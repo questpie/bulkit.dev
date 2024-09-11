@@ -4,7 +4,10 @@
   "type": "module",
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "check-dependency-version-consistency": "^4.1.0",
+    "npm-check-updates": "^17.1.1",
+    "rimraf": "^6.0.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

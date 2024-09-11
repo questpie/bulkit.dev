@@ -1,3 +1,4 @@
+import { envApi } from '@bulkit/api/envApi'
 import type { OAuth2Provider as OGOAuth2Provider } from 'arctic'
 import { generateCodeVerifier, OAuth2Client } from 'oslo/oauth2'
 
@@ -87,9 +88,9 @@ export function createCustomOAuthProvider(opts: {
 
 export const getGoogleProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.GOOGLE_CLIENT_ID!,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI!,
+    clientId: envApi.GOOGLE_CLIENT_ID!,
+    clientSecret: envApi.GOOGLE_CLIENT_SECRET!,
+    redirectUri: envApi.GOOGLE_REDIRECT_URI!,
     authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
     tokenEndpoint: 'https://oauth2.googleapis.com/token',
     scopes: ['https://www.googleapis.com/auth/userinfo.email'],
@@ -106,9 +107,9 @@ export const getGoogleProvider = () => {
 
 export const getYouTubeProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.YOUTUBE_CLIENT_ID!,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET!,
-    redirectUri: process.env.YOUTUBE_REDIRECT_URI!,
+    clientId: envApi.YOUTUBE_CLIENT_ID!,
+    clientSecret: envApi.YOUTUBE_CLIENT_SECRET!,
+    redirectUri: envApi.YOUTUBE_REDIRECT_URI!,
     authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
     tokenEndpoint: 'https://oauth2.googleapis.com/token',
     scopes: [
@@ -128,9 +129,9 @@ export const getYouTubeProvider = () => {
 
 export const getFacebookProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.FACEBOOK_CLIENT_ID!,
-    clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-    redirectUri: process.env.FACEBOOK_REDIRECT_URI!,
+    clientId: envApi.FACEBOOK_CLIENT_ID!,
+    clientSecret: envApi.FACEBOOK_CLIENT_SECRET!,
+    redirectUri: envApi.FACEBOOK_REDIRECT_URI!,
     authorizationEndpoint: 'https://www.facebook.com/v12.0/dialog/oauth',
     tokenEndpoint: 'https://graph.facebook.com/v12.0/oauth/access_token',
     scopes: ['email', 'pages_show_list', 'pages_read_engagement', 'pages_manage_posts'],
@@ -148,9 +149,9 @@ export const getFacebookProvider = () => {
 
 export const getInstagramProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.INSTAGRAM_CLIENT_ID!,
-    clientSecret: process.env.INSTAGRAM_CLIENT_SECRET!,
-    redirectUri: process.env.INSTAGRAM_REDIRECT_URI!,
+    clientId: envApi.INSTAGRAM_CLIENT_ID!,
+    clientSecret: envApi.INSTAGRAM_CLIENT_SECRET!,
+    redirectUri: envApi.INSTAGRAM_REDIRECT_URI!,
     authorizationEndpoint: 'https://api.instagram.com/oauth/authorize',
     tokenEndpoint: 'https://api.instagram.com/oauth/access_token',
     scopes: ['user_profile', 'user_media', 'instagram_basic', 'instagram_content_publish'],
@@ -165,9 +166,9 @@ export const getInstagramProvider = () => {
 
 export const getTikTokProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.TIKTOK_CLIENT_ID!,
-    clientSecret: process.env.TIKTOK_CLIENT_SECRET!,
-    redirectUri: process.env.TIKTOK_REDIRECT_URI!,
+    clientId: envApi.TIKTOK_CLIENT_ID!,
+    clientSecret: envApi.TIKTOK_CLIENT_SECRET!,
+    redirectUri: envApi.TIKTOK_REDIRECT_URI!,
     authorizationEndpoint: 'https://www.tiktok.com/auth/authorize/',
     tokenEndpoint: 'https://open-api.tiktok.com/oauth/access_token/',
     scopes: ['user.info.basic', 'video.publish'],
@@ -183,9 +184,9 @@ export const getTikTokProvider = () => {
 
 export const getLinkedInProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.LINKEDIN_CLIENT_ID!,
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-    redirectUri: process.env.LINKEDIN_REDIRECT_URI!,
+    clientId: envApi.LINKEDIN_CLIENT_ID!,
+    clientSecret: envApi.LINKEDIN_CLIENT_SECRET!,
+    redirectUri: envApi.LINKEDIN_REDIRECT_URI!,
     authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
     tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
     scopes: ['r_liteprofile', 'r_emailaddress', 'w_member_social'],
@@ -201,9 +202,9 @@ export const getLinkedInProvider = () => {
 
 export const getXProvider = () => {
   return createCustomOAuthProvider({
-    clientId: process.env.X_CLIENT_ID!,
-    clientSecret: process.env.X_CLIENT_SECRET!,
-    redirectUri: process.env.X_REDIRECT_URI!,
+    clientId: envApi.X_CLIENT_ID!,
+    clientSecret: envApi.X_CLIENT_SECRET!,
+    redirectUri: envApi.X_REDIRECT_URI!,
     authorizationEndpoint: 'https://twitter.com/i/oauth2/authorize',
     tokenEndpoint: 'https://api.twitter.com/2/oauth2/token',
     scopes: ['tweet.read', 'users.read', 'tweet.write'],
