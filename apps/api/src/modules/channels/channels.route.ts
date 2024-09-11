@@ -118,6 +118,9 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       }
     },
     {
+      detail: {
+        tags: ['Channels'],
+      },
       query: t.Object({
         limit: t.Number({
           default: 10,
@@ -148,6 +151,9 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       return channel
     },
     {
+      detail: {
+        tags: ['Channels'],
+      },
       params: t.Object({
         id: t.String(),
       }),

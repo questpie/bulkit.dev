@@ -10,7 +10,12 @@ import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia from 'elysia'
 
-export const organizationRoutes = new Elysia({ prefix: '/organizations' })
+export const organizationRoutes = new Elysia({
+  prefix: '/organizations',
+  detail: {
+    tags: ['Organizations'],
+  },
+})
   .use(protectedMiddleware)
   .post(
     '/',

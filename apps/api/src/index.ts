@@ -22,8 +22,24 @@ export const api = new Elysia()
 
         tags: [
           {
+            name: 'App',
+            description: 'Generic App endpoints',
+          },
+          {
             name: 'Auth',
             description: 'Endpoints for authentication',
+          },
+          {
+            name: 'Organizations',
+            description: 'Endpoints for organizations',
+          },
+          {
+            name: 'Channels',
+            description: 'Endpoints for channels',
+          },
+          {
+            name: 'Posts',
+            description: 'Endpoints for posts',
           },
           ...PLATFORMS.map((platform) => ({
             name: PLATFORM_TO_NAME[platform],

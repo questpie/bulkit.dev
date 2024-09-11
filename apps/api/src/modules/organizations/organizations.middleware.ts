@@ -2,7 +2,7 @@ import { db } from '@bulkit/api/db/db.client'
 import type { UserRole } from '@bulkit/api/db/db.constants'
 import { organizationsTable, userOrganizationsTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organization.constants'
+import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
 import { and, eq } from 'drizzle-orm'
 import Elysia from 'elysia'
 

@@ -1,12 +1,14 @@
 import { db } from '@bulkit/api/db/db.client'
-import type { Platform } from '@bulkit/api/db/db.constants'
+import type { Platform, PostType } from '@bulkit/api/db/db.constants'
 import {
   channelsTable,
   insertChannelSchema,
-  socialMediaIntegrationsTable,
   insertSocialMediaIntegrationSchema,
+  socialMediaIntegrationsTable,
+  type SelectPost,
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
+import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
 import { eq } from 'drizzle-orm'
 
 export abstract class ChannelManager {
@@ -111,4 +113,7 @@ export abstract class ChannelManager {
 
     return integration!
   }
+
+  abstract getAllowedPostTypes(): PostType[]
+  abstract sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
 }

@@ -6,3 +6,5 @@ import { envApi } from '@bulkit/api/envApi'
 // for query purposes
 const queryClient = postgres(envApi.DATABASE_URL)
 export const db = drizzle(queryClient, { schema })
+
+export type TransactionLike = typeof db
