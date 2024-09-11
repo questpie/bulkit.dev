@@ -1,0 +1,17 @@
+{
+  "name": "@questpie/jobs",
+  "module": "src/index.ts",
+  "files": ["src"],
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.33.7",
+    "@questpie/shared": "workspace:*",
+    "bullmq": "^5.12.10"
+  }
+}

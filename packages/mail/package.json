@@ -1,0 +1,22 @@
+{
+  "name": "@questpie/mail",
+  "module": "src/index.ts",
+  "files": ["src"],
+  "type": "module",
+  "devDependencies": {
+    "@questpie/shared": "workspace:*",
+    "@types/bun": "latest",
+    "@types/html-to-text": "^9.0.4",
+    "@types/nodemailer": "^6.4.15",
+    "@types/react": "^18"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0",
+    "nodemailer": "^6.9.14",
+    "resend": "^4.0.0",
+    "@react-email/render": "^1.0.1"
+  },
+  "dependencies": {
+    "html-to-text": "^9.0.5"
+  }
+}

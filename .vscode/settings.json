@@ -1,0 +1,84 @@
+{
+  "files.exclude": {
+    "**/.git": false,
+    "**/.svn": false,
+    "**/.hg": false,
+    "**/CVS": false,
+    "**/.DS_Store": false,
+    "**/Thumbs.db": false,
+    "**/.wrangler": false,
+    "**/migrations": false,
+    "**/node_modules": false,
+    "**/tsconfig.json": false,
+    "**/wrangler.toml": false,
+    "**/.prettierrc": false,
+    "**/.watchmanconfig": false,
+    "**/tsconfig.base.json": false,
+    "**/.gitignore": false,
+    "**/types": false,
+    "**/dist": false,
+    "apps/expo/index.js": false,
+    "**/metro.config.js": false,
+    "**/eas.json": false,
+    "**/tamagui.config.ts": false,
+    "**/babel.config.js": false,
+    "**/.expo": false,
+    "**/.next": false,
+    "**/.tamagui": false,
+    "**/.eslintrc.js": false,
+    "**/next-env.d.ts": false,
+    "**/.vscode": false,
+    "**/.turbo": false,
+    "**/out": false,
+    "SECURITY.md": false,
+    "LICENSE": false,
+    ".gitpod.yml": false,
+    ".npmrc": false,
+    "bun-workspace.yaml": false,
+    "renovate.json": false,
+    "turbo.json": false,
+    "**/cfImageLoader.js": false,
+    "**/sw.js": false,
+    "**/tamagui.css": false,
+    "apps/next/public/*.js": false,
+    "**/expo-env.d.ts": false,
+    "**/generate-tamagui-json.js": false,
+    "apps/docs/public/*.js": false,
+    "**/.eslintrc.json": false,
+    "**/.vscodeignore": false
+  },
+  "search.exclude": {
+    "**/out": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "package.json": "package-lock.json, bun-lock.yaml",
+    "*.js": "${capture}.js.map, ${capture}.d.ts, ${capture}.d.ts.map",
+    "*.ts": "$(capture).test.ts, $(capture).test.tsx, $(capture).test.node.ts, $(capture).test.node.tsx, $(capture).test.native.ts, $(capture).test.native.tsx, $(capture).test.ios.ts, $(capture).test.ios.tsx, $(capture).test.web.ts, $(capture).test.web.tsx, $(capture).test.android.ts, $(capture).test.android.tsx, ${capture}.native.tsx, ${capture}.ios.tsx, ${capture}.android.tsx, ${capture}.web.tsx, ${capture}.native.ts, ${capture}.ios.ts, ${capture}.android.ts, ${capture}.web.ts, ${capture}.native.js, ${capture}.ios.js, ${capture}.android.js, ${capture}.web.js, ${capture}.native.jsx, ${capture}.ios.jsx, ${capture}.android.jsx, ${capture}.web.jsx",
+    "*.tsx": "$(capture).test.ts, $(capture).test.tsx, $(capture).test.node.ts, $(capture).test.node.tsx, $(capture).test.native.ts, $(capture).test.native.tsx, $(capture).test.ios.ts, $(capture).test.ios.tsx, $(capture).test.web.ts, $(capture).test.web.tsx, $(capture).test.android.ts, $(capture).test.android.tsx, ${capture}.native.tsx, ${capture}.ios.tsx, ${capture}.android.tsx, ${capture}.web.tsx, ${capture}.native.ts, ${capture}.ios.ts, ${capture}.android.ts, ${capture}.web.ts, ${capture}.native.js, ${capture}.ios.js, ${capture}.android.js, ${capture}.web.js, ${capture}.native.jsx, ${capture}.ios.jsx, ${capture}.android.jsx, ${capture}.web.jsx"
+  },
+  "editor.defaultFormatter": "biomejs.biome",
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.codeActionsOnSave": {
+    "quickfix.biome": "explicit",
+    "source.organizeImports.biome": "explicit"
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  // temporary fix till this is fixed https://github.com/microsoft/TypeScript/issues/59119
+  "typescript.tsserver.experimental.useVsCodeWatcher": false
+}

@@ -1,0 +1,51 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=webapp-dev
+      - POSTGRES_PASSWORD=webapp-dev
+      - POSTGRES_DB=webapp-dev
+    volumes:
+      - "webapp-dev-db:/var/lib/postgresql/data"
+
+  redis:
+    image: "redis:latest"
+    ports:
+      - 6379:6379
+    restart: unless-stopped
+    command: redis-server --requirepass webapp-dev
+    volumes:
+      - redis-data:/data
+
+  minio:
+    image: "minio/minio:latest"
+    ports:
+      - "${FORWARD_MINIO_PORT:-9000}:9000"
+      - "${FORWARD_MINIO_CONSOLE_PORT:-9090}:9090"
+    environment:
+      MINIO_ROOT_USER: "root"
+      MINIO_ROOT_PASSWORD: "password"
+    volumes:
+      - "webapp-dev-minio:/data/minio"
+    command: minio server /data/minio --console-address ":9090"
+
+  soketi:
+    image: quay.io/soketi/soketi:latest-16-alpine
+    ports:
+      - "${SOKETI_PORT:-6001}:6001"
+    environment:
+      SOKETI_DEBUG: '1'
+      SOKETI_METRICS_SERVER_PORT: '9601'
+      SOKETI_DEFAULT_APP_ID: "app-id"
+      SOKETI_DEFAULT_APP_KEY: "app-key"
+      SOKETI_DEFAULT_APP_SECRET: "app-secret"
+    depends_on:
+      - redis
+
+volumes:
+  webapp-dev-db:
+  redis-data:
+  webapp-dev-minio:

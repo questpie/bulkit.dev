@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    // Enable latest features
+    "lib": ["ESNext", "DOM"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+
+    // Bundler mode
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+
+    // Best practices
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // Some stricter flags (disabled by default)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Here you should add paths to all packages
+    "paths": {
+      "@questpie/api/*": ["./apps/api/src/*"],
+      "@questpie/shared/*": ["./packages/shared/src/*"],
+      "@questpie/translations/*": ["./packages/translations/src/*"],
+      "@questpie/mail/*": ["./packages/mail/src/*"],
+      "@questpie/jobs/*": ["./packages/jobs/src/*"],
+      "@questpie/redis/*": ["./packages/redis/src/*"],
+      "@questpie/app/*": ["./apps/app/src/*"],
+      "@questpie/ui/*": ["./packages/ui/src/*"],
+      "@questpie/transactional/*": ["./packages/transactional/src/*"]
+    }
+  }
+}

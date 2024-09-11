@@ -1,0 +1,30 @@
+{
+  "name": "@questpie/webapp-boilerplate",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "clean": "bun clean:nm && bun clean:lock && bun clean:artifacts",
+    "clean:artifacts": "bunx rimraf --glob ./**/dist ./**/build ./**/out ./**/.next",
+    "clean:lock": "bunx rimraf --glob ./**/bun.lockb",
+    "clean:nm": "bunx rimraf --glob ./**/node_modules",
+    "cli": "bun run ./scripts/cli.ts",
+    "deps:check": "bunx check-dependency-version-consistency .",
+    "deps:update": "bunx npm-check-updates -ui -ws",
+    "dev:api": "cd apps/api && bun run dev",
+    "dev:app": "cd apps/app && bun run dev",
+    "dev:worker": "cd apps/api && bun run dev:worker",
+    "fix": "bun @biomejs/biome check --apply-unsafe ./packages ./apps",
+    "format": "bun @biomejs/biome format --write ./packages ./apps",
+    "lint": "bun @biomejs/biome lint ./packages ./apps",
+    "postinstall": "bun deps:check",
+    "types:check": "tsc --noEmit"
+  },
+  "workspaces": ["apps/*", "packages/*"]
+}

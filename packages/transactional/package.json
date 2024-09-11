@@ -1,0 +1,19 @@
+{
+  "name": "@questpie/transactional",
+  "module": "src/index.ts",
+  "files": ["src/index.ts"],
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@questpie/shared": "workspace:*",
+    "@react-email/components": "^0.0.24",
+    "clsx": "^2.1.1",
+    "react-email": "^3.0.1",
+    "tailwind-merge": "^2.5.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

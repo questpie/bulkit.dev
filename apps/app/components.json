@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "src/app/globals.css",
+    "baseColor": "stone",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "ui": "@questpie/app/app/_components",
+    "components": "@questpie/app/app/_components",
+    "utils": "@questpie/app/app/_utils/style.utils"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "name": "@questpie/ui",
+  "module": "src/index.ts",
+  "main": "src/index.ts",
+  "files": ["src"],
+  "type": "module",
+  "scripts": {
+    "ui": "bunx shadcn@latest"
+  },
+  "devDependencies": {
+    "@iconify-icon/react": "^2.1.0",
+    "@types/bun": "latest",
+    "@types/react": "^18",
+    "@types/react-dom": "^18"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "dependencies": {
+    "@iconify/react": "^5.0.2",
+    "@radix-ui/react-checkbox": "^1.1.1",
+    "@radix-ui/react-collapsible": "^1.1.0",
+    "@radix-ui/react-dialog": "^1.1.1",
+    "@radix-ui/react-icons": "^1.3.0",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-progress": "^1.1.0",
+    "@radix-ui/react-radio-group": "^1.2.0",
+    "@radix-ui/react-select": "^2.1.1",
+    "@radix-ui/react-separator": "^1.1.0",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tanstack/react-query": "^5.52.3",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.2.0",
+    "next-themes": "^0.3.0",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss": "^3.4.10",
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@questpie/cache",
+  "module": "src/index.ts",
+  "files": ["src/index.ts"],
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0",
+    "ioredis": "^5.4.1"
+  },
+  "dependencies": {
+    "lru-cache": "^11.0.0"
+  }
+}
