@@ -4,7 +4,7 @@ export type PostType = (typeof POST_TYPE)[number]
 export const POST_STATUS = ['draft', 'published'] as const
 export type PostStatus = (typeof POST_STATUS)[number]
 
-export const PLATFORM = [
+export const PLATFORMS = [
   'instagram',
   'facebook',
   'tiktok',
@@ -13,6 +13,7 @@ export const PLATFORM = [
   'linkedin',
   // 'google',
 ] as const
+
 export const PLATFORM_TO_NAME = {
   instagram: 'Instagram',
   facebook: 'Facebook',
@@ -23,7 +24,7 @@ export const PLATFORM_TO_NAME = {
   // google: 'Google',
 }
 
-export type Platform = (typeof PLATFORM)[number]
+export type Platform = (typeof PLATFORMS)[number]
 
 export const USER_ROLE = ['owner', 'member'] as const
 export type UserRole = (typeof USER_ROLE)[number]

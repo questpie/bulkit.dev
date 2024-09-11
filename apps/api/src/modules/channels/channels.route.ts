@@ -1,4 +1,7 @@
-import { type Platform, PLATFORM_TO_NAME } from '@bulkit/api/db/db.constants'
+import { tExt } from '@bulkit/api/common/schemas'
+import { db } from '@bulkit/api/db/db.client'
+import { PLATFORM_TO_NAME, PLATFORMS, type Platform } from '@bulkit/api/db/db.constants'
+import { channelsTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
 import { InstagramChannelManager } from '@bulkit/api/modules/channels/providers/instagram/instagram-channel.manager'
@@ -6,6 +9,8 @@ import { LinkedInChannelManager } from '@bulkit/api/modules/channels/providers/l
 import { TikTokChannelManager } from '@bulkit/api/modules/channels/providers/tiktok/tiktok-channel.manager'
 import { XChannelManager } from '@bulkit/api/modules/channels/providers/x/x-channel.manager'
 import { YouTubeChannelManager } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.manager'
+import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export function getChannelManager<TPlatform extends Platform>(platform: TPlatform) {
@@ -72,6 +77,10 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(protectedMiddleware)
+  .use(organizationMiddleware)
+  .guard({
+    hasRole: true,
+  })
   .use(createChannelRoutes('youtube'))
   .use(createChannelRoutes('instagram'))
   .use(createChannelRoutes('facebook'))
@@ -79,3 +88,68 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(createChannelRoutes('youtube'))
   .use(createChannelRoutes('x'))
   .use(createChannelRoutes('linkedin'))
+  .get(
+    '/',
+    async (ctx) => {
+      const { limit = 10, cursor, platform } = ctx.query
+
+      const query = db
+        .select()
+        .from(channelsTable)
+        .where(
+          and(
+            eq(channelsTable.organizationId, ctx.organization!.id),
+            platform ? eq(channelsTable.platform, platform) : undefined,
+            platform ? eq(channelsTable.platform, platform) : undefined
+          )
+        )
+        .orderBy(desc(channelsTable.id))
+        .limit(limit)
+        .offset(cursor)
+
+      const channels = await query
+
+      const hasNextCursor = channels.length > limit
+      const nextCursor = hasNextCursor ? cursor + limit : null
+
+      return {
+        data: channels,
+        nextCursor,
+      }
+    },
+    {
+      query: t.Object({
+        limit: t.Number({
+          default: 10,
+        }),
+        cursor: t.Number({
+          default: 0,
+        }),
+        platform: t.Optional(tExt.StringEnum(PLATFORMS)),
+      }),
+    }
+  )
+  .get(
+    '/:id',
+    async (ctx) => {
+      const { id } = ctx.params
+
+      const channel = await db.query.channelsTable.findFirst({
+        where: and(
+          eq(channelsTable.id, id),
+          eq(channelsTable.organizationId, ctx.organization!.id)
+        ),
+      })
+
+      if (!channel) {
+        ctx.error(404, 'Channel not found')
+      }
+
+      return channel
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+    }
+  )

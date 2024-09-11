@@ -1,5 +1,6 @@
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import cuid2 from '@paralleldrive/cuid2'
+import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
 import {
   boolean,
@@ -14,7 +15,7 @@ import {
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 import {
   CHANNEL_STATUS,
-  PLATFORM,
+  PLATFORMS,
   POST_STATUS,
   POST_TYPE,
   SCHEDULED_POST_STATUS,
@@ -194,7 +195,7 @@ export const socialMediaIntegrationsTable = pgTable('social_media_integrations',
   id: primaryKey(),
   userId: text('user_id').notNull(),
   platform: text('platform', {
-    enum: PLATFORM,
+    enum: PLATFORMS,
   }).notNull(),
   accessToken: text('access_token').notNull(),
   refreshToken: text('refresh_token'),
@@ -245,8 +246,30 @@ export const organizationsTable = pgTable('organizations', {
 
 export type SelectOrganization = typeof organizationsTable.$inferSelect
 export type InsertOrganization = typeof organizationsTable.$inferInsert
-export const insertOrganizationSchema = createInsertSchema(organizationsTable)
+export const insertOrganizationSchema = createInsertSchema(organizationsTable, {
+  id: Type.Never(),
+  updatedAt: Type.Never(),
+  createdAt: Type.Never(),
+})
 export const selectOrganizationSchema = createSelectSchema(organizationsTable)
+
+// Add this new table definition
+export const organizationInvitesTable = pgTable('organization_invites', {
+  id: text('id')
+    .primaryKey()
+    .$default(() => verificationTokenCuid()),
+  organizationId: text('organization_id').notNull(),
+  email: text('email').notNull(),
+  role: text('role', { enum: USER_ROLE }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+})
+
+export type SelectOrganizationInvite = typeof organizationInvitesTable.$inferSelect
+export type InsertOrganizationInvite = typeof organizationInvitesTable.$inferInsert
+export const insertOrganizationInviteSchema = createInsertSchema(organizationInvitesTable)
+export const selectOrganizationInviteSchema = createSelectSchema(organizationInvitesTable)
 
 // New Channels table
 export const channelsTable = pgTable(
@@ -254,7 +277,7 @@ export const channelsTable = pgTable(
   {
     id: primaryKey(),
     name: text('name').notNull(),
-    platform: text('platform', { enum: PLATFORM }).notNull(),
+    platform: text('platform', { enum: PLATFORMS }).notNull(),
     status: text('status', { enum: CHANNEL_STATUS }).notNull().default('pending'),
     organizationId: text('organization_id').notNull(),
     socialMediaIntegrationId: text('social_media_integration_id').notNull(), // Add this line
@@ -298,6 +321,7 @@ export const organizationsRelations = relations(organizationsTable, ({ many }) =
   scheduledPosts: many(scheduledPostsTable),
   resources: many(resourcesTable),
   channels: many(channelsTable), // Add this line
+  invites: many(organizationInvitesTable),
 }))
 
 export const userOrganizationsRelations = relations(userOrganizationsTable, ({ one }) => ({
@@ -307,6 +331,13 @@ export const userOrganizationsRelations = relations(userOrganizationsTable, ({ o
   }),
   organization: one(organizationsTable, {
     fields: [userOrganizationsTable.organizationId],
+    references: [organizationsTable.id],
+  }),
+}))
+// Add this new relation
+export const organizationInvitesRelations = relations(organizationInvitesTable, ({ one }) => ({
+  organization: one(organizationsTable, {
+    fields: [organizationInvitesTable.organizationId],
     references: [organizationsTable.id],
   }),
 }))
