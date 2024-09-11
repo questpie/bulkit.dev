@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/shared",
+  "name": "@bulkit/shared",
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",

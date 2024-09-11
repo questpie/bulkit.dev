@@ -1,4 +1,4 @@
-import { cn } from '@questpie/transactional/style-utils'
+import { cn } from '@bulkit/transactional/style-utils'
 import { Button } from '@react-email/components'
 import type * as React from 'react'
 

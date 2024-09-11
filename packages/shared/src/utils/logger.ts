@@ -1,4 +1,4 @@
-import { generalEnv } from '@questpie/shared/env/general.env'
+import { generalEnv } from '@bulkit/shared/env/general.env'
 
 const isDevelopment = generalEnv.PUBLIC_NODE_ENV !== 'production'
 

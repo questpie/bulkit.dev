@@ -1,6 +1,6 @@
 'use server'
 
-import { AUTH_COOKIE_NAME } from '@questpie/app/app/(auth)/auth.constants'
+import { AUTH_COOKIE_NAME } from '@bulkit/app/app/(auth)/auth.constants'
 import { cookies } from 'next/headers'
 
 export async function setSession(token: string | null) {

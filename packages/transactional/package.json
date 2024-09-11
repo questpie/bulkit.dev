@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/transactional",
+  "name": "@bulkit/transactional",
   "module": "src/index.ts",
   "files": ["src/index.ts"],
   "type": "module",
@@ -7,7 +7,7 @@
     "@types/bun": "latest"
   },
   "dependencies": {
-    "@questpie/shared": "workspace:*",
+    "@bulkit/shared": "workspace:*",
     "@react-email/components": "^0.0.24",
     "clsx": "^2.1.1",
     "react-email": "^3.0.1",

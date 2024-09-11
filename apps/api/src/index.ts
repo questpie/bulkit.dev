@@ -1,3 +1,4 @@
+import { PLATFORM, PLATFORM_TO_NAME } from '@bulkit/api/db/db.constants'
 import cors from '@elysiajs/cors'
 import swagger from '@elysiajs/swagger'
 import { Elysia } from 'elysia'
@@ -24,10 +25,10 @@ export const api = new Elysia()
             name: 'Auth',
             description: 'Endpoints for authentication',
           },
-          {
-            name: 'User',
-            description: 'Endpoints for user',
-          },
+          ...PLATFORM.map((platform) => ({
+            name: PLATFORM_TO_NAME[platform],
+            description: `${PLATFORM_TO_NAME[platform]} endpoints`,
+          })),
         ],
       },
     })

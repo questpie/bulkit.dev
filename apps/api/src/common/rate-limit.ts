@@ -1,4 +1,4 @@
-import { redisManager } from '@questpie/api/redis/redis-clients'
+import { redisManager } from '@bulkit/api/redis/redis-clients'
 import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 

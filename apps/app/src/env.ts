@@ -1,5 +1,5 @@
-import { createEnv } from '@questpie/shared/env/create-env'
-import { StringBoolean, StringInt } from '@questpie/shared/schemas/misc'
+import { createEnv } from '@bulkit/shared/env/create-env'
+import { StringBoolean, StringInt } from '@bulkit/shared/schemas/misc'
 import { Type } from '@sinclair/typebox'
 
 /**

@@ -2,10 +2,10 @@ import { generateCodeVerifier, generateState } from 'arctic'
 import { and, eq } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
 import { google, lucia } from '../lucia'
-import { db } from '@questpie/api/db/db.client'
-import { oauthAccountsTable, userTable } from '@questpie/api/db/db.schema'
-import { getDeviceInfo } from '@questpie/api/modules/auth/utils/device-info'
-import { generalEnv } from '@questpie/shared/env/general.env'
+import { db } from '@bulkit/api/db/db.client'
+import { oauthAccountsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
+import { generalEnv } from '@bulkit/shared/env/general.env'
 
 export const googleRoutes = new Elysia()
   .get(
@@ -87,16 +87,16 @@ export const googleRoutes = new Elysia()
             userId = existingOAuthAccount[0].userId
           } else {
             const [user] = await trx
-              .insert(userTable)
+              .insert(usersTable)
               .values({
                 email: googleUser.email,
                 name: googleUser.name,
               })
               .onConflictDoUpdate({
-                target: userTable.email,
+                target: usersTable.email,
                 set: { name: googleUser.name },
               })
-              .returning({ id: userTable.id })
+              .returning({ id: usersTable.id })
 
             userId = user.id
 

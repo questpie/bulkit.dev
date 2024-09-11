@@ -11,7 +11,7 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@questpie/ui/components",
-    "utils": "@questpie/ui/lib"
+    "components": "@bulkit/ui/components",
+    "utils": "@bulkit/ui/lib"
   }
 }

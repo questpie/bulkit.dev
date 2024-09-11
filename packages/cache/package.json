@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/cache",
+  "name": "@bulkit/cache",
   "module": "src/index.ts",
   "files": ["src/index.ts"],
   "type": "module",

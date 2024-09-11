@@ -1,6 +1,6 @@
-import { Icon } from '@iconify-icon/react'
-import { cn } from '@questpie/ui/lib'
+import { cn } from '@bulkit/ui/lib'
 import { cva, type VariantProps } from 'class-variance-authority'
+import { FaSpinner } from 'react-icons/fa'
 
 const spinnerVariants = cva('animate-spin', {
   variants: {
@@ -20,9 +20,7 @@ export interface SpinnerProps extends VariantProps<typeof spinnerVariants> {
 }
 
 const Spinner = ({ className, size, ...props }: SpinnerProps) => {
-  return (
-    <Icon icon='lucide:loader-2' className={cn(spinnerVariants({ size, className }))} {...props} />
-  )
+  return <FaSpinner className={cn(spinnerVariants({ size, className }))} {...props} />
 }
 
 export { Spinner, spinnerVariants }

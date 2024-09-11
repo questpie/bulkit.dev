@@ -1,5 +1,5 @@
-import type { JobFactory } from '@questpie/jobs/job-factory'
-import { logger } from '@questpie/shared/utils/logger'
+import type { JobFactory } from '@bulkit/jobs/job-factory'
+import { logger } from '@bulkit/shared/utils/logger'
 import { render } from '@react-email/render'
 import { convert } from 'html-to-text'
 import type { ReactElement } from 'react'

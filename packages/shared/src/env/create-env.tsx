@@ -1,7 +1,7 @@
 /**
  *  taken from https://github.com/jcwillox/typebox-x/blob/main/src/env/env.ts
  */
-import { type MergedValueError, mergeErrors } from '@questpie/shared/error/typebox-errors'
+import { type MergedValueError, mergeErrors } from '@bulkit/shared/error/typebox-errors'
 import {
   type StaticDecode,
   type TObject,

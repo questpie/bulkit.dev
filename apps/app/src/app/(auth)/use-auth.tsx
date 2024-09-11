@@ -1,9 +1,9 @@
 'use client'
 
-import { apiClient } from '@questpie/app/api/api.client'
-import { setSession as setSessionAction } from '@questpie/app/app/(auth)/auth.actions'
-import { AtomsHydrator } from '@questpie/app/app/_atoms/atoms-provider'
-import { getRootStore } from '@questpie/app/app/_atoms/root-store'
+import { apiClient } from '@bulkit/app/api/api.client'
+import { setSession as setSessionAction } from '@bulkit/app/app/(auth)/auth.actions'
+import { AtomsHydrator } from '@bulkit/app/app/_atoms/atoms-provider'
+import { getRootStore } from '@bulkit/app/app/_atoms/root-store'
 import { useMutation } from '@tanstack/react-query'
 import { atom, useAtomValue, useSetAtom } from 'jotai'
 
@@ -38,11 +38,8 @@ export function useAuthActions() {
       }
 
       await setSessionAction(res.data.session.id)
+      setSessionAtom(res.data)
       return res.data
-    },
-
-    onSuccess: (data) => {
-      setSessionAtom(data)
     },
   })
 
@@ -53,10 +50,8 @@ export function useAuthActions() {
         return null
       }
       await setSessionAction(null)
-      return res.data
-    },
-    onSuccess: () => {
       setSessionAtom(null)
+      return res.data
     },
   })
 

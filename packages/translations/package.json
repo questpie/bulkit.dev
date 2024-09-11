@@ -1,10 +1,10 @@
 {
-  "name": "@questpie/translations",
+  "name": "@bulkit/translations",
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",
   "dependencies": {
-    "@questpie/shared": "workspace:*"
+    "@bulkit/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "latest"

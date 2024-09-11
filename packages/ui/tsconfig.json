@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@questpie/ui/*": ["./src/*"]
+      "@bulkit/ui/*": ["./src/*"]
     },
     "plugins": [
       {

@@ -2,8 +2,8 @@
  * Register all workers here
  */
 
-import { mailClient } from '@questpie/api/mail/mail.client'
-import { logger } from '@questpie/shared/utils/logger'
+import { mailClient } from '@bulkit/api/mail/mail.client'
+import { logger } from '@bulkit/shared/utils/logger'
 
 mailClient.registerWorker()
 

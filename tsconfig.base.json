@@ -26,15 +26,15 @@
 
     // Here you should add paths to all packages
     "paths": {
-      "@questpie/api/*": ["./apps/api/src/*"],
-      "@questpie/shared/*": ["./packages/shared/src/*"],
-      "@questpie/translations/*": ["./packages/translations/src/*"],
-      "@questpie/mail/*": ["./packages/mail/src/*"],
-      "@questpie/jobs/*": ["./packages/jobs/src/*"],
-      "@questpie/redis/*": ["./packages/redis/src/*"],
-      "@questpie/app/*": ["./apps/app/src/*"],
-      "@questpie/ui/*": ["./packages/ui/src/*"],
-      "@questpie/transactional/*": ["./packages/transactional/src/*"]
+      "@bulkit/api/*": ["./apps/api/src/*"],
+      "@bulkit/shared/*": ["./packages/shared/src/*"],
+      "@bulkit/translations/*": ["./packages/translations/src/*"],
+      "@bulkit/mail/*": ["./packages/mail/src/*"],
+      "@bulkit/jobs/*": ["./packages/jobs/src/*"],
+      "@bulkit/redis/*": ["./packages/redis/src/*"],
+      "@bulkit/app/*": ["./apps/app/src/*"],
+      "@bulkit/ui/*": ["./packages/ui/src/*"],
+      "@bulkit/transactional/*": ["./packages/transactional/src/*"]
     }
   }
 }

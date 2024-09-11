@@ -1,13 +1,13 @@
 'use client'
-import { apiClient } from '@questpie/app/api/api.client'
-import { Icon } from '@questpie/ui/components/icon'
-import { Button } from '@questpie/ui/components/ui/button'
-import { Input } from '@questpie/ui/components/ui/input'
-import { Label } from '@questpie/ui/components/ui/label'
-import { toast } from '@questpie/ui/components/ui/sonner'
+import { apiClient } from '@bulkit/app/api/api.client'
+import { Button } from '@bulkit/ui/components/ui/button'
+import { Input } from '@bulkit/ui/components/ui/input'
+import { Label } from '@bulkit/ui/components/ui/label'
+import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
+import { LuSend } from 'react-icons/lu'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
@@ -58,28 +58,28 @@ export default function AuthPage() {
                 loadingText='Sending...'
                 disabled={magicLinkMutation.status === 'success'}
               >
-                <Icon icon='lucide:mail' />
+                <LuSend />
                 Sign in with Email
               </Button>
             </form>
-            <div className='relative'>
+            {/* <div className='relative'>
               <div className='absolute inset-0 flex items-center'>
                 <span className='w-full border-t border-border' />
               </div>
               <div className='relative flex justify-center text-xs uppercase'>
                 <span className='bg-background px-2 text-muted-foreground'>Or continue with</span>
               </div>
-            </div>
-            <div className='grid grid-cols-2 gap-4'>
+            </div> */}
+            {/* <div className='grid grid-cols-2 gap-4'>
               <Button variant='outline' className='gap-2'>
-                <Icon icon='logos:github-icon' />
+                <FaGithub />
                 GitHub
               </Button>
               <Button variant='outline' className='gap-2'>
-                <Icon icon='logos:google-icon' />
+                <FaGoogle />
                 Google
               </Button>
-            </div>
+            </div> */}
           </div>
           <p className='text-xs text-center text-muted-foreground'>
             By signing in, you agree to our{' '}
@@ -93,8 +93,8 @@ export default function AuthPage() {
             .
           </p>
           <div className='text-center mt-8'>
-            <h1 className='text-base font-bold'>QUESTPIE</h1>
-            <p className='text-xs text-muted-foreground'>Your WebApp Boilerplate</p>
+            <h1 className='text-base font-bold'>bulkit.dev</h1>
+            <p className='text-xs text-muted-foreground'>Streamline Your Social Presence</p>
           </div>
         </div>
       </div>

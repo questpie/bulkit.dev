@@ -1,4 +1,4 @@
-import { MailAdapter, type SerializableMailOptions } from '@questpie/mail/base-mail'
+import { MailAdapter, type SerializableMailOptions } from '@bulkit/mail/base-mail'
 import nodemailer from 'nodemailer'
 import type SMTPTransport from 'nodemailer/lib/smtp-transport'
 

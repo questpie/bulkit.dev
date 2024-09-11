@@ -1,6 +1,5 @@
-import { authRoutes } from '@questpie/api/modules/auth/auth.routes'
-import { chatRoutes } from '@questpie/api/modules/chat/chat.routes'
-import { userRoutes } from '@questpie/api/modules/user/user.routes'
+import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
+import { channelRoutes } from '@bulkit/api/modules/channels/channels.route'
 import { Elysia } from 'elysia'
 
 /**
@@ -8,6 +7,5 @@ import { Elysia } from 'elysia'
  */
 export const rootRoutes = new Elysia()
   .use(authRoutes)
-  .use(chatRoutes)
-  .use(userRoutes)
+  .use(channelRoutes)
   .get('/healthy', () => 'ok', { detail: { description: 'Health check' } })

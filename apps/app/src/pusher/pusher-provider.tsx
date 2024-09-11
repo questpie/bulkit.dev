@@ -1,4 +1,4 @@
-import { createPusherInstance, type PusherOverrides } from '@questpie/app/pusher/pusher.client'
+import { createPusherInstance, type PusherOverrides } from '@bulkit/app/pusher/pusher.client'
 import type PusherJs from 'pusher-js'
 import type { Channel } from 'pusher-js'
 import { createContext, useContext, useEffect, useState } from 'react'

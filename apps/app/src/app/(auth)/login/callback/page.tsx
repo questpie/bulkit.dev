@@ -1,7 +1,7 @@
 'use client'
-import { useAuthActions } from '@questpie/app/app/(auth)/use-auth'
-import { useEffect } from 'react'
+import { useAuthActions } from '@bulkit/app/app/(auth)/use-auth'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function LoginCallbackPage(props: {
   searchParams: Record<string, string | undefined>
@@ -12,10 +12,8 @@ export default function LoginCallbackPage(props: {
 
   useEffect(() => {
     if (!token || login.isPending) return
-    login.mutate(token, {
-      onSuccess: () => {
-        router.push('/')
-      },
+    login.mutateAsync(token).then(() => {
+      router.push('/')
     })
   }, [token, login, router])
 

@@ -1,8 +1,8 @@
-import type { BoilerPlateTemplate } from '@questpie/script/utils/boilerplate-parser'
+import type { BoilerPlateTemplate } from '@bulkit/script/utils/boilerplate-parser'
 
 export const PACKAGE_TEMPLATE: BoilerPlateTemplate = {
   'package.json': `{
-  "name": "@questpie/{{name}}",
+  "name": "@bulkit/{{name}}",
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",

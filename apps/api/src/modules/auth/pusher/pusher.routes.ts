@@ -1,6 +1,6 @@
-import { protectedMiddleware } from '@questpie/api/modules/auth/auth.middleware'
-import { pusher } from '@questpie/api/pusher/pusher.client'
-import { doesMatchChannel, parseChannelName } from '@questpie/shared/utils/pusher'
+import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { pusher } from '@bulkit/api/pusher/pusher.client'
+import { doesMatchChannel, parseChannelName } from '@bulkit/shared/utils/pusher'
 import Elysia, { t } from 'elysia'
 import type { User } from 'lucia'
 

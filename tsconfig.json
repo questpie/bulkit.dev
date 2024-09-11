@@ -2,7 +2,7 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "paths": {
-      "@questpie/script/*": ["./scripts/*"]
+      "@bulkit/script/*": ["./scripts/*"]
     }
   },
   "include": ["./scripts/**/*"]

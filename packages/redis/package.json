@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/redis",
+  "name": "@bulkit/redis",
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",

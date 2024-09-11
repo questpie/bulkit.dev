@@ -1,5 +1,5 @@
 import { command, positional, run } from '@drizzle-team/brocli'
-import { createPackage } from '@questpie/script/commands/create-package'
+import { createPackage } from '@bulkit/script/commands/create-package'
 
 const createPackageCommand = command({
   name: 'create:package',

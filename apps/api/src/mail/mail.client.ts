@@ -1,17 +1,16 @@
-import { env } from '@questpie/api/env'
-import { jobFactory } from '@questpie/api/jobs/job-factory'
-import { ResendAdapter } from '@questpie/mail/adapter/resend.adapter'
-import { SmtpAdapter } from '@questpie/mail/adapter/smtp.adapter'
-import { MailClient, type MailAdapter } from '@questpie/mail/base-mail'
-import { generalEnv } from '@questpie/shared/env/general.env'
-import { logger } from '@questpie/shared/utils/logger'
+import { envApi } from '@bulkit/api/envApi'
+import { ResendAdapter } from '@bulkit/mail/adapter/resend.adapter'
+import { SmtpAdapter } from '@bulkit/mail/adapter/smtp.adapter'
+import { MailClient, type MailAdapter } from '@bulkit/mail/base-mail'
+import { generalEnv } from '@bulkit/shared/env/general.env'
+import { logger } from '@bulkit/shared/utils/logger'
 import { createTestAccount, getTestMessageUrl } from 'nodemailer'
 
 // Global binding for development mode
 
 const adapterPromise = async (): Promise<MailAdapter> => {
   if (generalEnv.PUBLIC_NODE_ENV === 'production') {
-    return new ResendAdapter({ apiKey: env.RESEND_API_KEY })
+    return new ResendAdapter({ apiKey: envApi.RESEND_API_KEY })
   }
   const testAccount = await createTestAccount()
   return new SmtpAdapter({
@@ -33,8 +32,6 @@ const adapterPromise = async (): Promise<MailAdapter> => {
 
 export const mailClient = new MailClient({
   adapter: adapterPromise(),
-  from: env.MAIL_FROM,
-  jobFactory,
+  from: envApi.MAIL_FROM,
+  // jobFactory,
 })
-
-// For HMR in development

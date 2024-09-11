@@ -1,6 +1,6 @@
-import { generalEnv } from '@questpie/shared/env/general.env'
-import { MailButton } from '@questpie/transactional/components/mail-button'
-import { MailLayout } from '@questpie/transactional/components/mail-layout'
+import { generalEnv } from '@bulkit/shared/env/general.env'
+import { MailButton } from '@bulkit/transactional/components/mail-button'
+import { MailLayout } from '@bulkit/transactional/components/mail-layout'
 import { Section, Text } from '@react-email/components'
 
 export type MailMagicLinkProps = {

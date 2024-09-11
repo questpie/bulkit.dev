@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/api",
+  "name": "@bulkit/api",
   "version": "1.0.50",
   "type": "module",
   "scripts": {
@@ -21,10 +21,10 @@
     "@grotto/logysia": "^0.1.4",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@paralleldrive/cuid2": "paralleldrive/cuid2",
-    "@questpie/mail": "workspace:*",
-    "@questpie/shared": "workspace:*",
-    "@questpie/jobs": "workspace:*",
-    "@questpie/redis": "workspace:*",
+    "@bulkit/mail": "workspace:*",
+    "@bulkit/shared": "workspace:*",
+    "@bulkit/jobs": "workspace:*",
+    "@bulkit/redis": "workspace:*",
     "@react-email/render": "^1.0.1",
     "@sinclair/typebox": "^0.33.7",
     "arctic": "^1.9.2",

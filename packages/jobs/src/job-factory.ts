@@ -1,5 +1,5 @@
-import { generalEnv } from '@questpie/shared/env/general.env'
-import { logger } from '@questpie/shared/utils/logger'
+import { generalEnv } from '@bulkit/shared/env/general.env'
+import { logger } from '@bulkit/shared/utils/logger'
 import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 import {

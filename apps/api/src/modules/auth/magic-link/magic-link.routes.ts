@@ -1,10 +1,10 @@
-import { applyRateLimit } from '@questpie/api/common/rate-limit'
-import { db } from '@questpie/api/db/db.client'
-import { emailVerificationTable, userTable } from '@questpie/api/db/db.schema'
-import { env } from '@questpie/api/env'
-import { mailClient } from '@questpie/api/mail/mail.client'
-import { generalEnv } from '@questpie/shared/env/general.env'
-import MailMagicLink from '@questpie/transactional/emails/mail-magic-link'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
+import { db } from '@bulkit/api/db/db.client'
+import { emailVerificationTable, usersTable } from '@bulkit/api/db/db.schema'
+import { envApi } from '@bulkit/api/envApi'
+import { mailClient } from '@bulkit/api/mail/mail.client'
+import { generalEnv } from '@bulkit/shared/env/general.env'
+import MailMagicLink from '@bulkit/transactional/emails/mail-magic-link'
 import { and, eq } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
 import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
@@ -29,7 +29,7 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
         })
         .then((r) => r[0])
 
-      const url = new URL('auth/magic-link/verify', env.SERVER_URL)
+      const url = new URL('auth/magic-link/verify', envApi.SERVER_URL)
       url.searchParams.set('token', token)
       if (body.redirectTo) {
         url.searchParams.set('redirectTo', body.redirectTo)
@@ -80,8 +80,8 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
 
       let user = await db
         .select()
-        .from(userTable)
-        .where(eq(userTable.email, storedToken.email))
+        .from(usersTable)
+        .where(eq(usersTable.email, storedToken.email))
         .limit(1)
         .then((r) => r[0])
 
@@ -92,7 +92,7 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
 
         // Create a new user if they don't exist
         user = await db
-          .insert(userTable)
+          .insert(usersTable)
           .values({ email: storedToken.email, name })
           .returning()
           .then((r) => r[0])

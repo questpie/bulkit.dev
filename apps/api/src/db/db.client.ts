@@ -1,8 +1,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './db.schema'
-import { env } from '@questpie/api/env'
+import { envApi } from '@bulkit/api/envApi'
 
 // for query purposes
-const queryClient = postgres(env.DATABASE_URL)
+const queryClient = postgres(envApi.DATABASE_URL)
 export const db = drizzle(queryClient, { schema })

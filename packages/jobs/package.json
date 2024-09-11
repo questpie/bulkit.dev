@@ -1,5 +1,5 @@
 {
-  "name": "@questpie/jobs",
+  "name": "@bulkit/jobs",
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.33.7",
-    "@questpie/shared": "workspace:*",
+    "@bulkit/shared": "workspace:*",
     "bullmq": "^5.12.10"
   }
 }

@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { cn } from "@questpie/ui/lib"
+import { cn } from "@bulkit/ui/lib"
 
 export interface InputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {}

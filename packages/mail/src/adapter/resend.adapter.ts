@@ -1,5 +1,5 @@
 // Adapters
-import { MailAdapter, type SerializableMailOptions } from '@questpie/mail/base-mail'
+import { MailAdapter, type SerializableMailOptions } from '@bulkit/mail/base-mail'
 import { Resend } from 'resend'
 
 type ResendAdapterOptions = {

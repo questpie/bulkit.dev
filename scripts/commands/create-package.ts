@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { PACKAGE_TEMPLATE } from "@questpie/script/boilerplates/package-boilerplate";
-import { createTemplateFiles } from "@questpie/script/utils/boilerplate-parser";
+import { PACKAGE_TEMPLATE } from "@bulkit/script/boilerplates/package-boilerplate";
+import { createTemplateFiles } from "@bulkit/script/utils/boilerplate-parser";
 
 type CreatePackageOptions = {
 	name: string;

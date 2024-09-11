@@ -1,12 +1,12 @@
+import { db } from '@bulkit/api/db/db.client'
+import { sessionTable, usersTable } from '@bulkit/api/db/db.schema'
+import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
+import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
-import { db } from '@questpie/api/db/db.client'
-import { sessionTable, userTable } from '@questpie/api/db/db.schema'
-import type { DeviceInfo } from '@questpie/api/modules/auth/utils/device-info'
-import { generalEnv } from '@questpie/shared/env/general.env'
 import { Google } from 'arctic'
 import { Lucia } from 'lucia'
 
-const adapter = new DrizzlePostgreSQLAdapter(db, sessionTable, userTable)
+const adapter = new DrizzlePostgreSQLAdapter(db, sessionTable, usersTable)
 
 export const lucia = new Lucia(adapter, {
   sessionCookie: {

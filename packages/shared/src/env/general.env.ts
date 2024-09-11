@@ -1,4 +1,4 @@
-import { createEnv } from '@questpie/shared/env/create-env'
+import { createEnv } from '@bulkit/shared/env/create-env'
 import { Type } from '@sinclair/typebox'
 
 /**

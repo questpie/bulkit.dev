@@ -1,4 +1,4 @@
-import type { LeafPaths } from '@questpie/shared/types/data'
+import type { LeafPaths } from '@bulkit/shared/types/data'
 
 export type TranslationsRaw = typeof import('./static/en.json')
 
