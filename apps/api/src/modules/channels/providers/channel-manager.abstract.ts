@@ -1,15 +1,15 @@
-import { db } from '@bulkit/api/db/db.client'
+import { db, type TransactionLike } from '@bulkit/api/db/db.client'
 import type { Platform, PostType } from '@bulkit/api/db/db.constants'
 import {
   channelsTable,
-  insertChannelSchema,
-  insertSocialMediaIntegrationSchema,
   socialMediaIntegrationsTable,
   type SelectPost,
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
+import { generateCodeVerifier, type OAuth2RequestError } from 'arctic'
 import { eq } from 'drizzle-orm'
+import type { Cookie } from 'elysia'
 
 export abstract class ChannelManager {
   protected constructor(
@@ -17,14 +17,42 @@ export abstract class ChannelManager {
     protected readonly oauthProvider: OAuth2Provider
   ) {}
 
-  async getAuthorizationUrl(organizationId: string): Promise<string> {
-    const state = Buffer.from(JSON.stringify({ organizationId })).toString('base64')
-    return this.oauthProvider.createAuthorizationURL(state).toString()
+  private getCodeVerifierCookieName(organizationId: string) {
+    return `code_verifier_${this.platform}_${organizationId}`
   }
 
-  async handleCallback(code: string, organizationId: string) {
-    const { accessToken, refreshToken, accessTokenExpiresAt } =
-      await this.oauthProvider.validateAuthorizationCode(code)
+  async getAuthorizationUrl(
+    organizationId: string,
+    cookie: Record<string, Cookie<string | undefined>>
+  ): Promise<URL> {
+    const state = Buffer.from(JSON.stringify({ organizationId })).toString('base64')
+
+    let codeVerifier: string | undefined
+
+    if (this.oauthProvider.isPKCE) {
+      codeVerifier = generateCodeVerifier()
+      cookie[this.getCodeVerifierCookieName(organizationId)].value = codeVerifier
+    }
+
+    return this.oauthProvider.createAuthorizationURL(state, codeVerifier)
+  }
+
+  async handleCallback(
+    code: string,
+    organizationId: string,
+    cookie: Record<string, Cookie<string | undefined>>
+  ) {
+    let codeVerifier: string | undefined
+    if (this.oauthProvider.isPKCE) {
+      codeVerifier = cookie[this.getCodeVerifierCookieName(organizationId)].value
+    }
+
+    const { accessToken, refreshToken, accessTokenExpiresAt } = await this.oauthProvider
+      .validateAuthorizationCode(code, codeVerifier)
+      .catch((e) => {
+        console.log((e as OAuth2RequestError).description)
+        throw e
+      })
 
     const userInfo = await this.oauthProvider.getUserInfo(accessToken)
 
@@ -37,49 +65,59 @@ export abstract class ChannelManager {
       picture: userInfo.picture,
     }
 
-    // Save the integration
-    const integration = await this.saveIntegration(
-      data.userId,
-      organizationId,
-      data.accessToken,
-      data.refreshToken,
-      data.tokenExpiry,
-      data
-    )
+    return db.transaction(async (trx) => {
+      // Save the integration
+      const integration = await this.saveIntegration(
+        trx,
+        data.userId,
+        organizationId,
+        data.accessToken,
+        data.refreshToken,
+        data.tokenExpiry
+      )
 
-    // Create the channel
-    const channel = await this.createChannel(data.channelName, organizationId, integration.id).then(
-      (c) => this.updateChannelStatus(c.id, 'active')
-    )
+      // Create the channel
+      const channel = await this.createChannel(
+        trx,
+        data.channelName,
+        organizationId,
+        integration.id
+      ).then((c) => this.updateChannelStatus(trx, c.id, 'active'))
 
-    return {
-      channel,
-      integration,
-    }
+      return {
+        channel,
+        integration,
+      }
+    })
   }
 
   private async createChannel(
+    db: TransactionLike,
     name: string,
     organizationId: string,
-    socialMediaIntegrationId: string
+    socialMediaIntegrationId: string,
+    picture?: string
   ) {
     const newChannel = await db
       .insert(channelsTable)
-      .values(
-        insertChannelSchema.parse({
-          name,
-          platform: this.platform,
-          organizationId,
-          status: 'pending',
-          socialMediaIntegrationId,
-        })
-      )
+      .values({
+        name,
+        platform: this.platform,
+        organizationId,
+        status: 'pending',
+        socialMediaIntegrationId,
+        imageUrl: picture,
+      })
       .returning()
 
     return newChannel[0]!
   }
 
-  async updateChannelStatus(channelId: string, status: 'active' | 'inactive' | 'pending') {
+  async updateChannelStatus(
+    db: TransactionLike,
+    channelId: string,
+    status: 'active' | 'inactive' | 'pending'
+  ) {
     return await db
       .update(channelsTable)
       .set({ status })
@@ -89,26 +127,24 @@ export abstract class ChannelManager {
   }
 
   private async saveIntegration(
+    db: TransactionLike,
     userId: string,
     organizationId: string,
     accessToken: string,
     refreshToken?: string,
-    tokenExpiry?: Date,
-    additionalData?: any
+    tokenExpiry?: Date
   ) {
     const [integration] = await db
       .insert(socialMediaIntegrationsTable)
-      .values(
-        insertSocialMediaIntegrationSchema.parse({
-          userId,
-          organizationId,
-          platform: this.platform,
-          accessToken,
-          refreshToken,
-          tokenExpiry,
-          additionalData,
-        })
-      )
+      .values({
+        userId,
+        organizationId,
+        platform: this.platform,
+        accessToken,
+        refreshToken,
+        tokenExpiry,
+        scope: this.oauthProvider.scopes?.join(' '),
+      })
       .returning()
 
     return integration!

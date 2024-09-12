@@ -1,7 +1,7 @@
 import type { Platform } from '@bulkit/api/db/db.constants'
 import { envApi } from '@bulkit/api/envApi'
-import type { OAuth2Provider as OGOAuth2Provider } from 'arctic'
-import { generateCodeVerifier, OAuth2Client } from 'oslo/oauth2'
+import type { Tokens } from 'arctic'
+import { OAuth2Client } from 'oslo/oauth2'
 
 // Add new type for supported providers
 export type OAuthProviderName =
@@ -13,8 +13,13 @@ export type OAuthProviderName =
   | 'linkedin'
   | 'x'
 
-export type OAuth2Provider = OGOAuth2Provider & {
+export type OAuth2Provider = {
   getUserInfo: (accessToken: string) => Promise<UserInfo>
+  isPKCE?: boolean
+  createAuthorizationURL(state: string, codeVerifier?: string): Promise<URL>
+  validateAuthorizationCode(code: string, codeVerifier?: string): Promise<Tokens>
+  refreshAccessToken?(refreshToken: string): Promise<Tokens>
+  scopes?: string[]
 }
 
 export type UserInfo = {
@@ -33,26 +38,28 @@ export function createCustomOAuthProvider(opts: {
   scopes?: string[]
   isPKCE?: boolean
   userInfoEndpoint: string
+  authenticateWith?: 'http_basic_auth' | 'request_body'
   parseUserInfo: (data: any) => UserInfo
 }): OAuth2Provider {
   const client = new OAuth2Client(opts.clientId, opts.authorizationEndpoint, opts.tokenEndpoint, {
     redirectURI: opts.redirectUri,
   })
 
-  const codeVerifier = opts.isPKCE ? generateCodeVerifier() : undefined
   return {
-    createAuthorizationURL(state: string) {
+    scopes: opts.scopes,
+    isPKCE: opts.isPKCE,
+    createAuthorizationURL(state: string, codeVerifier?: string) {
       return client.createAuthorizationURL({
         state,
         codeVerifier,
         scopes: opts.scopes,
       })
     },
-    async validateAuthorizationCode(code: string) {
+    async validateAuthorizationCode(code: string, codeVerifier?: string) {
       const res = await client.validateAuthorizationCode(code, {
         credentials: opts.clientSecret,
         codeVerifier,
-        authenticateWith: 'request_body',
+        authenticateWith: opts.authenticateWith,
       })
 
       return {
@@ -215,6 +222,7 @@ export const getXProvider = () => {
     scopes: ['tweet.read', 'users.read', 'tweet.write', 'offline.access'],
     isPKCE: true,
     userInfoEndpoint: 'https://api.twitter.com/2/users/me?user.fields=profile_image_url',
+    authenticateWith: 'http_basic_auth',
     parseUserInfo: (data) => ({
       id: data.data.id,
       name: data.data.name,

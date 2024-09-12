@@ -4,7 +4,7 @@ import { organizationsTable, userOrganizationsTable } from '@bulkit/api/db/db.sc
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
 import { and, eq } from 'drizzle-orm'
-import Elysia from 'elysia'
+import Elysia, { t } from 'elysia'
 
 // Constants
 
@@ -15,10 +15,19 @@ export const organizationMiddleware = new Elysia({
   name: 'organization.middleware',
 })
   .use(protectedMiddleware)
-  .resolve(async ({ headers, auth }) => {
+  .guard({
+    headers: t.Object({
+      authorization: t.String({
+        minLength: 1,
+        pattern: 'Bearer .+',
+      }),
+      [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
+    }),
+  })
+  .resolve(async ({ headers, auth, error }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
     if (!organizationId) {
-      return { organization: null }
+      return error('Forbidden', 'Organization ID not provided')
     }
 
     const [organization] = await db
@@ -36,6 +45,10 @@ export const organizationMiddleware = new Elysia({
       )
       .limit(1)
 
+    if (!organization?.organizations) {
+      return error('Forbidden', 'Insufficient permissions for this organization')
+    }
+
     return {
       organization: { ...organization.organizations, role: organization.user_organizations.role },
     }
@@ -45,17 +58,15 @@ export const organizationMiddleware = new Elysia({
      * Checks if the user has one of the specified roles or is the owner.
      * @param {string[]} roles - Array of allowed roles.
      */
-    hasRole(roles: UserRole[] | boolean = false) {
-      onBeforeHandle(async ({ auth, organization, error }) => {
-        if (!roles) {
-          return
+    hasRole(roles: UserRole[] | true = true) {
+      onBeforeHandle(async ({ organization, error }) => {
+        if (!organization || (roles !== true && !roles.includes(organization.role))) {
+          error('Forbidden', 'Insufficient permissions for this organization')
         }
-
-        if (organization && (roles === true || roles.includes(organization.role))) {
-          return
-        }
-        error('Forbidden', 'Insufficient permissions for this organization')
       })
     },
   }))
   .as('plugin')
+
+// Bearer 2xdvep7zvbtsn7r4ukapdlwlgdlqhc6rvfbaqdk7
+// qxbe0743qb4kyrq4i2fsfs3u

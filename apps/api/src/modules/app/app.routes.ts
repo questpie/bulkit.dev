@@ -9,7 +9,7 @@ export const appRoutes = new Elysia({ prefix: '/app' })
   .get('/settings', async (ctx) => {
     const platforms: Record<Platform, boolean> = {
       facebook: envApi.FACEBOOK_ENABLED,
-      twitter: envApi.TWITTER_ENABLED,
+      tiktok: envApi.TIKTOK_ENABLED,
       linkedin: envApi.LINKEDIN_ENABLED,
       instagram: envApi.INSTAGRAM_ENABLED,
       youtube: envApi.GOOGLE_ENABLED,

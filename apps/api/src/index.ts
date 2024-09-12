@@ -10,7 +10,11 @@ import { rootRoutes } from './root.routes'
  */
 export const api = new Elysia()
   .use(logixlysia())
-  .use(cors())
+  .use(
+    cors({
+      origin: true,
+    })
+  )
   .use(
     swagger({
       documentation: {

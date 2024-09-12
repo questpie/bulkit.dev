@@ -201,7 +201,7 @@ export const socialMediaIntegrationsTable = pgTable('social_media_integrations',
   refreshToken: text('refresh_token'),
   tokenExpiry: timestamp('token_expiry'),
   scope: text('scope'),
-  additionalData: jsonb('additional_data'), // For any platform-specific data
+  // additionalData: jsonb('additional_data'), // For any platform-specific data
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   isActive: boolean('is_active').default(true),
@@ -278,6 +278,7 @@ export const channelsTable = pgTable(
     id: primaryKey(),
     name: text('name').notNull(),
     platform: text('platform', { enum: PLATFORMS }).notNull(),
+    imageUrl: text('image_url'),
     status: text('status', { enum: CHANNEL_STATUS }).notNull().default('pending'),
     organizationId: text('organization_id').notNull(),
     socialMediaIntegrationId: text('social_media_integration_id').notNull(), // Add this line
@@ -495,7 +496,7 @@ export type InsertUser = typeof usersTable.$inferInsert
 
 export const userRelations = relations(usersTable, ({ many }) => ({
   sessions: many(sessionTable),
-  emailVerifications: many(emailVerificationTable),
+  // emailVerifications: many(emailVerificationTable),
   oauthAccounts: many(oauthAccountsTable),
 }))
 

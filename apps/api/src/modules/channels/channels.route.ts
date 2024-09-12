@@ -1,8 +1,6 @@
-import { tExt } from '@bulkit/api/common/schemas'
 import { db } from '@bulkit/api/db/db.client'
 import { PLATFORM_TO_NAME, PLATFORMS, type Platform } from '@bulkit/api/db/db.constants'
 import { channelsTable } from '@bulkit/api/db/db.schema'
-import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
 import { InstagramChannelManager } from '@bulkit/api/modules/channels/providers/instagram/instagram-channel.manager'
 import { LinkedInChannelManager } from '@bulkit/api/modules/channels/providers/linkedin/linkedin-channel.manager'
@@ -10,6 +8,7 @@ import { TikTokChannelManager } from '@bulkit/api/modules/channels/providers/tik
 import { XChannelManager } from '@bulkit/api/modules/channels/providers/x/x-channel.manager'
 import { YouTubeChannelManager } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.manager'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { createEnum } from '@bulkit/shared/utils/misc'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
@@ -38,29 +37,26 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
     detail: { tags: [PLATFORM_TO_NAME[platform]] },
   })
     .derive({ as: 'scoped' }, () => ({ channelManager: getChannelManager(platform) }))
-    .get(
-      '/auth',
-      async ({ query, channelManager }) => {
-        const { name, organizationId } = query
-        const authUrl = await channelManager.getAuthorizationUrl(organizationId)
-        return { authUrl }
-      },
-      {
-        detail: {
-          description: `OAuth2 Authorization for ${PLATFORM_TO_NAME[platform]}`,
+    .guard((app) =>
+      app.use(organizationMiddleware).get(
+        '/auth',
+        async ({ channelManager, organization, cookie }) => {
+          const authUrl = await channelManager.getAuthorizationUrl(organization!.id, cookie)
+          return { authUrl: authUrl.toString() }
         },
-        query: t.Object({
-          name: t.String({ minLength: 1 }),
-          organizationId: t.String({ minLength: 1 }),
-        }),
-      }
+        {
+          detail: {
+            description: `OAuth2 Authorization for ${PLATFORM_TO_NAME[platform]}`,
+          },
+        }
+      )
     )
     .get(
       '/callback',
-      async ({ query, channelManager }) => {
+      async ({ query, channelManager, cookie }) => {
         const { code, state } = query
         const { organizationId } = JSON.parse(Buffer.from(state, 'base64').toString())
-        const { channel } = await channelManager.handleCallback(code, organizationId)
+        const { channel } = await channelManager.handleCallback(code, organizationId, cookie)
         return { channel }
       },
       {
@@ -76,11 +72,6 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
 }
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
-  .use(protectedMiddleware)
-  .use(organizationMiddleware)
-  .guard({
-    hasRole: true,
-  })
   .use(createChannelRoutes('youtube'))
   .use(createChannelRoutes('instagram'))
   .use(createChannelRoutes('facebook'))
@@ -88,6 +79,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(createChannelRoutes('youtube'))
   .use(createChannelRoutes('x'))
   .use(createChannelRoutes('linkedin'))
+  .use(organizationMiddleware)
   .get(
     '/',
     async (ctx) => {
@@ -122,13 +114,13 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         tags: ['Channels'],
       },
       query: t.Object({
-        limit: t.Number({
+        limit: t.Numeric({
           default: 10,
         }),
-        cursor: t.Number({
+        cursor: t.Numeric({
           default: 0,
         }),
-        platform: t.Optional(tExt.StringEnum(PLATFORMS)),
+        platform: t.Optional(t.Enum(createEnum(PLATFORMS))),
       }),
     }
   )

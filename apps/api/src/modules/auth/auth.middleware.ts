@@ -1,5 +1,5 @@
 import { lucia } from '@bulkit/api/modules/auth/lucia'
-import Elysia from 'elysia'
+import Elysia, { t } from 'elysia'
 import type { Session, User } from 'lucia'
 
 /**
@@ -44,7 +44,14 @@ export const protectedMiddleware = new Elysia({
   name: 'protected.middleware',
 })
   .use(authMiddleware)
-  .guard({ isSignedIn: true })
+  .guard({
+    isSignedIn: true,
+    headers: t.Object({
+      authorization: t.String({
+        pattern: 'Bearer .+',
+      }),
+    }),
+  })
   .resolve(({ auth, error }) => {
     if (!auth || !auth.session || !auth.user) {
       return error(401, 'Unauthorized')
