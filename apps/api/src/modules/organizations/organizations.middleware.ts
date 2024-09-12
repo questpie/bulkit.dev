@@ -17,17 +17,24 @@ export const organizationMiddleware = new Elysia({
   .use(protectedMiddleware)
   .guard({
     headers: t.Object({
+      [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
       authorization: t.String({
-        minLength: 1,
         pattern: 'Bearer .+',
       }),
-      [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
     }),
+    response: {
+      403: t.Object({
+        message: t.String(),
+      }),
+      401: t.Object({
+        message: t.String(),
+      }),
+    },
   })
   .resolve(async ({ headers, auth, error }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
     if (!organizationId) {
-      return error('Forbidden', 'Organization ID not provided')
+      return error('Forbidden', { message: 'Organization ID not provided' })
     }
 
     const [organization] = await db
@@ -46,7 +53,7 @@ export const organizationMiddleware = new Elysia({
       .limit(1)
 
     if (!organization?.organizations) {
-      return error('Forbidden', 'Insufficient permissions for this organization')
+      return error('Forbidden', { message: 'Insufficient permissions for this organization' })
     }
 
     return {
@@ -61,7 +68,7 @@ export const organizationMiddleware = new Elysia({
     hasRole(roles: UserRole[] | true = true) {
       onBeforeHandle(async ({ organization, error }) => {
         if (!organization || (roles !== true && !roles.includes(organization.role))) {
-          error('Forbidden', 'Insufficient permissions for this organization')
+          error('Forbidden', { message: 'Insufficient permissions for this organization' })
         }
       })
     },

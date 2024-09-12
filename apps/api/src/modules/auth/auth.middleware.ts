@@ -51,10 +51,15 @@ export const protectedMiddleware = new Elysia({
         pattern: 'Bearer .+',
       }),
     }),
+    response: {
+      401: t.Object({
+        message: t.String(),
+      }),
+    },
   })
   .resolve(({ auth, error }) => {
     if (!auth || !auth.session || !auth.user) {
-      return error(401, 'Unauthorized')
+      return error(401, { message: 'Unauthorized' })
     }
     return {
       auth: buildAuthObject(auth),

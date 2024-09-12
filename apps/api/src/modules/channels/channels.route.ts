@@ -8,7 +8,7 @@ import { TikTokChannelManager } from '@bulkit/api/modules/channels/providers/tik
 import { XChannelManager } from '@bulkit/api/modules/channels/providers/x/x-channel.manager'
 import { YouTubeChannelManager } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.manager'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { createEnum } from '@bulkit/shared/utils/misc'
+import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
@@ -120,7 +120,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         cursor: t.Numeric({
           default: 0,
         }),
-        platform: t.Optional(t.Enum(createEnum(PLATFORMS))),
+        platform: t.Optional(StringLiteralEnum(PLATFORMS)),
       }),
     }
   )
