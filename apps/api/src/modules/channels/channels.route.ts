@@ -1,6 +1,6 @@
 import { db } from '@bulkit/api/db/db.client'
 import { PLATFORM_TO_NAME, PLATFORMS, type Platform } from '@bulkit/api/db/db.constants'
-import { channelsTable } from '@bulkit/api/db/db.schema'
+import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
 import { InstagramChannelManager } from '@bulkit/api/modules/channels/providers/instagram/instagram-channel.manager'
 import { LinkedInChannelManager } from '@bulkit/api/modules/channels/providers/linkedin/linkedin-channel.manager'
@@ -122,6 +122,12 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         }),
         platform: t.Optional(StringLiteralEnum(PLATFORMS)),
       }),
+      response: {
+        200: t.Object({
+          data: t.Array(selectChannelSchema),
+          nextCursor: t.Nullable(t.Numeric()),
+        }),
+      },
     }
   )
   .get(
@@ -137,7 +143,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       })
 
       if (!channel) {
-        ctx.error(404, 'Channel not found')
+        return ctx.error(404, { message: 'Channel not found' })
       }
 
       return channel
@@ -149,5 +155,11 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       params: t.Object({
         id: t.String(),
       }),
+      response: {
+        200: selectChannelSchema,
+        404: t.Object({
+          message: t.String(),
+        }),
+      },
     }
   )
