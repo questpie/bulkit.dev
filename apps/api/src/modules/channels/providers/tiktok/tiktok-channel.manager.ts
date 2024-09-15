@@ -5,15 +5,21 @@ import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channe
 import { ChannelManager } from '@bulkit/api/modules/channels/providers/channel-manager.abstract'
 
 export class TikTokChannelManager extends ChannelManager {
+  allowedPostTypes: PostType[] = ['short']
   constructor() {
     super('tiktok' as Platform, getOAuthProvider('tiktok'))
   }
 
-  getAllowedPostTypes(): PostType[] {
-    return ['short']
+  postShort(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
   }
-
-  async sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+  postStory(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+  postThread(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+  postPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
     throw new Error('Method not implemented.')
   }
 }

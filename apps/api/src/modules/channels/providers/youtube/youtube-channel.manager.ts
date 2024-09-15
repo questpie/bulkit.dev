@@ -5,15 +5,21 @@ import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channe
 import { ChannelManager } from '@bulkit/api/modules/channels/providers/channel-manager.abstract'
 
 export class YouTubeChannelManager extends ChannelManager {
+  allowedPostTypes: PostType[] = ['post', 'short', 'thread', 'story']
   constructor() {
     super('youtube' as Platform, getOAuthProvider('youtube'))
   }
 
-  getAllowedPostTypes(): PostType[] {
-    return ['post', 'short', 'thread', 'story']
+  postShort(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
   }
-
-  async sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+  postStory(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+  postThread(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+  postPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {
     throw new Error('Method not implemented.')
   }
 }

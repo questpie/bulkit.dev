@@ -150,6 +150,11 @@ export abstract class ChannelManager {
     return integration!
   }
 
-  abstract getAllowedPostTypes(): PostType[]
-  abstract sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
+  public async sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {}
+
+  abstract allowedPostTypes: PostType[]
+  abstract postShort(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
+  abstract postStory(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
+  abstract postThread(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
+  abstract postPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
 }
