@@ -303,9 +303,9 @@ export const scheduledPostsTable = pgTable('scheduled_posts', {
   id: primaryKey(),
   postId: text('post_id').notNull(),
   channelId: text('channel_id').notNull(), // Changed from platform to channelId
-  scheduledDate: timestamp('scheduled_date').notNull(),
+  scheduledAt: timestamp('scheduled_at').notNull(),
   status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'), // pending, published, failed
-  publishedDate: timestamp('published_date'),
+  publishedAt: timestamp('published_at'),
   failureReason: text('failure_reason'),
   organizationId: text('organization_id').notNull(),
 })
