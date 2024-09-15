@@ -1,6 +1,6 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { db } from '@bulkit/api/db/db.client'
-import { emailVerificationTable, usersTable } from '@bulkit/api/db/db.schema'
+import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
 import { mailClient } from '@bulkit/api/mail/mail.client'
 import { generalEnv } from '@bulkit/shared/env/general.env'
@@ -18,16 +18,16 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
 
       // Store token in database
       const { token } = await db
-        .insert(emailVerificationTable)
+        .insert(emailVerificationsTable)
         .values({
           type: 'magic-link',
           email,
           expiresAt: createDate(new TimeSpan(2, 'h')),
         })
         .returning({
-          token: emailVerificationTable.id,
+          token: emailVerificationsTable.id,
         })
-        .then((r) => r[0])
+        .then((r) => r[0]!)
 
       const url = new URL('auth/magic-link/verify', envApi.SERVER_URL)
       url.searchParams.set('token', token)
@@ -67,9 +67,9 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
 
       const storedToken = await db
         .select()
-        .from(emailVerificationTable)
+        .from(emailVerificationsTable)
         .where(
-          and(eq(emailVerificationTable.id, token), eq(emailVerificationTable.type, 'magic-link'))
+          and(eq(emailVerificationsTable.id, token), eq(emailVerificationsTable.type, 'magic-link'))
         )
         .limit(1)
         .then((r) => r[0])
@@ -95,11 +95,11 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
           .insert(usersTable)
           .values({ email: storedToken.email, name })
           .returning()
-          .then((r) => r[0])
+          .then((r) => r[0]!)
       }
 
       // Delete the used token
-      await db.delete(emailVerificationTable).where(and(eq(emailVerificationTable.id, token)))
+      await db.delete(emailVerificationsTable).where(and(eq(emailVerificationsTable.id, token)))
 
       /**
        * Create short-lived auth token user can use to create session at POST /auth/session
@@ -107,14 +107,14 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
        * And we also don't want to send raw token in redirectTo query params, because of security reasons
        */
       const authToken = await db
-        .insert(emailVerificationTable)
+        .insert(emailVerificationsTable)
         .values({
-          email: user.email,
+          email: user!.email,
           type: 'auth-code',
           expiresAt: createDate(new TimeSpan(5, 'm')),
         })
         .returning()
-        .then((r) => r[0])
+        .then((r) => r[0]!)
 
       if (!query.redirectTo) {
         return {

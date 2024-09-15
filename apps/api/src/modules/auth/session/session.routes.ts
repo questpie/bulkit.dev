@@ -1,6 +1,6 @@
 import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { db } from '@bulkit/api/db/db.client'
-import { emailVerificationTable, usersTable } from '@bulkit/api/db/db.schema'
+import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { buildAuthObject, protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { lucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
@@ -17,11 +17,11 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
 
       const [storedToken] = await db
         .select()
-        .from(emailVerificationTable)
+        .from(emailVerificationsTable)
         .where(
           and(
-            eq(emailVerificationTable.id, authToken),
-            eq(emailVerificationTable.type, 'auth-code')
+            eq(emailVerificationsTable.id, authToken),
+            eq(emailVerificationsTable.type, 'auth-code')
           )
         )
         .limit(1)
@@ -42,7 +42,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
       }
 
       const session = await lucia.createSession(user.id, getDeviceInfo(request))
-      await db.delete(emailVerificationTable).where(eq(emailVerificationTable.id, authToken))
+      await db.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
 
       return buildAuthObject({
         session,

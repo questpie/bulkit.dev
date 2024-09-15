@@ -22,7 +22,7 @@ import {
   USER_ROLE,
 } from './db.constants'
 
-const primaryKey = (name = 'id') =>
+const primaryKeyCol = (name = 'id') =>
   text(name)
     .$default(() => cuid2.createId())
     .primaryKey()
@@ -32,7 +32,7 @@ const verificationTokenCuid = cuid2.init({ length: 63 })
 // Resources table for media assets
 export type ResourceType = 'image' | 'video' | 'audio'
 export const resourcesTable = pgTable('resources', {
-  id: primaryKey('id'),
+  id: primaryKeyCol('id'),
   isExternal: boolean('is_external').notNull().default(false),
   location: text('location'), // URL of the resource if it's external, otherwise the local path inside storage
   type: text('type').$type<ResourceType>().notNull(), // e.g., 'image', 'video', 'audio'
@@ -50,7 +50,7 @@ export const selectResourceSchema = createSelectSchema(resourcesTable)
 export const postsTable = pgTable(
   'posts',
   {
-    id: primaryKey('id'),
+    id: primaryKeyCol('id'),
     type: text('type', { enum: POST_TYPE }).notNull(),
     status: text('status', { enum: POST_STATUS }).notNull().default('draft'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -73,7 +73,7 @@ export type InsertPost = typeof postsTable.$inferInsert
 export const postDetailsTable = pgTable(
   'post_details',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     postId: text('post_id').notNull(),
     name: text('name').notNull(),
     version: integer('version').notNull().default(1),
@@ -95,7 +95,7 @@ export const selectPostDetailsSchema = createSelectSchema(postDetailsTable)
 export const threadPostsTable = pgTable(
   'thread_posts',
   {
-    id: primaryKey('id'),
+    id: primaryKeyCol('id'),
     postId: text('post_id').notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
@@ -116,7 +116,7 @@ export const selectThreadPostSchema = createSelectSchema(threadPostsTable)
 
 // New table for thread media
 export const threadMediaTable = pgTable('thread_media', {
-  id: primaryKey('id'),
+  id: primaryKeyCol('id'),
   threadPostId: text('thread_post_id').notNull(),
   resourceId: text('resource_id').notNull(),
   order: integer('order').notNull(),
@@ -131,7 +131,7 @@ export const selectThreadMediaSchema = createSelectSchema(threadMediaTable)
 export const regularPostsTable = pgTable(
   'regular_posts',
   {
-    id: primaryKey('id'),
+    id: primaryKeyCol('id'),
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
@@ -151,7 +151,7 @@ export const selectRegularPostSchema = createSelectSchema(regularPostsTable)
 
 // New table for regular post media
 export const regularPostMediaTable = pgTable('regular_post_media', {
-  id: primaryKey('id'),
+  id: primaryKeyCol('id'),
   regularPostId: text('regular_post_id').notNull(),
   resourceId: text('resource_id').notNull(),
   order: integer('order').notNull(),
@@ -166,7 +166,7 @@ export const selectRegularPostMediaSchema = createSelectSchema(regularPostMediaT
 export const storyPostsTable = pgTable(
   'story_posts',
   {
-    id: primaryKey('id'),
+    id: primaryKeyCol('id'),
     postId: text('post_id').notNull(),
     resourceId: text('resource_id').notNull(),
     version: integer('version').notNull().default(1),
@@ -189,7 +189,7 @@ export const selectStoryPostSchema = createSelectSchema(storyPostsTable)
 export const shortPostsTable = pgTable(
   'short_posts',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     postId: text('post_id').notNull(),
     resourceId: text('resource_id').notNull(),
     description: text('description').notNull(),
@@ -212,7 +212,7 @@ export const selectShortPostSchema = createSelectSchema(shortPostsTable)
 export const commentsTable = pgTable(
   'comments',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     postId: text('post_id').notNull(),
     userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
@@ -236,7 +236,7 @@ export const selectCommentSchema = createSelectSchema(commentsTable)
 export const socialMediaIntegrationsTable = pgTable(
   'social_media_integrations',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     platformAccountId: text('platform_account_id').notNull(),
     platform: text('platform', {
       enum: PLATFORMS,
@@ -266,7 +266,7 @@ export const selectSocialMediaIntegrationSchema = createSelectSchema(socialMedia
 export const userOrganizationsTable = pgTable(
   'user_organizations',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
     role: text('role', { enum: USER_ROLE }).notNull(),
@@ -287,7 +287,7 @@ export const selectUserOrganizationSchema = createSelectSchema(userOrganizations
 
 // New Organizations table
 export const organizationsTable = pgTable('organizations', {
-  id: primaryKey(),
+  id: primaryKeyCol(),
   name: text('name').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -324,7 +324,7 @@ export const selectOrganizationInviteSchema = createSelectSchema(organizationInv
 export const channelsTable = pgTable(
   'channels',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     name: text('name').notNull(),
     platform: text('platform', { enum: PLATFORMS }).notNull(),
     imageUrl: text('image_url'),
@@ -349,7 +349,7 @@ export const selectChannelSchema = createSelectSchema(channelsTable)
 
 // Scheduled Posts table (to handle the relationship between posts and platforms)
 export const scheduledPostsTable = pgTable('scheduled_posts', {
-  id: primaryKey(),
+  id: primaryKeyCol(),
   postId: text('post_id').notNull(),
   channelId: text('channel_id').notNull(), // Changed from platform to channelId
   scheduledAt: timestamp('scheduled_at').notNull(),
@@ -523,12 +523,36 @@ export const shortPostsRelations = relations(shortPostsTable, ({ one }) => ({
   }),
 }))
 
+/**
+ * We are keeping it like this so the SuperAdmin stuff is completely transparent to fe.
+ * We don't want the users on fe to see isSuperAdmin:false in the network tab
+ */
+export const superAdminsTable = pgTable('super_admins', {
+  userId: text('user_id')
+    .notNull()
+    .references(() => usersTable.id, { onDelete: 'cascade' })
+    .primaryKey(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export type SelectSuperAdmin = typeof superAdminsTable.$inferSelect
+export type InsertSuperAdmin = typeof superAdminsTable.$inferInsert
+export const insertSuperAdminSchema = createInsertSchema(superAdminsTable)
+export const selectSuperAdminSchema = createSelectSchema(superAdminsTable)
+
+export const superAdminsRelations = relations(superAdminsTable, ({ one }) => ({
+  user: one(usersTable, {
+    fields: [superAdminsTable.userId],
+    references: [usersTable.id],
+  }),
+}))
+
 // AUTH
 
 export const usersTable = pgTable(
-  'user',
+  'users',
   {
-    id: primaryKey(),
+    id: primaryKeyCol(),
     email: text('email').notNull(),
     name: text('name').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -544,12 +568,12 @@ export const usersTable = pgTable(
 export type SelectUser = typeof usersTable.$inferSelect
 export type InsertUser = typeof usersTable.$inferInsert
 
-export const userRelations = relations(usersTable, ({ many }) => ({
-  sessions: many(sessionTable),
+export const usersRelations = relations(usersTable, ({ many }) => ({
+  sessions: many(sessionsTable),
   oauthAccounts: many(oauthAccountsTable),
 }))
 
-export const sessionTable = pgTable('session', {
+export const sessionsTable = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id')
     .notNull()
@@ -566,19 +590,19 @@ export const sessionTable = pgTable('session', {
     .$onUpdate(() => new Date()),
 })
 
-export type SelectSession = typeof sessionTable.$inferSelect
-export type InsertSession = typeof sessionTable.$inferInsert
+export type SelectSession = typeof sessionsTable.$inferSelect
+export type InsertSession = typeof sessionsTable.$inferInsert
 
-export const sessionRelations = relations(sessionTable, ({ one }) => ({
+export const sessionRelations = relations(sessionsTable, ({ one }) => ({
   user: one(usersTable, {
-    fields: [sessionTable.userId],
+    fields: [sessionsTable.userId],
     references: [usersTable.id],
   }),
 }))
 
 export type EmailVerificationType = 'magic-link' | 'auth-code'
 
-export const emailVerificationTable = pgTable('email_verification', {
+export const emailVerificationsTable = pgTable('email_verifications', {
   id: text('id')
     .primaryKey()
     .$default(() => verificationTokenCuid()),
@@ -596,11 +620,11 @@ export const emailVerificationTable = pgTable('email_verification', {
     .$onUpdate(() => new Date()),
 })
 
-export type SelectEmailVerification = typeof emailVerificationTable.$inferSelect
-export type InsertEmailVerification = typeof emailVerificationTable.$inferInsert
+export type SelectEmailVerification = typeof emailVerificationsTable.$inferSelect
+export type InsertEmailVerification = typeof emailVerificationsTable.$inferInsert
 
 export const oauthAccountsTable = pgTable('oauth_accounts', {
-  id: primaryKey(),
+  id: primaryKeyCol(),
   userId: text('user_id')
     .notNull()
     .references(() => usersTable.id),

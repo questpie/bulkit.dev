@@ -1,9 +1,12 @@
 import { db } from '@bulkit/api/db/db.client'
 import type { UserRole } from '@bulkit/api/db/db.constants'
-import { organizationsTable, userOrganizationsTable } from '@bulkit/api/db/db.schema'
+import { getSuperAdmin } from '@bulkit/api/modules/auth/auth.dal'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import {
+  getOrganizationById,
+  getUserOrganization,
+} from '@bulkit/api/modules/organizations/organizations.dal'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
-import { and, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 // Constants
@@ -31,33 +34,38 @@ export const organizationMiddleware = new Elysia({
       }),
     },
   })
-  .resolve(async ({ headers, auth, error }) => {
+  .resolve(async ({ headers, auth }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
+
     if (!organizationId) {
-      return error('Forbidden', { message: 'Organization ID not provided' })
+      return { organization: null }
     }
 
-    const [organization] = await db
-      .select()
-      .from(userOrganizationsTable)
-      .where(
-        and(
-          eq(userOrganizationsTable.userId, auth.user.id),
-          eq(userOrganizationsTable.organizationId, organizationId)
-        )
-      )
-      .innerJoin(
-        organizationsTable,
-        eq(userOrganizationsTable.organizationId, organizationsTable.id)
-      )
-      .limit(1)
+    // check if user isn't a superAdmin
+    const superAdmin = await getSuperAdmin(db, auth.user.id)
 
-    if (!organization?.organizations) {
-      return error('Forbidden', { message: 'Insufficient permissions for this organization' })
+    if (superAdmin) {
+      const organization = await getOrganizationById(db, organizationId)
+
+      if (!organization) {
+        return {
+          organization: null,
+        }
+      }
+
+      return {
+        organization: {
+          ...organization,
+          role: 'superAdmin',
+        },
+      }
     }
 
     return {
-      organization: { ...organization.organizations, role: organization.user_organizations.role },
+      organization: await getUserOrganization(db, {
+        organizationId,
+        userId: auth.user.id,
+      }),
     }
   })
   .macro(({ onBeforeHandle }) => ({
@@ -66,14 +74,20 @@ export const organizationMiddleware = new Elysia({
      * @param {string[]} roles - Array of allowed roles.
      */
     hasRole(roles: UserRole[] | true = true) {
-      onBeforeHandle(async ({ organization, error }) => {
-        if (!organization || (roles !== true && !roles.includes(organization.role))) {
-          error('Forbidden', { message: 'Insufficient permissions for this organization' })
+      onBeforeHandle(async ({ organization, error, headers }) => {
+        if (!headers[ORGANIZATION_HEADER]) {
+          error(403, { message: 'Organization header is required' })
+          return
+        }
+
+        if (
+          !organization ||
+          organization.role === 'superAdmin' ||
+          (roles !== true && !roles.includes(organization.role))
+        ) {
+          error(403, { message: 'Insufficient permissions for this organization' })
         }
       })
     },
   }))
   .as('plugin')
-
-// Bearer 2xdvep7zvbtsn7r4ukapdlwlgdlqhc6rvfbaqdk7
-// qxbe0743qb4kyrq4i2fsfs3u
