@@ -3,7 +3,10 @@ import type { Platform, PostType } from '@bulkit/api/db/db.constants'
 import {
   channelsTable,
   socialMediaIntegrationsTable,
+  type InsertChannel,
+  type InsertSocialMediaIntegration,
   type SelectPost,
+  type SelectSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
@@ -66,23 +69,25 @@ export abstract class ChannelManager {
     }
 
     return db.transaction(async (trx) => {
-      // Save the integration
-      const integration = await this.saveIntegration(
-        trx,
-        data.userId,
+      // Upsert the integration
+      const integration = await this.upsertIntegration(trx, {
+        platform: this.platform,
+        platformAccountId: userInfo.id,
         organizationId,
-        data.accessToken,
-        data.refreshToken,
-        data.tokenExpiry
-      )
+        accessToken,
+        refreshToken,
+        tokenExpiry: accessTokenExpiresAt,
+      })
 
-      // Create the channel
-      const channel = await this.createChannel(
-        trx,
-        data.channelName,
+      // Upsert the channel
+      const channel = await this.upsertChannel(trx, {
+        name: data.channelName,
+        platform: this.platform,
         organizationId,
-        integration.id
-      ).then((c) => this.updateChannelStatus(trx, c.id, 'active'))
+        socialMediaIntegrationId: integration.id,
+        imageUrl: data.picture,
+        status: 'active',
+      })
 
       return {
         channel,
@@ -91,63 +96,73 @@ export abstract class ChannelManager {
     })
   }
 
-  private async createChannel(
-    db: TransactionLike,
-    name: string,
-    organizationId: string,
-    socialMediaIntegrationId: string,
-    picture?: string
-  ) {
-    const newChannel = await db
+  private async upsertChannel(db: TransactionLike, data: InsertChannel) {
+    const [channel] = await db
       .insert(channelsTable)
       .values({
-        name,
-        platform: this.platform,
-        organizationId,
-        status: 'pending',
-        socialMediaIntegrationId,
-        imageUrl: picture,
+        status: 'active',
+        ...data,
+      })
+      .onConflictDoUpdate({
+        target: channelsTable.socialMediaIntegrationId,
+        set: {
+          status: 'active',
+          name: data.name,
+        },
       })
       .returning()
 
-    return newChannel[0]!
+    return channel!
   }
 
-  async updateChannelStatus(
-    db: TransactionLike,
-    channelId: string,
-    status: 'active' | 'inactive' | 'pending'
-  ) {
-    return await db
-      .update(channelsTable)
-      .set({ status })
-      .where(eq(channelsTable.id, channelId))
-      .returning()
-      .then((r) => r[0]!)
-  }
-
-  private async saveIntegration(
-    db: TransactionLike,
-    userId: string,
-    organizationId: string,
-    accessToken: string,
-    refreshToken?: string,
-    tokenExpiry?: Date
-  ) {
+  private async upsertIntegration(db: TransactionLike, data: InsertSocialMediaIntegration) {
     const [integration] = await db
       .insert(socialMediaIntegrationsTable)
       .values({
-        userId,
-        organizationId,
-        platform: this.platform,
-        accessToken,
-        refreshToken,
-        tokenExpiry,
-        scope: this.oauthProvider.scopes?.join(' '),
+        ...data,
+      })
+      .onConflictDoUpdate({
+        target: socialMediaIntegrationsTable.platformAccountId,
+        set: {
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          tokenExpiry: data.tokenExpiry,
+        },
       })
       .returning()
 
     return integration!
+  }
+
+  protected async refreshAccessToken(
+    integration: SelectSocialMediaIntegration
+  ): Promise<SelectSocialMediaIntegration> {
+    if (!this.oauthProvider.refreshAccessToken) {
+      throw new Error('This provider does not support refreshing access tokens')
+    }
+
+    if (!integration.refreshToken) {
+      throw new Error('No refresh token available')
+    }
+
+    try {
+      const { accessToken, refreshToken, accessTokenExpiresAt } =
+        await this.oauthProvider.refreshAccessToken(integration.refreshToken)
+
+      return await db
+        .update(socialMediaIntegrationsTable)
+        .set({
+          accessToken,
+          refreshToken: refreshToken ?? integration.refreshToken,
+          tokenExpiry: accessTokenExpiresAt,
+        })
+        .where(eq(socialMediaIntegrationsTable.id, integration.id))
+        .returning()
+        .then((r) => r[0])
+    } catch (error) {
+      console.error('Failed to refresh access token:', error)
+      throw new Error('Failed to refresh access token')
+    }
   }
 
   public async sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {}

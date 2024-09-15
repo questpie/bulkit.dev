@@ -55,12 +55,10 @@ export const postsTable = pgTable(
     status: text('status', { enum: POST_STATUS }).notNull().default('draft'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
-    userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
     deletedAt: timestamp('deleted_at'),
   },
   (table) => ({
-    userIdIdx: index().on(table.userId),
     orgIdIdx: index().on(table.organizationId),
     typeIdx: index().on(table.type),
     statusIdx: index().on(table.status),
@@ -72,6 +70,27 @@ export const selectPostSchema = createSelectSchema(postsTable)
 export type SelectPost = typeof postsTable.$inferSelect
 export type InsertPost = typeof postsTable.$inferInsert
 
+export const postDetailsTable = pgTable(
+  'post_details',
+  {
+    id: primaryKey(),
+    postId: text('post_id').notNull(),
+    name: text('name').notNull(),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    postIdIdx: index().on(table.postId),
+    versionIdx: index().on(table.version),
+  })
+)
+
+export type SelectPostDetails = typeof postDetailsTable.$inferSelect
+export type InsertPostDetails = typeof postDetailsTable.$inferInsert
+export const insertPostDetailsSchema = createInsertSchema(postDetailsTable)
+export const selectPostDetailsSchema = createSelectSchema(postDetailsTable)
+
 // New table for thread posts
 export const threadPostsTable = pgTable(
   'thread_posts',
@@ -81,8 +100,8 @@ export const threadPostsTable = pgTable(
     order: integer('order').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
+    createdBy: text('created_by').notNull(), // Added createdBy
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -116,8 +135,8 @@ export const regularPostsTable = pgTable(
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
+    createdBy: text('created_by').notNull(), // Added createdBy
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -151,8 +170,8 @@ export const storyPostsTable = pgTable(
     postId: text('post_id').notNull(),
     resourceId: text('resource_id').notNull(),
     version: integer('version').notNull().default(1),
+    createdBy: text('created_by').notNull(), // Added createdBy
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -175,8 +194,8 @@ export const shortPostsTable = pgTable(
     resourceId: text('resource_id').notNull(),
     description: text('description').notNull(),
     version: integer('version').notNull().default(1),
+    createdBy: text('created_by').notNull(), // Added createdBy
     createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -190,23 +209,53 @@ export type InsertShortPost = typeof shortPostsTable.$inferInsert
 export const insertShortPostSchema = createInsertSchema(shortPostsTable)
 export const selectShortPostSchema = createSelectSchema(shortPostsTable)
 
+export const commentsTable = pgTable(
+  'comments',
+  {
+    id: primaryKey(),
+    postId: text('post_id').notNull(),
+    userId: text('user_id').notNull(),
+    organizationId: text('organization_id').notNull(),
+    content: text('content').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    postIdIdx: index().on(table.postId),
+    userIdIdx: index().on(table.userId),
+    orgIdIdx: index().on(table.organizationId),
+  })
+)
+
+export type SelectComment = typeof commentsTable.$inferSelect
+export type InsertComment = typeof commentsTable.$inferInsert
+export const insertCommentSchema = createInsertSchema(commentsTable)
+export const selectCommentSchema = createSelectSchema(commentsTable)
+
 // Social Media Integrations table (for OAuth details)
-export const socialMediaIntegrationsTable = pgTable('social_media_integrations', {
-  id: primaryKey(),
-  userId: text('user_id').notNull(),
-  platform: text('platform', {
-    enum: PLATFORMS,
-  }).notNull(),
-  accessToken: text('access_token').notNull(),
-  refreshToken: text('refresh_token'),
-  tokenExpiry: timestamp('token_expiry'),
-  scope: text('scope'),
-  // additionalData: jsonb('additional_data'), // For any platform-specific data
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  isActive: boolean('is_active').default(true),
-  organizationId: text('organization_id').notNull(),
-})
+export const socialMediaIntegrationsTable = pgTable(
+  'social_media_integrations',
+  {
+    id: primaryKey(),
+    platformAccountId: text('platform_account_id').notNull(),
+    platform: text('platform', {
+      enum: PLATFORMS,
+    }).notNull(),
+    accessToken: text('access_token').notNull(),
+    refreshToken: text('refresh_token'),
+    tokenExpiry: timestamp('token_expiry'),
+    scope: text('scope'),
+    // additionalData: jsonb('additional_data'), // For any platform-specific data
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    organizationId: text('organization_id').notNull(),
+  },
+  (table) => ({
+    orgIdIdx: index().on(table.organizationId),
+    platformIdx: index().on(table.platform),
+    platformAccountIdIdx: index().on(table.platformAccountId),
+  })
+)
 
 export type SelectSocialMediaIntegration = typeof socialMediaIntegrationsTable.$inferSelect
 export type InsertSocialMediaIntegration = typeof socialMediaIntegrationsTable.$inferInsert
@@ -279,7 +328,7 @@ export const channelsTable = pgTable(
     name: text('name').notNull(),
     platform: text('platform', { enum: PLATFORMS }).notNull(),
     imageUrl: text('image_url'),
-    status: text('status', { enum: CHANNEL_STATUS }).notNull().default('pending'),
+    status: text('status', { enum: CHANNEL_STATUS }).notNull().default('active'),
     organizationId: text('organization_id').notNull(),
     socialMediaIntegrationId: text('social_media_integration_id').notNull(), // Add this line
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -351,10 +400,6 @@ export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
 }))
 
 export const postsRelations = relations(postsTable, ({ one, many }) => ({
-  user: one(usersTable, {
-    fields: [postsTable.userId],
-    references: [usersTable.id],
-  }),
   organization: one(organizationsTable, {
     fields: [postsTable.organizationId],
     references: [organizationsTable.id],
@@ -364,6 +409,15 @@ export const postsRelations = relations(postsTable, ({ one, many }) => ({
   storyPosts: many(storyPostsTable),
   shortPosts: many(shortPostsTable),
   scheduledPosts: many(scheduledPostsTable),
+  postsDetails: many(postDetailsTable),
+  comments: many(commentsTable),
+}))
+
+export const postDetailsRelations = relations(postDetailsTable, ({ one }) => ({
+  post: one(postsTable, {
+    fields: [postDetailsTable.postId],
+    references: [postsTable.id],
+  }),
 }))
 
 // Add relations for the channelsTable
@@ -401,10 +455,6 @@ export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one }) 
 export const socialMediaIntegrationsRelations = relations(
   socialMediaIntegrationsTable,
   ({ one, many }) => ({
-    user: one(usersTable, {
-      fields: [socialMediaIntegrationsTable.userId],
-      references: [usersTable.id],
-    }),
     organization: one(organizationsTable, {
       fields: [socialMediaIntegrationsTable.organizationId],
       references: [organizationsTable.id],
@@ -496,7 +546,6 @@ export type InsertUser = typeof usersTable.$inferInsert
 
 export const userRelations = relations(usersTable, ({ many }) => ({
   sessions: many(sessionTable),
-  // emailVerifications: many(emailVerificationTable),
   oauthAccounts: many(oauthAccountsTable),
 }))
 

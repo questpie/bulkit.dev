@@ -29,7 +29,16 @@ export type Platform = (typeof PLATFORMS)[number]
 export const USER_ROLE = ['owner', 'member'] as const
 export type UserRole = (typeof USER_ROLE)[number]
 
-export const CHANNEL_STATUS = ['active', 'inactive', 'pending'] as const
+/**
+ *
+ * Enum representing the possible statuses of a channel.
+ * @readonly
+ * @enum {string}
+ * @property {string} active - The channel is currently active and functioning normally.
+ * @property {string} inactive - The channel is currently inactive or archived.
+ * @property {string} error - The channel is experiencing an auth error or other issue.
+ */
+export const CHANNEL_STATUS = ['active', 'inactive', 'error'] as const
 export type ChannelStatus = (typeof CHANNEL_STATUS)[number]
 
 export const SCHEDULED_POST_STATUS = ['pending', 'published', 'failed'] as const
