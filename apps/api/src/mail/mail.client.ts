@@ -3,7 +3,7 @@ import { ResendAdapter } from '@bulkit/mail/adapter/resend.adapter'
 import { SmtpAdapter } from '@bulkit/mail/adapter/smtp.adapter'
 import { MailClient, type MailAdapter } from '@bulkit/mail/base-mail'
 import { generalEnv } from '@bulkit/shared/env/general.env'
-import { logger } from '@bulkit/shared/utils/logger'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { createTestAccount, getTestMessageUrl } from 'nodemailer'
 
 // Global binding for development mode
@@ -24,8 +24,8 @@ const adapterPromise = async (): Promise<MailAdapter> => {
       },
     },
     afterSendCallback: async (info) => {
-      logger.debug('Message sent:', info.messageId)
-      logger.info('Preview URL:', getTestMessageUrl(info))
+      appLogger.debug(`Message sent: ${info.messageId}`)
+      appLogger.info(`Preview URL: ${getTestMessageUrl(info)}`)
     },
   })
 }

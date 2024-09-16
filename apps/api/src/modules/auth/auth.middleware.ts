@@ -1,3 +1,4 @@
+import { BearerSchema } from '@bulkit/api/common/common.schemas'
 import { lucia } from '@bulkit/api/modules/auth/lucia'
 import Elysia, { t } from 'elysia'
 import type { Session, User } from 'lucia'
@@ -19,6 +20,11 @@ export const authMiddleware = new Elysia({
     return {
       auth: validatedSession?.user ? buildAuthObject(validatedSession) : null,
     }
+  })
+  .guard({
+    headers: t.Object({
+      authorization: t.Optional(BearerSchema),
+    }),
   })
   .macro(({ onBeforeHandle }) => ({
     /**

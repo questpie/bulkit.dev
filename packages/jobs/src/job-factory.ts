@@ -1,5 +1,5 @@
 import { generalEnv } from '@bulkit/shared/env/general.env'
-import { logger } from '@bulkit/shared/utils/logger'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 import {
@@ -40,7 +40,7 @@ export class JobFactory {
 
   private info(job: Job, ...args: any[]) {
     if (this.options.verbose) {
-      logger.info(`[${job.name}:${job.id}]`, ...args)
+      appLogger.info(`[${job.name}:${job.id}]`, ...args)
     }
   }
 
@@ -89,7 +89,7 @@ export class JobFactory {
         worker.on(rawEventName, options.events[event as keyof typeof options.events])
       }
 
-      logger.info('Worker registered', options.name)
+      appLogger.info('Worker registered', options.name)
     }
 
     const registerWorker = () => {

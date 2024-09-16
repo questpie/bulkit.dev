@@ -6,6 +6,9 @@ import { Type } from '@sinclair/typebox'
 export const envApi = createEnv({
   server: {
     PORT: StringInt({ default: 3333 }),
+    LOG_LEVEL: Type.Optional(
+      Type.String({ default: generalEnv.PUBLIC_NODE_ENV === 'development' ? 'debug' : 'info' })
+    ),
 
     // database
     DATABASE_URL: Type.String(),
@@ -76,6 +79,7 @@ export const envApi = createEnv({
 
   runtimeEnv: {
     PORT: process.env.PORT,
+    LOG_LEVEL: process.env.LOG_LEVEL,
 
     DATABASE_URL: process.env.DATABASE_URL,
 

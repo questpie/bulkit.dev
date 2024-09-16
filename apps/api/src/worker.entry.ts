@@ -3,8 +3,11 @@
  */
 
 import { mailClient } from '@bulkit/api/mail/mail.client'
-import { logger } from '@bulkit/shared/utils/logger'
+import { appLogger } from '@bulkit/shared/utils/logger'
+
+// register pinio logger
+import '@bulkit/api/common/logger'
 
 mailClient.registerWorker()
 
-logger.info('Workers instances running')
+appLogger.info('Workers instances running')

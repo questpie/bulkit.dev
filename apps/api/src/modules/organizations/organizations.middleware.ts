@@ -1,3 +1,4 @@
+import { BearerSchema } from '@bulkit/api/common/common.schemas'
 import { db } from '@bulkit/api/db/db.client'
 import { getSuperAdmin } from '@bulkit/api/modules/auth/auth.dal'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
@@ -19,9 +20,10 @@ export const organizationMiddleware = new Elysia({
 })
   .use(protectedMiddleware)
   .guard({
-    // headers: t.Object({
-    //   [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
-    // }),
+    headers: t.Object({
+      authorization: t.Optional(BearerSchema),
+      [ORGANIZATION_HEADER]: t.Optional(t.String({ minLength: 1 })),
+    }),
     response: {
       403: t.Object({
         message: t.String(),

@@ -1,6 +1,6 @@
 import { envApi } from '@bulkit/api/envApi'
 import { api } from '@bulkit/api/index'
-import { logger } from '@bulkit/shared/utils/logger'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { Elysia } from 'elysia'
 
 /**
@@ -9,4 +9,4 @@ import { Elysia } from 'elysia'
  */
 const app = new Elysia().use(api).listen(envApi.PORT)
 
-logger.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
+appLogger.info(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`)
