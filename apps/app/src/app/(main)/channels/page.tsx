@@ -1,5 +1,5 @@
 import { apiServer } from '@bulkit/app/api/api.server'
-import { ChannelsPageHeader } from '@bulkit/app/app/(main)/channels/_components/channels-page-header'
+import { ChannelsPageHeader } from '@bulkit/app/app/(main)/channels/_components/channels-header'
 import { ChannelsTable } from '@bulkit/app/app/(main)/channels/_components/channels-table'
 import { getPagination } from '@bulkit/app/app/_utils/pagination'
 

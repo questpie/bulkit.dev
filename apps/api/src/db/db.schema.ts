@@ -70,32 +70,12 @@ export const selectPostSchema = createSelectSchema(postsTable)
 export type SelectPost = typeof postsTable.$inferSelect
 export type InsertPost = typeof postsTable.$inferInsert
 
-export const postDetailsTable = pgTable(
-  'post_details',
-  {
-    id: primaryKeyCol(),
-    postId: text('post_id').notNull(),
-    name: text('name').notNull(),
-    version: integer('version').notNull().default(1),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
-  },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-    versionIdx: index().on(table.version),
-  })
-)
-
-export type SelectPostDetails = typeof postDetailsTable.$inferSelect
-export type InsertPostDetails = typeof postDetailsTable.$inferInsert
-export const insertPostDetailsSchema = createInsertSchema(postDetailsTable)
-export const selectPostDetailsSchema = createSelectSchema(postDetailsTable)
-
 // New table for thread posts
 export const threadPostsTable = pgTable(
   'thread_posts',
   {
     id: primaryKeyCol('id'),
+    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
@@ -132,6 +112,7 @@ export const regularPostsTable = pgTable(
   'regular_posts',
   {
     id: primaryKeyCol('id'),
+    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
@@ -167,8 +148,9 @@ export const storyPostsTable = pgTable(
   'story_posts',
   {
     id: primaryKeyCol('id'),
+    name: text('name').notNull(),
     postId: text('post_id').notNull(),
-    resourceId: text('resource_id').notNull(),
+    resourceId: text('resource_id'),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
     createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -190,8 +172,9 @@ export const shortPostsTable = pgTable(
   'short_posts',
   {
     id: primaryKeyCol(),
+    name: text('name').notNull(),
     postId: text('post_id').notNull(),
-    resourceId: text('resource_id').notNull(),
+    resourceId: text('resource_id'),
     description: text('description').notNull(),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
@@ -423,7 +406,6 @@ export const postsRelations = relations(postsTable, ({ one, many }) => ({
   storyPosts: many(storyPostsTable),
   shortPosts: many(shortPostsTable),
   scheduledPosts: many(scheduledPostsTable),
-  postsDetails: many(postDetailsTable),
   comments: many(commentsTable),
 }))
 
@@ -439,13 +421,6 @@ export const commentsRelations = relations(commentsTable, ({ one }) => ({
   organization: one(organizationsTable, {
     fields: [commentsTable.organizationId],
     references: [organizationsTable.id],
-  }),
-}))
-
-export const postDetailsRelations = relations(postDetailsTable, ({ one }) => ({
-  post: one(postsTable, {
-    fields: [postDetailsTable.postId],
-    references: [postsTable.id],
   }),
 }))
 

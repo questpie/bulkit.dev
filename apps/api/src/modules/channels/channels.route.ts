@@ -1,3 +1,4 @@
+import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { db } from '@bulkit/api/db/db.client'
 import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
@@ -116,7 +117,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { limit = 10, cursor, platform } = ctx.query
 
-      const query = db
+      const channels = await db
         .select()
         .from(channelsTable)
         .where(
@@ -127,16 +128,16 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           )
         )
         .orderBy(desc(channelsTable.id))
-        .limit(limit)
+        .limit(limit + 1)
         .offset(cursor)
 
-      const channels = await query
+      const hasNextPage = channels.length > limit
+      const results = channels.slice(0, limit)
 
-      const hasNextCursor = channels.length > limit
-      const nextCursor = hasNextCursor ? cursor + limit : null
+      const nextCursor = hasNextPage ? cursor + limit : null
 
       return {
-        data: channels,
+        data: results,
         nextCursor,
       }
     },
@@ -144,15 +145,12 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       detail: {
         tags: ['Channels'],
       },
-      query: t.Object({
-        limit: t.Numeric({
-          default: 10,
+      query: t.Composite([
+        PaginationSchema,
+        t.Object({
+          platform: t.Optional(StringLiteralEnum(PLATFORMS)),
         }),
-        cursor: t.Numeric({
-          default: 0,
-        }),
-        platform: t.Optional(StringLiteralEnum(PLATFORMS)),
-      }),
+      ]),
       response: {
         200: t.Object({
           data: t.Array(selectChannelSchema),

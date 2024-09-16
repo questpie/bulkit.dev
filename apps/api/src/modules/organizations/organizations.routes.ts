@@ -1,5 +1,5 @@
+import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { db } from '@bulkit/api/db/db.client'
-import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
 import {
   insertOrganizationInviteSchema,
   insertOrganizationSchema,
@@ -10,6 +10,7 @@ import {
   userOrganizationsTable,
 } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
@@ -75,6 +76,7 @@ export const organizationRoutes = new Elysia({
       const results = userOrganizations.slice(0, limit)
 
       const nextCursor = hasNextPage ? cursor + limit : null
+
       return {
         data: results.map(({ user_organizations, organizations }) => ({
           ...organizations,
@@ -84,10 +86,7 @@ export const organizationRoutes = new Elysia({
       }
     },
     {
-      query: t.Object({
-        limit: t.Number(),
-        cursor: t.Number(),
-      }),
+      query: PaginationSchema,
       response: {
         200: t.Object({
           data: t.Array(

@@ -12,20 +12,3 @@ export const CHANNEL_ICON: Record<Platform, IconType> = {
   tiktok: FaTiktok,
   youtube: FiYoutube,
 }
-
-export const getChannelProfileUrl = (platform: Platform, username: string) => {
-  switch (platform) {
-    case 'instagram':
-      return `https://instagram.com/${username}`
-    case 'facebook':
-      return `https://facebook.com/${username}`
-    case 'tiktok':
-      return `https://tiktok.com/@${username}`
-    case 'youtube':
-      return `https://youtube.com/channel/${username}`
-    case 'x':
-      return `https://x.com/${username}`
-    case 'linkedin':
-      return `https://linkedin.com/in/${username}`
-  }
-}

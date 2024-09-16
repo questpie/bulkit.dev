@@ -1,6 +1,13 @@
 export const POST_TYPE = ['short', 'story', 'post', 'thread'] as const
 export type PostType = (typeof POST_TYPE)[number]
 
+export const POST_TYPE_NAME = {
+  short: 'Short',
+  story: 'Story',
+  post: 'Post',
+  thread: 'Thread',
+} as const
+
 export const POST_STATUS = ['draft', 'ready'] as const
 export type PostStatus = (typeof POST_STATUS)[number]
 
