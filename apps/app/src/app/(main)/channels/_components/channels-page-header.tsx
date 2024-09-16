@@ -50,9 +50,9 @@ export function ChannelsPageHeader() {
                     window.location.href = res.data.authUrl
                   }}
                 >
-                  <CardContent className='p-4 text-center flex flex-col gap-2 items-center font-bold text-sm'>
+                  <CardContent className='py-4 text-center flex flex-col gap-2 items-center font-bold text-sm'>
                     <Icon className='size-8' />
-                    <span>{PLATFORM_TO_NAME[platform]}</span>
+                    <span className='line-clamp-1 text-nowrap'>{PLATFORM_TO_NAME[platform]}</span>
                   </CardContent>
                 </Card>
               )
