@@ -48,7 +48,7 @@ export function Sidebar() {
                   className={cn(
                     'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-2 hover:bg-accent font-bold',
                     {
-                      'bg-muted text-primary cursor-default pointer-events-none':
+                      'text-primary cursor-default pointer-events-none bg-primary/20':
                         item.href === pathname,
                     }
                   )}

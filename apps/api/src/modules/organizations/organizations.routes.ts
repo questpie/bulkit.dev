@@ -1,5 +1,5 @@
 import { db } from '@bulkit/api/db/db.client'
-import { USER_ROLE } from '@bulkit/api/db/db.constants'
+import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
 import {
   insertOrganizationInviteSchema,
   insertOrganizationSchema,
@@ -25,7 +25,11 @@ export const organizationRoutes = new Elysia({
     '/',
     async ({ body, auth }) => {
       return db.transaction(async (trx) => {
-        const [organization] = await trx.insert(organizationsTable).values(body).returning()
+        const organization = await trx
+          .insert(organizationsTable)
+          .values(body)
+          .returning()
+          .then((res) => res[0]!)
 
         const organizationUser = await trx
           .insert(userOrganizationsTable)
@@ -35,7 +39,7 @@ export const organizationRoutes = new Elysia({
             userId: auth.user.id,
           })
           .returning()
-          .then((res) => res[0])
+          .then((res) => res[0]!)
 
         return { ...organization, role: organizationUser.role }
       })
@@ -159,7 +163,7 @@ export const organizationRoutes = new Elysia({
 
       // Here you would typically send an email with the invite link
 
-      return invite[0]
+      return invite[0]!
     },
     {
       response: {

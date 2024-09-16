@@ -1,5 +1,4 @@
 import { db } from '@bulkit/api/db/db.client'
-import { PLATFORM_TO_NAME, PLATFORMS, type Platform } from '@bulkit/api/db/db.constants'
 import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
 import { InstagramChannelManager } from '@bulkit/api/modules/channels/providers/instagram/instagram-channel.manager'
@@ -8,6 +7,7 @@ import { TikTokChannelManager } from '@bulkit/api/modules/channels/providers/tik
 import { XChannelManager } from '@bulkit/api/modules/channels/providers/x/x-channel.manager'
 import { YouTubeChannelManager } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.manager'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { PLATFORM_TO_NAME, PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
@@ -38,26 +38,57 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
   })
     .derive({ as: 'scoped' }, () => ({ channelManager: getChannelManager(platform) }))
     .guard((app) =>
-      app.use(organizationMiddleware).get(
-        '/auth',
-        async ({ channelManager, organization, cookie }) => {
-          const authUrl = await channelManager.getAuthorizationUrl(organization!.id, cookie)
-          return { authUrl: authUrl.toString() }
-        },
-        {
-          detail: {
-            description: `OAuth2 Authorization for ${PLATFORM_TO_NAME[platform]}`,
+      app
+        .use(organizationMiddleware)
+        .guard({
+          hasRole: true,
+        })
+        .get(
+          '/auth',
+          async ({ channelManager, organization, cookie, query }) => {
+            const authUrl = await channelManager.getAuthorizationUrl(
+              organization!.id,
+              cookie,
+              query.redirectTo
+            )
+
+            return { authUrl: authUrl.toString() }
           },
-        }
-      )
+          {
+            detail: {
+              description: `OAuth2 Authorization for ${PLATFORM_TO_NAME[platform]}`,
+            },
+            response: {
+              200: t.Object({
+                authUrl: t.String(),
+              }),
+            },
+            query: t.Object({
+              redirectTo: t.Optional(
+                t.String({
+                  minLength: 1,
+                  description:
+                    'URL to redirect to after authorization. Use {{cId}} to replace with created channel ID.',
+                })
+              ),
+            }),
+          }
+        )
     )
     .get(
       '/callback',
-      async ({ query, channelManager, cookie }) => {
+      async ({ query, channelManager, cookie, redirect }) => {
         const { code, state } = query
-        const { organizationId } = JSON.parse(Buffer.from(state, 'base64').toString())
+
+        const { organizationId, redirectTo } = JSON.parse(Buffer.from(state, 'base64').toString())
         const { channel } = await channelManager.handleCallback(code, organizationId, cookie)
-        return { channel }
+
+        if (redirectTo) {
+          // {{cId}} can also be encoded in the URL so we need to decode it
+          return redirect(decodeURI(redirectTo).replace('{{cId}}', channel.id), 302)
+        }
+
+        return { success: true }
       },
       {
         detail: {

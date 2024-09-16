@@ -20,7 +20,7 @@ import {
   POST_TYPE,
   SCHEDULED_POST_STATUS,
   USER_ROLE,
-} from './db.constants'
+} from '../../../../packages/shared/src/constants/db.constants'
 
 const primaryKeyCol = (name = 'id') =>
   text(name)
@@ -213,9 +213,15 @@ export const commentsTable = pgTable(
   'comments',
   {
     id: primaryKeyCol(),
-    postId: text('post_id').notNull(),
-    userId: text('user_id').notNull(),
-    organizationId: text('organization_id').notNull(),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => usersTable.id),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id),
     content: text('content').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -254,6 +260,11 @@ export const socialMediaIntegrationsTable = pgTable(
     orgIdIdx: index().on(table.organizationId),
     platformIdx: index().on(table.platform),
     platformAccountIdIdx: index().on(table.platformAccountId),
+    uniquePlatformIdx: uniqueIndex().on(
+      table.platformAccountId,
+      table.platform,
+      table.organizationId
+    ),
   })
 )
 
@@ -330,7 +341,9 @@ export const channelsTable = pgTable(
     imageUrl: text('image_url'),
     status: text('status', { enum: CHANNEL_STATUS }).notNull().default('active'),
     organizationId: text('organization_id').notNull(),
-    socialMediaIntegrationId: text('social_media_integration_id').notNull(), // Add this line
+    socialMediaIntegrationId: text('social_media_integration_id').references(
+      () => socialMediaIntegrationsTable.id
+    ),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
@@ -338,7 +351,7 @@ export const channelsTable = pgTable(
     platformIdx: index().on(table.platform),
     statusIdx: index().on(table.status),
     orgIdIdx: index().on(table.organizationId),
-    socialMediaIntegrationIdIdx: index().on(table.socialMediaIntegrationId), // Add this line
+    socialMediaIntegrationIdIdx: uniqueIndex().on(table.socialMediaIntegrationId), // Add this line
   })
 )
 
@@ -411,6 +424,21 @@ export const postsRelations = relations(postsTable, ({ one, many }) => ({
   scheduledPosts: many(scheduledPostsTable),
   postsDetails: many(postDetailsTable),
   comments: many(commentsTable),
+}))
+
+export const commentsRelations = relations(commentsTable, ({ one }) => ({
+  post: one(postsTable, {
+    fields: [commentsTable.postId],
+    references: [postsTable.id],
+  }),
+  user: one(usersTable, {
+    fields: [commentsTable.userId],
+    references: [usersTable.id],
+  }),
+  organization: one(organizationsTable, {
+    fields: [commentsTable.organizationId],
+    references: [organizationsTable.id],
+  }),
 }))
 
 export const postDetailsRelations = relations(postDetailsTable, ({ one }) => ({

@@ -12,7 +12,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
   .use(rateLimit())
   .post(
     '/',
-    async ({ body, error, request, cookie }) => {
+    async ({ body, error, request }) => {
       const { authToken } = body
 
       const [storedToken] = await db
@@ -27,7 +27,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
         .limit(1)
 
       if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
-        return error(400, 'Invalid token')
+        return error(400, { message: 'Invalid token' })
       }
 
       const user = await db
@@ -38,21 +38,42 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
         .then((r) => r[0])
 
       if (!user) {
-        return error(400, 'Invalid user')
+        return error(400, { message: 'Invalid user' })
       }
 
       const session = await lucia.createSession(user.id, getDeviceInfo(request))
       await db.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
 
-      return buildAuthObject({
-        session,
-        user,
-      })
+      return {
+        session: {
+          id: session.id,
+        },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        },
+      }
     },
     {
       applyRateLimit: {
         limit: 10,
         window: 60,
+      },
+      response: {
+        400: t.Object({
+          message: t.String(),
+        }),
+        200: t.Object({
+          session: t.Object({
+            id: t.String(),
+          }),
+          user: t.Object({
+            id: t.String(),
+            email: t.String(),
+            name: t.String(),
+          }),
+        }),
       },
       body: t.Object({
         authToken: t.String(),
@@ -66,9 +87,38 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
   .guard((app) => {
     return app
       .use(protectedMiddleware)
-      .get('/', async ({ auth }) => {
-        return auth
-      })
+      .get(
+        '/',
+        async ({ auth }) => {
+          return {
+            session: {
+              id: auth.session.id,
+            },
+            user: {
+              id: auth.user.id,
+              email: auth.user.email,
+              name: auth.user.name,
+            },
+          }
+        },
+        {
+          detail: {
+            description: 'Returns the session and user object',
+          },
+          response: {
+            200: t.Object({
+              session: t.Object({
+                id: t.String(),
+              }),
+              user: t.Object({
+                id: t.String(),
+                email: t.String(),
+                name: t.String(),
+              }),
+            }),
+          },
+        }
+      )
       .delete(
         '/',
         async ({ auth }) => {

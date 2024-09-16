@@ -15,7 +15,7 @@ export type MailMagicLinkProps = {
  */
 const defaultMagicLink: MailMagicLinkProps['data'] = {
   email: 'john.doe@example.com',
-  magicLinkUrl: 'https://localhost:3000/magic-link-preview',
+  magicLinkUrl: 'http://localhost:3000/magic-link-preview',
 }
 
 function MailMagicLink(props: MailMagicLinkProps) {

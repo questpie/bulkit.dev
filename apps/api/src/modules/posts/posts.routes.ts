@@ -1,6 +1,6 @@
 import { tExt } from '@bulkit/api/common/schemas'
 import { db } from '@bulkit/api/db/db.client'
-import { PLATFORMS } from '@bulkit/api/db/db.constants'
+import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import { insertPostSchema, postsTable } from '@bulkit/api/db/db.schema'
 import { getChannelManager } from '@bulkit/api/modules/channels/channels.route'
 import { eq } from 'drizzle-orm'

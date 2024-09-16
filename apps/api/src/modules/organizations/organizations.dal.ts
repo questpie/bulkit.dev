@@ -2,6 +2,8 @@ import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { organizationsTable, userOrganizationsTable } from '@bulkit/api/db/db.schema'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 
+export type OrganizationWithRole = Required<Awaited<ReturnType<typeof getUserOrganization>>>
+
 export async function getUserOrganization(
   db: TransactionLike,
   opts: {

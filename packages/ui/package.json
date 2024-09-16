@@ -18,6 +18,8 @@
     "react-dom": "^18"
   },
   "dependencies": {
+    "@bulkit/shared": "workspace:*",
+    "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -35,10 +37,13 @@
     "clsx": "^2.1.1",
     "embla-carousel-react": "^8.3.0",
     "next-themes": "^0.3.0",
+    "react-hook-form": "^7.53.0",
     "react-icons": "^5.3.0",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "^3.4.11",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "vaul": "^0.9.3",
+    "@sinclair/typebox": "0.32.34"
   }
 }

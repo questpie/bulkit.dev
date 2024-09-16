@@ -1,4 +1,4 @@
-import type { PostType } from '@bulkit/api/db/db.constants'
+import type { PostType } from '@bulkit/shared/constants/db.constants'
 import type { SelectPost } from '@bulkit/api/db/db.schema'
 import { getOAuthProvider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'

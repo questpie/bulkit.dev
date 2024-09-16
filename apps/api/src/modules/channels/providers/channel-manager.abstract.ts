@@ -1,5 +1,4 @@
 import { db, type TransactionLike } from '@bulkit/api/db/db.client'
-import type { Platform, PostType } from '@bulkit/api/db/db.constants'
 import {
   channelsTable,
   socialMediaIntegrationsTable,
@@ -10,6 +9,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
+import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 import { generateCodeVerifier, type OAuth2RequestError } from 'arctic'
 import { eq } from 'drizzle-orm'
 import type { Cookie } from 'elysia'
@@ -26,15 +26,19 @@ export abstract class ChannelManager {
 
   async getAuthorizationUrl(
     organizationId: string,
-    cookie: Record<string, Cookie<string | undefined>>
+    cookie: Record<string, Cookie<string | undefined>>,
+    redirectTo?: string
   ): Promise<URL> {
-    const state = Buffer.from(JSON.stringify({ organizationId })).toString('base64')
+    const state = Buffer.from(JSON.stringify({ organizationId, redirectTo })).toString('base64')
 
     let codeVerifier: string | undefined
 
     if (this.oauthProvider.isPKCE) {
       codeVerifier = generateCodeVerifier()
-      cookie[this.getCodeVerifierCookieName(organizationId)].value = codeVerifier
+      console.log('codeVerifier:', codeVerifier)
+      cookie[this.getCodeVerifierCookieName(organizationId)]!.set({
+        value: codeVerifier,
+      })
     }
 
     return this.oauthProvider.createAuthorizationURL(state, codeVerifier)
@@ -47,7 +51,7 @@ export abstract class ChannelManager {
   ) {
     let codeVerifier: string | undefined
     if (this.oauthProvider.isPKCE) {
-      codeVerifier = cookie[this.getCodeVerifierCookieName(organizationId)].value
+      codeVerifier = cookie[this.getCodeVerifierCookieName(organizationId)]!.value
     }
 
     const { accessToken, refreshToken, accessTokenExpiresAt } = await this.oauthProvider
@@ -122,7 +126,11 @@ export abstract class ChannelManager {
         ...data,
       })
       .onConflictDoUpdate({
-        target: socialMediaIntegrationsTable.platformAccountId,
+        target: [
+          socialMediaIntegrationsTable.platformAccountId,
+          socialMediaIntegrationsTable.platform,
+          socialMediaIntegrationsTable.organizationId,
+        ],
         set: {
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
@@ -134,11 +142,19 @@ export abstract class ChannelManager {
     return integration!
   }
 
-  protected async refreshAccessToken(
-    integration: SelectSocialMediaIntegration
-  ): Promise<SelectSocialMediaIntegration> {
+  protected async refreshAccessToken(integrationId: string): Promise<SelectSocialMediaIntegration> {
     if (!this.oauthProvider.refreshAccessToken) {
       throw new Error('This provider does not support refreshing access tokens')
+    }
+
+    const integration = await db
+      .select()
+      .from(socialMediaIntegrationsTable)
+      .where(eq(socialMediaIntegrationsTable.id, integrationId))
+      .then((r) => r[0])
+
+    if (!integration) {
+      throw new Error('Integration not found')
     }
 
     if (!integration.refreshToken) {
@@ -158,7 +174,7 @@ export abstract class ChannelManager {
         })
         .where(eq(socialMediaIntegrationsTable.id, integration.id))
         .returning()
-        .then((r) => r[0])
+        .then((r) => r[0]!)
     } catch (error) {
       console.error('Failed to refresh access token:', error)
       throw new Error('Failed to refresh access token')

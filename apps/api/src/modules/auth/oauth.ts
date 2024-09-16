@@ -1,4 +1,4 @@
-import type { Platform } from '@bulkit/api/db/db.constants'
+import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { envApi } from '@bulkit/api/envApi'
 import type { Tokens } from 'arctic'
 import { OAuth2Client } from 'oslo/oauth2'

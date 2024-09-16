@@ -1,11 +1,11 @@
 import { db } from '@bulkit/api/db/db.client'
-import type { UserRole } from '@bulkit/api/db/db.constants'
 import { getSuperAdmin } from '@bulkit/api/modules/auth/auth.dal'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import {
   getOrganizationById,
   getUserOrganization,
 } from '@bulkit/api/modules/organizations/organizations.dal'
+import type { UserRole } from '@bulkit/shared/constants/db.constants'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
 import Elysia, { t } from 'elysia'
 
@@ -19,12 +19,9 @@ export const organizationMiddleware = new Elysia({
 })
   .use(protectedMiddleware)
   .guard({
-    headers: t.Object({
-      [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
-      authorization: t.String({
-        pattern: 'Bearer .+',
-      }),
-    }),
+    // headers: t.Object({
+    //   [ORGANIZATION_HEADER]: t.String({ minLength: 1 }),
+    // }),
     response: {
       403: t.Object({
         message: t.String(),
@@ -76,16 +73,16 @@ export const organizationMiddleware = new Elysia({
     hasRole(roles: UserRole[] | true = true) {
       onBeforeHandle(async ({ organization, error, headers }) => {
         if (!headers[ORGANIZATION_HEADER]) {
-          error(403, { message: 'Organization header is required' })
-          return
+          throw error(403, { message: 'Organization header is required' })
         }
 
         if (
           !organization ||
-          organization.role === 'superAdmin' ||
-          (roles !== true && !roles.includes(organization.role))
+          (roles !== true &&
+            organization.role !== 'superAdmin' &&
+            !roles.includes(organization.role))
         ) {
-          error(403, { message: 'Insufficient permissions for this organization' })
+          throw error(403, { message: 'Insufficient permissions for this organization' })
         }
       })
     },

@@ -1,4 +1,4 @@
-import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/api/db/db.constants'
+import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import cors from '@elysiajs/cors'
 import swagger from '@elysiajs/swagger'
 import { Elysia } from 'elysia'
@@ -8,7 +8,7 @@ import { rootRoutes } from './root.routes'
  * Here you can either listen inside server.entry.ts or import to next.js and serve the api from next.js
  */
 export const api = new Elysia()
-  // .use(logixlysia() as any)
+  // .use(logixlysia())
   .use(
     cors({
       origin: true,

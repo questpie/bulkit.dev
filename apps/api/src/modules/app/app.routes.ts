@@ -1,4 +1,4 @@
-import { PLATFORMS, type Platform } from '@bulkit/api/db/db.constants'
+import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
 import { envApi } from '@bulkit/api/envApi'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'

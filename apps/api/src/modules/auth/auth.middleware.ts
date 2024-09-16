@@ -29,7 +29,7 @@ export const authMiddleware = new Elysia({
       if (!value) return
       onBeforeHandle(({ auth, error }) => {
         if (!auth) {
-          return error(401, 'Unauthorized')
+          throw error(401, { message: 'Unauthorized' })
         }
       })
     },
@@ -46,38 +46,28 @@ export const protectedMiddleware = new Elysia({
   .use(authMiddleware)
   .guard({
     isSignedIn: true,
-    headers: t.Object({
-      authorization: t.String({
-        pattern: 'Bearer .+',
-      }),
-    }),
     response: {
       401: t.Object({
         message: t.String(),
       }),
     },
   })
-  .resolve(({ auth, error }) => {
-    if (!auth || !auth.session || !auth.user) {
-      return error(401, { message: 'Unauthorized' })
-    }
+  .resolve(({ auth }) => {
     return {
-      auth: buildAuthObject(auth),
+      auth: auth!,
     }
   })
   .as('plugin')
 
 /**
  * Builds a sanitized auth object from the validated session.
- * @param {Object} validatedSession - The validated session object.
- * @returns {Object} An object containing user and session information.
  */
 export function buildAuthObject(
   validatedSession: Extract<
     Awaited<ReturnType<typeof lucia.validateSession>>,
     { user: User; session: Session }
   >
-): { user: User; session: Session } {
+) {
   return {
     user: {
       id: validatedSession.user.id,
