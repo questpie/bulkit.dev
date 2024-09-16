@@ -10,12 +10,13 @@ export default function LoginCallbackPage(props: {
   const { login } = useAuthActions()
   const router = useRouter()
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!token || login.isPending) return
     login.mutateAsync(token).then(() => {
       router.push('/')
     })
-  }, [token, login, router])
+  }, [])
 
   return (
     <div className='flex justify-center items-center min-h-screen bg-muted'>

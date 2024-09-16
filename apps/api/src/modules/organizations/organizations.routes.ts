@@ -84,6 +84,10 @@ export const organizationRoutes = new Elysia({
       }
     },
     {
+      query: t.Object({
+        limit: t.Number(),
+        cursor: t.Number(),
+      }),
       response: {
         200: t.Object({
           data: t.Array(
@@ -112,6 +116,8 @@ export const organizationRoutes = new Elysia({
           )
         )
         .then((res) => res[0])
+
+      console.log(organization)
 
       if (!organization) {
         throw error(404, { message: 'Organization not found' })

@@ -1,5 +1,4 @@
 import { pinioLogger } from '@bulkit/api/common/logger'
-import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import cors from '@elysiajs/cors'
 import swagger from '@elysiajs/swagger'
@@ -13,7 +12,7 @@ import { rootRoutes } from './root.routes'
 export const api = new Elysia()
   // TODO: add logger level to env
   .use(ip())
-  .use(applyRateLimit())
+  // .use(applyRateLimit())
   .use(
     pinioLogger.into({
       customProps(ctx) {

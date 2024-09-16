@@ -27,6 +27,7 @@ export type UserInfo = {
   name: string
   email?: string
   picture?: string
+  url: string
 }
 
 export function createCustomOAuthProvider(opts: {
@@ -135,6 +136,7 @@ export const getYouTubeProvider = () => {
       id: data.items[0].id,
       name: data.items[0].snippet.title,
       picture: data.items[0].snippet.thumbnails.default.url,
+      url: data.items[0].snippet.customUrl,
     }),
   })
 }
@@ -155,6 +157,7 @@ export const getFacebookProvider = () => {
       name: data.name,
       email: data.email,
       picture: `https://graph.facebook.com/${data.id}/picture?type=large`,
+      url: `https://facebook.com/${data.id}`,
     }),
   })
 }
@@ -172,6 +175,8 @@ export const getInstagramProvider = () => {
     parseUserInfo: (data) => ({
       id: data.id,
       name: data.username,
+      picture: `https://graph.instagram.com/${data.id}/picture?type=large`,
+      url: `https://instagram.com/${data.username}`,
     }),
   })
 }
@@ -190,6 +195,7 @@ export const getTikTokProvider = () => {
       id: data.data.user.open_id,
       name: data.data.user.display_name,
       picture: data.data.user.avatar_url,
+      url: `https://www.tiktok.com/@${data.data.user.unique_id}`,
     }),
   })
 }
@@ -208,6 +214,7 @@ export const getLinkedInProvider = () => {
       id: data.id,
       name: `${data.localizedFirstName} ${data.localizedLastName}`,
       picture: data.profilePicture?.['displayImage~']?.elements[0]?.identifiers[0]?.identifier,
+      url: `https://linkedin.com/in/${data.localizedFirstName}-${data.localizedLastName}-${data.id}`,
     }),
   })
 }
@@ -227,6 +234,7 @@ export const getXProvider = () => {
       id: data.data.id,
       name: data.data.name,
       picture: data.data.profile_image_url,
+      url: `https://x.com/${data.data.username}`,
     }),
   })
 }

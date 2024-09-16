@@ -19,7 +19,7 @@ export const PLATFORM_TO_NAME = {
   facebook: 'Facebook',
   tiktok: 'TikTok',
   youtube: 'YouTube',
-  x: 'X',
+  x: 'X (Twitter)',
   linkedin: 'LinkedIn',
   // google: 'Google',
 }

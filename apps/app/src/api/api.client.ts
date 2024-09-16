@@ -19,3 +19,7 @@ const apiClient = treaty<ApiType>(env.PUBLIC_API_URL, {
 })
 
 export { apiClient }
+
+export type RouteOutput<T extends () => Promise<{ data?: unknown }>> = NonNullable<
+  Awaited<ReturnType<T>>['data']
+>

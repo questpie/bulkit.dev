@@ -63,15 +63,6 @@ export abstract class ChannelManager {
 
     const userInfo = await this.oauthProvider.getUserInfo(accessToken)
 
-    const data = {
-      userId: userInfo.id,
-      accessToken,
-      refreshToken: refreshToken ?? undefined,
-      tokenExpiry: accessTokenExpiresAt,
-      channelName: userInfo.name ?? `${this.platform} User`,
-      picture: userInfo.picture,
-    }
-
     return db.transaction(async (trx) => {
       // Upsert the integration
       const integration = await this.upsertIntegration(trx, {
@@ -85,11 +76,12 @@ export abstract class ChannelManager {
 
       // Upsert the channel
       const channel = await this.upsertChannel(trx, {
-        name: data.channelName,
+        name: userInfo.name,
         platform: this.platform,
         organizationId,
         socialMediaIntegrationId: integration.id,
-        imageUrl: data.picture,
+        imageUrl: userInfo.picture,
+        url: userInfo.url,
         status: 'active',
       })
 
@@ -112,6 +104,8 @@ export abstract class ChannelManager {
         set: {
           status: 'active',
           name: data.name,
+          imageUrl: data.imageUrl,
+          url: data.url,
         },
       })
       .returning()

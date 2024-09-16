@@ -20,10 +20,12 @@ export const organizationMiddleware = new Elysia({
 })
   .use(protectedMiddleware)
   .guard({
-    headers: t.Object({
-      authorization: t.Optional(BearerSchema),
-      [ORGANIZATION_HEADER]: t.Optional(t.String({ minLength: 1 })),
-    }),
+    // headers: t.Optional(
+    //   t.Object({
+    //     authorization: t.Optional(BearerSchema),
+    //     [ORGANIZATION_HEADER]: t.Optional(t.String({ minLength: 1 })),
+    //   })
+    // ),
     response: {
       403: t.Object({
         message: t.String(),

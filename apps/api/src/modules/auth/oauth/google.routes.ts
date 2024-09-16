@@ -14,20 +14,20 @@ export const googleRoutes = new Elysia()
       const state = generateState()
       const codeVerifier = generateCodeVerifier()
 
-      cookie.state.set({
+      cookie.state?.set({
         value: state,
         httpOnly: true,
         secure: generalEnv.PUBLIC_NODE_ENV === 'production',
         path: '/',
       })
-      cookie.code_verifier.set({
+      cookie.code_verifier?.set({
         value: codeVerifier,
         httpOnly: true,
         secure: generalEnv.PUBLIC_NODE_ENV === 'production',
         path: '/',
       })
 
-      cookie.redirectTo.set({
+      cookie.redirectTo?.set({
         value: query.redirectTo,
         httpOnly: true,
         secure: generalEnv.PUBLIC_NODE_ENV === 'production',
@@ -49,8 +49,8 @@ export const googleRoutes = new Elysia()
   .get(
     '/google/callback',
     async ({ query, cookie, error, redirect, request }) => {
-      const storedState = cookie.state.value
-      const storedCodeVerifier = cookie.code_verifier.value
+      const storedState = cookie.state?.value
+      const storedCodeVerifier = cookie.code_verifier?.value
 
       if (!storedState || !storedCodeVerifier || !query.state || storedState !== query.state) {
         return error(400, 'Invalid state')
@@ -84,7 +84,7 @@ export const googleRoutes = new Elysia()
           let userId: string
 
           if (existingOAuthAccount.length > 0) {
-            userId = existingOAuthAccount[0].userId
+            userId = existingOAuthAccount[0]!.userId
           } else {
             const [user] = await trx
               .insert(usersTable)
@@ -98,7 +98,7 @@ export const googleRoutes = new Elysia()
               })
               .returning({ id: usersTable.id })
 
-            userId = user.id
+            userId = user!.id
 
             await trx.insert(oauthAccountsTable).values({
               userId: userId,
@@ -110,13 +110,13 @@ export const googleRoutes = new Elysia()
           const session = await lucia.createSession(userId, getDeviceInfo(request))
           const sessionCookie = lucia.createSessionCookie(session.id)
 
-          cookie[sessionCookie.name].set({
+          cookie[sessionCookie.name]!.set({
             value: sessionCookie.value,
             ...sessionCookie.attributes,
           })
         })
 
-        const redirectTo = cookie.redirectTo.value
+        const redirectTo = cookie.redirectTo!.value
         redirect(redirectTo || '/')
       } catch (e) {
         console.error(e)

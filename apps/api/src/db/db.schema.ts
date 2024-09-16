@@ -339,6 +339,7 @@ export const channelsTable = pgTable(
     name: text('name').notNull(),
     platform: text('platform', { enum: PLATFORMS }).notNull(),
     imageUrl: text('image_url'),
+    url: text('url'),
     status: text('status', { enum: CHANNEL_STATUS }).notNull().default('active'),
     organizationId: text('organization_id').notNull(),
     socialMediaIntegrationId: text('social_media_integration_id').references(
