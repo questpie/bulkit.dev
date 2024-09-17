@@ -7,7 +7,9 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 
 // register pinio logger
 import '@bulkit/api/common/logger'
+import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
 
 mailClient.registerWorker()
+resourceCleanupJob.registerWorker()
 
 appLogger.info('Workers instances running')
