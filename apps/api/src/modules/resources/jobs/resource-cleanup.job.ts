@@ -10,6 +10,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { redisManager } from '@bulkit/api/redis/redis-clients'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { eq, isNull } from 'drizzle-orm'
 
@@ -17,7 +18,7 @@ export const resourceCleanupJob = jobFactory.createJob({
   name: 'resource-cleanup',
   repeat: {
     // pattern: '0 0 * * *', // Run every day at midnight,
-    every: 10000, // Run every 10 seconds for testing
+    pattern: '* * * * *', // Run every minute for testing
   },
   handler: async (job) => {
     appLogger.info('Fetching unused resources')
