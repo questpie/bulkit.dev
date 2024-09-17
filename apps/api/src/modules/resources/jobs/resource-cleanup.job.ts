@@ -10,9 +10,8 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
-import { redisManager } from '@bulkit/api/redis/redis-clients'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, lt } from 'drizzle-orm'
 
 export const resourceCleanupJob = jobFactory.createJob({
   name: 'resource-cleanup',
@@ -33,6 +32,10 @@ export const resourceCleanupJob = jobFactory.createJob({
         db.select({ resourceId: regularPostMediaTable.resourceId }).from(regularPostMediaTable)
       )
       .as('used')
+
+    //   older than 7 days
+    const expirationDate = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000)
+
     // Get unused resources using Drizzle syntax
     const unusedResources = await db
       .select({
@@ -42,7 +45,7 @@ export const resourceCleanupJob = jobFactory.createJob({
       })
       .from(resourcesTable)
       .leftJoin(usedAq, eq(resourcesTable.id, usedAq.resourceId))
-      .where(isNull(usedAq.resourceId))
+      .where(and(isNull(usedAq.resourceId), lt(resourcesTable.createdAt, expirationDate)))
 
     if (!unusedResources.length) {
       appLogger.info('No unused resources found')
