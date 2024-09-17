@@ -45,7 +45,9 @@ export const resourceCleanupJob = jobFactory.createJob({
       })
       .from(resourcesTable)
       .leftJoin(usedAq, eq(resourcesTable.id, usedAq.resourceId))
-      .where(and(isNull(usedAq.resourceId), lt(resourcesTable.createdAt, expirationDate)))
+      .where(
+        and(isNull(usedAq.resourceId), lt(resourcesTable.createdAt, expirationDate.toISOString()))
+      )
 
     if (!unusedResources.length) {
       appLogger.info('No unused resources found')

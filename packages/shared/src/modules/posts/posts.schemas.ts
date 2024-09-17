@@ -15,7 +15,7 @@ export const PostDetailsSchema = Type.Object({
   status: StringLiteralEnum(POST_STATUS),
   currentVersion: Type.Number(),
   type: StringLiteralEnum(POST_TYPE),
-  createdAt: Type.Date(),
+  createdAt: Type.String(),
 })
 
 export const RegularPostSchema = Type.Object({

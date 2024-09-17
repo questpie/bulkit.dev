@@ -73,7 +73,10 @@ export function ResourceUploader({
         <input {...getInputProps()} />
         <Button
           {...getRootProps()}
-          className={cn(isDragActive && 'bg-primary/20 text-primary border-primary border')}
+          className={cn(
+            'border border-transparent',
+            isDragActive && 'bg-primary/20 text-primary border-primary border'
+          )}
         >
           <LuUploadCloud />
           {isDragActive ? <>Drop here...</> : <>Upload files</>}

@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    transpilePackages:['logixlysia']
-};
+  images: {
+    remotePatterns: [{ hostname: '*' }],
+  },
+}
 
-export default nextConfig;
+export default nextConfig

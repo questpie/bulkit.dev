@@ -37,8 +37,11 @@ export const resourcesTable = pgTable('resources', {
   location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
   type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
   isPrivate: boolean('is_private').notNull().default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
   organizationId: text('organization_id').notNull(),
 })
 
@@ -53,10 +56,13 @@ export const postsTable = pgTable(
   {
     id: primaryKeyCol('id'),
     type: text('type', { enum: POST_TYPE }).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
     organizationId: text('organization_id').notNull(),
-    deletedAt: timestamp('deleted_at'),
+    deletedAt: timestamp('deleted_at', { mode: 'string' }),
     currentVersion: integer('current_version').notNull().default(1),
   },
   (table) => ({
@@ -79,7 +85,7 @@ export const postDetailsTable = pgTable(
       .references(() => postsTable.id),
     name: text('name').notNull(),
     status: text('status', { enum: POST_STATUS }).notNull(),
-    createdAt: timestamp('changed_at').defaultNow().notNull(),
+    createdAt: timestamp('changed_at', { mode: 'string' }).defaultNow().notNull(),
     createdBy: text('changed_by')
       .notNull()
       .references(() => usersTable.id),
@@ -108,7 +114,7 @@ export const threadPostsTable = pgTable(
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -143,7 +149,7 @@ export const regularPostsTable = pgTable(
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -178,7 +184,7 @@ export const storyPostsTable = pgTable(
     resourceId: text('resource_id'),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -202,7 +208,7 @@ export const shortPostsTable = pgTable(
     description: text('description').notNull(),
     version: integer('version').notNull().default(1),
     createdBy: text('created_by').notNull(), // Added createdBy
-    createdAt: timestamp('created_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -230,8 +236,11 @@ export const commentsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id),
     content: text('content').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -256,11 +265,14 @@ export const socialMediaIntegrationsTable = pgTable(
     }).notNull(),
     accessToken: text('access_token').notNull(),
     refreshToken: text('refresh_token'),
-    tokenExpiry: timestamp('token_expiry'),
+    tokenExpiry: timestamp('token_expiry', { mode: 'string' }),
     scope: text('scope'),
     // additionalData: jsonb('additional_data'), // For any platform-specific data
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
     organizationId: text('organization_id').notNull(),
   },
   (table) => ({
@@ -288,8 +300,11 @@ export const userOrganizationsTable = pgTable(
     userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
     role: text('role', { enum: USER_ROLE }).notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   (table) => ({
     userIdIdx: index().on(table.userId),
@@ -307,8 +322,11 @@ export const selectUserOrganizationSchema = createSelectSchema(userOrganizations
 export const organizationsTable = pgTable('organizations', {
   id: primaryKeyCol(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
 })
 
 export type SelectOrganization = typeof organizationsTable.$inferSelect
@@ -328,9 +346,12 @@ export const organizationInvitesTable = pgTable('organization_invites', {
   organizationId: text('organization_id').notNull(),
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { mode: 'string' }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
 })
 
 export type SelectOrganizationInvite = typeof organizationInvitesTable.$inferSelect
@@ -352,8 +373,11 @@ export const channelsTable = pgTable(
     socialMediaIntegrationId: text('social_media_integration_id').references(
       () => socialMediaIntegrationsTable.id
     ),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   (table) => ({
     platformIdx: index().on(table.platform),
@@ -373,9 +397,9 @@ export const scheduledPostsTable = pgTable('scheduled_posts', {
   id: primaryKeyCol(),
   postId: text('post_id').notNull(),
   channelId: text('channel_id').notNull(), // Changed from platform to channelId
-  scheduledAt: timestamp('scheduled_at').notNull(),
+  scheduledAt: timestamp('scheduled_at', { mode: 'string' }).notNull(),
   status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'), // pending, published, failed
-  publishedAt: timestamp('published_at'),
+  publishedAt: timestamp('published_at', { mode: 'string' }),
   failureReason: text('failure_reason'),
   organizationId: text('organization_id').notNull(),
 })
@@ -560,7 +584,7 @@ export const superAdminsTable = pgTable('super_admins', {
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .primaryKey(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
 })
 
 export type SelectSuperAdmin = typeof superAdminsTable.$inferSelect
@@ -583,10 +607,10 @@ export const usersTable = pgTable(
     id: primaryKeyCol(),
     email: text('email').notNull(),
     name: text('name').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at')
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
       .defaultNow()
-      .$onUpdate(() => new Date()),
+      .$onUpdate(() => new Date().toISOString()),
   },
   (table) => ({
     emailIndex: uniqueIndex().on(table.email),
@@ -612,10 +636,10 @@ export const sessionsTable = pgTable('sessions', {
   }).notNull(),
   deviceFingerprint: text('device_fingerprint').notNull(),
   deviceInfo: jsonb('device_info').$type<DeviceInfo>().notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
     .defaultNow()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => new Date().toISOString()),
 })
 
 export type SelectSession = typeof sessionsTable.$inferSelect
@@ -642,10 +666,10 @@ export const emailVerificationsTable = pgTable('email_verifications', {
   type: text('type').$type<EmailVerificationType>().notNull(),
   /** If you want your verification to be realtime store channelName here */
   // channelName: text('channel_name'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at')
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
     .defaultNow()
-    .$onUpdate(() => new Date()),
+    .$onUpdate(() => new Date().toISOString()),
 })
 
 export type SelectEmailVerification = typeof emailVerificationsTable.$inferSelect
@@ -658,8 +682,8 @@ export const oauthAccountsTable = pgTable('oauth_accounts', {
     .references(() => usersTable.id),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
 })
 
 export const oauthAccountsRelations = relations(oauthAccountsTable, ({ one }) => ({

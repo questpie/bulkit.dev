@@ -160,7 +160,7 @@ export const organizationRoutes = new Elysia({
         .values({
           ...body,
           organizationId: params.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
         })
         .returning()
 
@@ -187,7 +187,7 @@ export const organizationRoutes = new Elysia({
         .where(eq(organizationInvitesTable.id, params.token))
         .then((res) => res[0])
 
-      if (!invite || invite.expiresAt < new Date()) {
+      if (!invite || new Date(invite.expiresAt).getTime() < new Date().getTime()) {
         throw new Error('Invalid or expired invite')
       }
 
@@ -241,7 +241,7 @@ export const organizationRoutes = new Elysia({
           t.Object({
             id: t.String(),
             role: StringLiteralEnum(USER_ROLE),
-            expiresAt: t.Date(),
+            expiresAt: t.String(),
             organizationId: t.String(),
             organizationName: t.String(),
           })

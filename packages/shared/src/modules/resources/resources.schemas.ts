@@ -6,5 +6,5 @@ export const ResourceSchema = Type.Object({
   location: Type.String({ minLength: 1 }),
   isExternal: Type.Boolean(),
   url: Type.String({ minLength: 1 }),
-  createdAt: Type.Date(),
+  createdAt: Type.String(),
 })

@@ -1,14 +1,13 @@
 import { apiServer } from '@bulkit/app/api/api.server'
 import { Header } from '@bulkit/app/app/(main)/_components/header'
-import { PostFormProvider } from '@bulkit/app/app/(main)/posts/[id]/post-form'
-import { ResourceUploader } from '@bulkit/app/app/(main)/posts/[id]/resource-uploader'
+import { PostFormProvider, RegularPostFields } from '@bulkit/app/app/(main)/posts/[id]/post-form'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
-import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Separator } from '@bulkit/ui/components/ui/separator'
 import { cn } from '@bulkit/ui/lib'
 import { notFound } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { LuActivity, LuSave, LuSend } from 'react-icons/lu'
 
 export default async function PostDetail(props: { params: { id: string } }) {
@@ -21,6 +20,14 @@ export default async function PostDetail(props: { params: { id: string } }) {
   const post = postResp.data
 
   const Icon = POST_TYPE_ICON[post.type]
+
+  let content: ReactNode = null
+
+  switch (post.type) {
+    case 'post':
+      content = <RegularPostFields />
+      break
+  }
 
   return (
     <PostFormProvider defaultValues={postResp.data} className='flex flex-col'>
@@ -72,9 +79,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
 
         <Separator />
 
-        <div className='px-4 py-4'>
-          <ResourceUploader variant='button' />
-        </div>
+        <div className='px-4 py-4 flex flex-col'>{content}</div>
       </div>
     </PostFormProvider>
   )

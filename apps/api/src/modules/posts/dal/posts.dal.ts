@@ -462,7 +462,7 @@ async function updateRegularPost(
     .insert(regularPostMediaTable)
     .values(
       sortedMedia.map((m) => ({
-        regularPostId: post.id,
+        regularPostId: updatedRegularPost.id,
         order: m.order,
         resourceId: m.resource.id,
       }))
