@@ -2,7 +2,7 @@
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
-import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
+import { PLATFORMS, PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
 import { Card, CardContent } from '@bulkit/ui/components/ui/card'
 import {
   ResponsiveDialog,
@@ -12,10 +12,28 @@ import {
   ResponsiveDialogTitle,
 } from '@bulkit/ui/components/ui/responsive-dialog'
 import { toast } from '@bulkit/ui/components/ui/sonner'
+import { cn } from '@bulkit/ui/lib'
+import { useMutation } from '@tanstack/react-query'
 import React from 'react'
 import { LuPlus } from 'react-icons/lu'
 
 export function ChannelsPageHeader() {
+  const mutation = useMutation({
+    mutationFn: (platform: Platform) =>
+      apiClient.channels[platform].auth.get({
+        query: {
+          redirectTo: `${window.location.origin}/channels/{{cId}}`,
+        },
+      }),
+    onSuccess: (res) => {
+      if (res.error) {
+        return toast.error(res.error?.value.message)
+      }
+
+      window.location.href = res.data.authUrl
+    },
+  })
+
   return (
     <Header title='Channels'>
       <ResponsiveDialog>
@@ -36,18 +54,13 @@ export function ChannelsPageHeader() {
                   role='button'
                   tabIndex={0}
                   key={platform}
-                  className='w-24 h-24 hover:bg-accent cursor-pointer'
-                  onClick={async () => {
-                    const res = await apiClient.channels[platform].auth.get({
-                      query: {
-                        redirectTo: `${window.location.origin}/channels/{{cId}}`,
-                      },
-                    })
-                    if (res.error) {
-                      return toast.error(res.error?.value.message)
-                    }
-
-                    window.location.href = res.data.authUrl
+                  className={cn(
+                    'w-24 h-24 hover:bg-accent cursor-pointer',
+                    mutation.isPending && 'opacity-50 pointer-events-none'
+                  )}
+                  onClick={() => {
+                    if (mutation.isPending) return
+                    mutation.mutate(platform)
                   }}
                 >
                   <CardContent className='py-4 text-center flex flex-col gap-2 items-center font-bold text-sm'>

@@ -32,6 +32,7 @@ export async function getPost(
       status: postDetailsTable.status,
       name: postDetailsTable.name,
       currentVersion: postsTable.currentVersion,
+      createdAt: postsTable.createdAt,
     })
     .from(postsTable)
     .innerJoin(postDetailsTable, eq(postsTable.id, postDetailsTable.postId))
@@ -198,7 +199,7 @@ export async function getPost(
 export async function createPost(
   db: TransactionLike,
   opts: {
-    organizationId: string
+    orgId: string
     userId: string
     name?: string
     type: PostType
@@ -207,7 +208,7 @@ export async function createPost(
   const pRaw = await db
     .insert(postsTable)
     .values({
-      organizationId: opts.organizationId,
+      organizationId: opts.orgId,
       type: opts.type,
       currentVersion: 1,
     })
@@ -232,6 +233,7 @@ export async function createPost(
     currentVersion: 1,
     status: postDetails.status,
     name: postDetails.name,
+    createdAt: pRaw.createdAt,
   }
 
   switch (opts.type) {
@@ -327,11 +329,11 @@ export async function updatePost(
     userId: string
     post: Post
   }
-): Promise<Post> {
+): Promise<Post | null> {
   const existingPost = await getPost(db, { orgId: opts.orgId, postId: opts.post.id })
 
   if (!existingPost) {
-    throw new Error(`Post not found: ${opts.post.id}`)
+    return null
   }
 
   // increase post version

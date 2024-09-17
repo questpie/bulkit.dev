@@ -12,8 +12,6 @@ export default async function ChannelsPage(props: { serachParams: Record<string,
     },
   })
 
-  console.log(channels.data)
-
   return (
     <div className='flex flex-col'>
       <ChannelsPageHeader />

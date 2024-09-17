@@ -1,10 +1,7 @@
 'use client'
 import type { SelectChannel } from '@bulkit/api/db/db.schema'
 import type { apiClient, RouteOutput } from '@bulkit/app/api/api.client'
-import {
-  CHANNEL_ICON,
-  getChannelProfileUrl,
-} from '@bulkit/app/app/(main)/channels/channels.constants'
+import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Button } from '@bulkit/ui/components/ui/button'
@@ -18,7 +15,7 @@ import {
   TableRow,
 } from '@bulkit/ui/components/ui/table'
 import Link from 'next/link'
-import { LuExternalLink, LuEye, LuLink, LuLink2, LuLink2Off } from 'react-icons/lu'
+import { LuExternalLink, LuEye, LuLink2Off } from 'react-icons/lu'
 
 export type Channel = RouteOutput<typeof apiClient.channels.index.get>['data'][number]
 
