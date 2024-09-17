@@ -1,3 +1,5 @@
+import { POST_STATUS } from '@bulkit/shared/constants/db.constants'
+import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
 export const ResourceSchema = Type.Object({
@@ -9,29 +11,38 @@ export const ResourceSchema = Type.Object({
 export const PostMediaSchema = Type.Object({
   id: Type.String(),
   order: Type.Number(),
-  resource: Type.Union([ResourceSchema, Type.Null()]),
+  resource: ResourceSchema,
 })
 
 export const RegularPostSchema = Type.Object({
   id: Type.String(),
-  type: Type.Literal('post'),
   name: Type.String(),
+  status: StringLiteralEnum(POST_STATUS),
+  currentVersion: Type.Number(),
+
+  type: Type.Literal('post'),
   text: Type.String(),
   media: Type.Array(PostMediaSchema),
 })
 
 export const ShortPostSchema = Type.Object({
   id: Type.String(),
-  type: Type.Literal('short'),
   name: Type.String(),
+  status: StringLiteralEnum(POST_STATUS),
+  currentVersion: Type.Number(),
+
+  type: Type.Literal('short'),
   description: Type.String(),
   resource: Type.Union([ResourceSchema, Type.Null()]),
 })
 
 export const ThreadPostSchema = Type.Object({
   id: Type.String(),
-  type: Type.Literal('thread'),
   name: Type.String(),
+  status: StringLiteralEnum(POST_STATUS),
+  currentVersion: Type.Number(),
+
+  type: Type.Literal('thread'),
   items: Type.Array(
     Type.Object({
       text: Type.String(),
@@ -43,8 +54,11 @@ export const ThreadPostSchema = Type.Object({
 
 export const StoryPostSchema = Type.Object({
   id: Type.String(),
-  type: Type.Literal('story'),
   name: Type.String(),
+  status: StringLiteralEnum(POST_STATUS),
+  currentVersion: Type.Number(),
+
+  type: Type.Literal('story'),
   resource: Type.Union([ResourceSchema, Type.Null()]),
 })
 

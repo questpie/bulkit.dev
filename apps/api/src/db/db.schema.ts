@@ -52,16 +52,15 @@ export const postsTable = pgTable(
   {
     id: primaryKeyCol('id'),
     type: text('type', { enum: POST_TYPE }).notNull(),
-    status: text('status', { enum: POST_STATUS }).notNull().default('draft'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
     organizationId: text('organization_id').notNull(),
     deletedAt: timestamp('deleted_at'),
+    currentVersion: integer('current_version').notNull().default(1),
   },
   (table) => ({
     orgIdIdx: index().on(table.organizationId),
     typeIdx: index().on(table.type),
-    statusIdx: index().on(table.status),
   })
 )
 export const insertPostSchema = createInsertSchema(postsTable)
@@ -70,12 +69,39 @@ export const selectPostSchema = createSelectSchema(postsTable)
 export type SelectPost = typeof postsTable.$inferSelect
 export type InsertPost = typeof postsTable.$inferInsert
 
+export const postDetailsTable = pgTable(
+  'post_details',
+  {
+    id: primaryKeyCol('id'),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id),
+    name: text('name').notNull(),
+    status: text('status', { enum: POST_STATUS }).notNull(),
+    createdAt: timestamp('changed_at').defaultNow().notNull(),
+    createdBy: text('changed_by')
+      .notNull()
+      .references(() => usersTable.id),
+    version: integer('version').notNull().default(1),
+  },
+  (table) => ({
+    postIdIdx: index().on(table.postId),
+    versionIdx: index().on(table.version),
+    statusIdx: index().on(table.status),
+  })
+)
+
+export const insertPostDetailSchema = createInsertSchema(postDetailsTable)
+export const selectPostDetailSchema = createSelectSchema(postDetailsTable)
+
+export type SelectPostDetail = typeof postDetailsTable.$inferSelect
+export type InsertPostDetail = typeof postDetailsTable.$inferInsert
+
 // New table for thread posts
 export const threadPostsTable = pgTable(
   'thread_posts',
   {
     id: primaryKeyCol('id'),
-    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
@@ -112,7 +138,6 @@ export const regularPostsTable = pgTable(
   'regular_posts',
   {
     id: primaryKeyCol('id'),
-    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
@@ -148,7 +173,6 @@ export const storyPostsTable = pgTable(
   'story_posts',
   {
     id: primaryKeyCol('id'),
-    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
     version: integer('version').notNull().default(1),
@@ -172,7 +196,6 @@ export const shortPostsTable = pgTable(
   'short_posts',
   {
     id: primaryKeyCol(),
-    name: text('name').notNull(),
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
     description: text('description').notNull(),
