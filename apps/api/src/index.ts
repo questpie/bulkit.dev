@@ -5,6 +5,7 @@ import swagger from '@elysiajs/swagger'
 import { Elysia } from 'elysia'
 import { ip } from 'elysia-ip'
 import { rootRoutes } from './root.routes'
+import { appLogger } from '@bulkit/shared/utils/logger'
 
 /**
  * Here you can either listen inside server.entry.ts or import to next.js and serve the api from next.js
@@ -73,6 +74,9 @@ export const api = new Elysia()
       },
     })
   )
+  .onError(({ error }) => {
+    appLogger.error(error)
+  })
   .use(rootRoutes)
 
 export type ApiType = typeof api

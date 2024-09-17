@@ -95,7 +95,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         postId: ctx.params.id,
       })
       if (!post) {
-        throw ctx.error(404, { message: 'Post not found' })
+        return ctx.error(404, { message: 'Post not found' })
       }
 
       return post
@@ -121,7 +121,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         })
 
         if (!post) {
-          throw ctx.error(404, { message: 'Post not found' })
+          return ctx.error(404, { message: 'Post not found' })
         }
 
         return post

@@ -1,12 +1,7 @@
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type } from '@sinclair/typebox'
-
-export const ResourceSchema = Type.Object({
-  id: Type.String(),
-  type: Type.String(),
-  location: Type.Union([Type.String(), Type.Null()]),
-})
 
 export const PostMediaSchema = Type.Object({
   id: Type.String(),
@@ -57,3 +52,18 @@ export const PostSchema = Type.Union([
   Type.Composite([PostDetailsSchema, ThreadPostSchema]),
   Type.Composite([PostDetailsSchema, StoryPostSchema]),
 ])
+
+export function getPostSchemaFromType(type: string) {
+  switch (type) {
+    case 'post':
+      return RegularPostSchema
+    case 'short':
+      return ShortPostSchema
+    case 'thread':
+      return ThreadPostSchema
+    case 'story':
+      return StoryPostSchema
+    default:
+      throw new Error(`Unknown post type: ${type}`)
+  }
+}

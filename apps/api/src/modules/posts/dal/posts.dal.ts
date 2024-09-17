@@ -13,9 +13,11 @@ import {
   type SelectPost,
   type SelectRegularPostMedia,
 } from '@bulkit/api/db/db.schema'
+import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
 import type { PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, asc, desc, eq, getTableColumns } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
@@ -45,6 +47,8 @@ export async function getPost(
     )
     .then((res) => res[0])
 
+  appLogger.debug({ post })
+
   if (!post) {
     return null
   }
@@ -70,6 +74,9 @@ export async function getPost(
           id: shortPost.resources.id,
           location: shortPost.resources.location,
           type: shortPost.resources.type,
+          createdAt: shortPost.resources.createdAt,
+          isExternal: shortPost.resources.isExternal,
+          url: await getResourcePublicUrl(shortPost.resources),
         },
       } satisfies Extract<Post, { type: 'short' }>
     }
@@ -87,7 +94,7 @@ export async function getPost(
           regularPostMediaTable,
           eq(regularPostsTable.id, regularPostMediaTable.regularPostId)
         )
-        .innerJoin(resourcesTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
+        .leftJoin(resourcesTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
         .orderBy(desc(regularPostsTable.version))
 
       if (!regularPosts.length) {
@@ -97,16 +104,23 @@ export async function getPost(
       return {
         ...post,
         type: post.type,
-        media: regularPosts.map((p) => {
-          return {
-            ...(p.regular_post_media as SelectRegularPostMedia),
-            resource: {
-              id: p.resources.id,
-              location: p.resources.location,
-              type: p.resources.type,
-            },
-          }
-        }),
+        media: await Promise.all(
+          regularPosts
+            .filter((p) => !!p.resources && !!p.regular_post_media)
+            .map(async (p) => {
+              return {
+                ...(p.regular_post_media as SelectRegularPostMedia),
+                resource: {
+                  id: p.resources!.id,
+                  location: p.resources!.location,
+                  type: p.resources!.type,
+                  createdAt: p.resources!.createdAt,
+                  isExternal: p.resources!.isExternal,
+                  url: await getResourcePublicUrl(p.resources!),
+                },
+              }
+            })
+        ),
         text: regularPosts[0]!.regular_posts.text,
       } satisfies Extract<Post, { type: 'post' }>
     }
@@ -121,7 +135,7 @@ export async function getPost(
           )
         )
         .leftJoin(threadMediaTable, eq(threadPostsTable.id, threadMediaTable.threadPostId))
-        .innerJoin(resourcesTable, eq(threadMediaTable.resourceId, resourcesTable.id))
+        .leftJoin(resourcesTable, eq(threadMediaTable.resourceId, resourcesTable.id))
         .orderBy(desc(threadPostsTable.version), asc(threadPostsTable.order))
 
       if (!threads.length) {
@@ -142,19 +156,24 @@ export async function getPost(
         items.push({
           order: threads[0]!.thread_posts.order,
           text: threads[0]!.thread_posts.text,
-          media: threads
-            .filter((p) => !!p.thread_media)
-            .map((p) => {
-              return {
-                id: p.thread_media!.id,
-                order: p.thread_media!.order,
-                resource: {
-                  id: p.resources.id,
-                  location: p.resources.location,
-                  type: p.resources.type,
-                },
-              }
-            }),
+          media: await Promise.all(
+            threads
+              .filter((p) => !!p.thread_media && !!p.resources)
+              .map(async (p) => {
+                return {
+                  id: p.thread_media!.id,
+                  order: p.thread_media!.order,
+                  resource: {
+                    id: p.resources!.id,
+                    location: p.resources!.location,
+                    type: p.resources!.type,
+                    createdAt: p.resources!.createdAt,
+                    isExternal: p.resources!.isExternal,
+                    url: await getResourcePublicUrl(p.resources!),
+                  },
+                }
+              })
+          ),
         })
       }
 
@@ -188,6 +207,9 @@ export async function getPost(
           id: storyPosts.resource.id,
           location: storyPosts.resource.location,
           type: storyPosts.resource.type,
+          createdAt: storyPosts.resource.createdAt,
+          isExternal: storyPosts.resource.isExternal,
+          url: await getResourcePublicUrl(storyPosts.resource),
         },
       } satisfies Extract<Post, { type: 'story' }>
     }

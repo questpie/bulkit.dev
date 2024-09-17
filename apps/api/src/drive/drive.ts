@@ -26,6 +26,8 @@ export const drive = new DriveManager({
           accessKeyId: envApi.S3_ACCESS_KEY,
           secretAccessKey: envApi.S3_SECRET_KEY,
         },
+        endpoint: `${envApi.S3_ENDPOINT}:${envApi.S3_PORT}`,
+        forcePathStyle: true,
         region: envApi.S3_REGION,
         bucket: envApi.S3_BUCKET,
         visibility: 'public',

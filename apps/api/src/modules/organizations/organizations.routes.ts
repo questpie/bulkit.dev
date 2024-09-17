@@ -116,10 +116,8 @@ export const organizationRoutes = new Elysia({
         )
         .then((res) => res[0])
 
-      console.log(organization)
-
       if (!organization) {
-        throw error(404, { message: 'Organization not found' })
+        return error(404, { message: 'Organization not found' })
       }
 
       return {
@@ -154,7 +152,7 @@ export const organizationRoutes = new Elysia({
         .then((res) => res[0])
 
       if (!userOrg || !['owner'].includes(userOrg.role)) {
-        throw error(403, { message: 'Insufficient permissions' })
+        return error(403, { message: 'Insufficient permissions' })
       }
 
       const invite = await db

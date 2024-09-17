@@ -34,8 +34,9 @@ export type ResourceType = 'image' | 'video' | 'audio'
 export const resourcesTable = pgTable('resources', {
   id: primaryKeyCol('id'),
   isExternal: boolean('is_external').notNull().default(false),
-  location: text('location'), // URL of the resource if it's external, otherwise the local path inside storage
-  type: text('type').$type<ResourceType>().notNull(), // e.g., 'image', 'video', 'audio'
+  location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
+  type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
+  isPrivate: boolean('is_private').notNull().default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   organizationId: text('organization_id').notNull(),

@@ -10,6 +10,7 @@ import {
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
 import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { generateCodeVerifier, type OAuth2RequestError } from 'arctic'
 import { eq } from 'drizzle-orm'
 import type { Cookie } from 'elysia'
@@ -35,7 +36,6 @@ export abstract class ChannelManager {
 
     if (this.oauthProvider.isPKCE) {
       codeVerifier = generateCodeVerifier()
-      console.log('codeVerifier:', codeVerifier)
       cookie[this.getCodeVerifierCookieName(organizationId)]!.set({
         value: codeVerifier,
       })
@@ -57,7 +57,7 @@ export abstract class ChannelManager {
     const { accessToken, refreshToken, accessTokenExpiresAt } = await this.oauthProvider
       .validateAuthorizationCode(code, codeVerifier)
       .catch((e) => {
-        console.log((e as OAuth2RequestError).description)
+        appLogger.error((e as OAuth2RequestError).description)
         throw e
       })
 

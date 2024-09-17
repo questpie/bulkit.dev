@@ -1,4 +1,5 @@
 import { lucia } from '@bulkit/api/modules/auth/lucia'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import Elysia, { t } from 'elysia'
 import type { Session, User } from 'lucia'
 
@@ -14,18 +15,11 @@ export const authMiddleware = new Elysia({
     const sessionId = authorizationHeader ? lucia.readBearerToken(authorizationHeader) : null
 
     if (!sessionId) return { auth: null }
-    const validatedSession = await lucia.validateSession(sessionId).catch(console.log)
+    const validatedSession = await lucia.validateSession(sessionId).catch(appLogger.error)
 
     return {
       auth: validatedSession?.user ? buildAuthObject(validatedSession) : null,
     }
-  })
-  .guard({
-    // headers: t.Optional(
-    //   t.Object({
-    //     authorization: t.Optional(BearerSchema),
-    //   })
-    // ),
   })
   .macro(({ onBeforeHandle }) => ({
     /**
@@ -36,7 +30,7 @@ export const authMiddleware = new Elysia({
       if (!value) return
       onBeforeHandle(({ auth, error }) => {
         if (!auth) {
-          throw error(401, { message: 'Unauthorized' })
+          return error(401, { message: 'Unauthorized' })
         }
       })
     },
@@ -51,14 +45,7 @@ export const protectedMiddleware = new Elysia({
   name: 'protected.middleware',
 })
   .use(authMiddleware)
-  .guard({
-    isSignedIn: true,
-    response: {
-      401: t.Object({
-        message: t.String(),
-      }),
-    },
-  })
+  .guard({ isSignedIn: true })
   .resolve(({ auth }) => {
     return {
       auth: auth!,

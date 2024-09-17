@@ -19,22 +19,6 @@ export const organizationMiddleware = new Elysia({
   name: 'organization.middleware',
 })
   .use(protectedMiddleware)
-  .guard({
-    // headers: t.Optional(
-    //   t.Object({
-    //     authorization: t.Optional(BearerSchema),
-    //     [ORGANIZATION_HEADER]: t.Optional(t.String({ minLength: 1 })),
-    //   })
-    // ),
-    response: {
-      403: t.Object({
-        message: t.String(),
-      }),
-      401: t.Object({
-        message: t.String(),
-      }),
-    },
-  })
   .resolve(async ({ headers, auth }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
 
@@ -69,6 +53,14 @@ export const organizationMiddleware = new Elysia({
       }),
     }
   })
+  .guard({
+    // headers: t.Optional(
+    //   t.Object({
+    //     authorization: t.Optional(BearerSchema),
+    //     [ORGANIZATION_HEADER]: t.Optional(t.String({ minLength: 1 })),
+    //   })
+    // ),
+  })
   .macro(({ onBeforeHandle }) => ({
     /**
      * Checks if the user has one of the specified roles or is the owner.
@@ -77,7 +69,7 @@ export const organizationMiddleware = new Elysia({
     hasRole(roles: UserRole[] | true = true) {
       onBeforeHandle(async ({ organization, error, headers }) => {
         if (!headers[ORGANIZATION_HEADER]) {
-          throw error(403, { message: 'Organization header is required' })
+          return error(403, { message: 'Organization header is required' })
         }
 
         if (
@@ -86,7 +78,7 @@ export const organizationMiddleware = new Elysia({
             organization.role !== 'superAdmin' &&
             !roles.includes(organization.role))
         ) {
-          throw error(403, { message: 'Insufficient permissions for this organization' })
+          return error(403, { message: 'Insufficient permissions for this organization' })
         }
       })
     },
