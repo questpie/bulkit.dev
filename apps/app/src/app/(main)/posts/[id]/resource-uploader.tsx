@@ -9,21 +9,19 @@ import { useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { LuUploadCloud } from 'react-icons/lu'
 
-type PostMediaFieldProps = {
+type ResourceUploaderProps = {
   onUploaded?: (resources: Resource[]) => void
   allowedTypes?: string[]
   maxFiles?: number
   maxSize?: number // in bytes
-
-  variant?: 'dropzone' | 'button'
 }
-export function ResourceUploader({
+
+function useResourceUploader({
   onUploaded,
   allowedTypes = ['image/*', 'video/*', 'audio/*'],
-  maxFiles = 5,
-  maxSize = 5 * 1024 * 1024, // 5MB
-  variant = 'dropzone',
-}: PostMediaFieldProps) {
+  maxFiles = 10,
+  maxSize = 50 * 1024 * 1024, // 50MB
+}: ResourceUploaderProps) {
   const mutation = useMutation({
     mutationFn: (...args: Parameters<typeof apiClient.resources.index.post>) =>
       apiClient.resources.index.post(...args).then((res) => {
@@ -38,8 +36,8 @@ export function ResourceUploader({
     },
   })
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: useCallback(
+  const dropzone = useDropzone({
+    onDropAccepted: useCallback(
       (acceptedFiles: File[]) => {
         toast.promise(
           mutation.mutateAsync({
@@ -54,42 +52,50 @@ export function ResourceUploader({
       },
       [mutation]
     ),
-    accept: allowedTypes.reduce(
+    accept: allowedTypes?.reduce(
       (acc, type) => {
         acc[type] = []
         return acc
       },
       {} as Record<string, string[]>
     ),
+    onDropRejected: (rejectedFiles) => {
+      const uniqueErrorMessages = new Set<string>()
+      for (const file of rejectedFiles) {
+        for (const error of file.errors) {
+          uniqueErrorMessages.add(error.message)
+        }
+      }
+      const m = Array.from(uniqueErrorMessages).map((m, i) => (
+        <>
+          <span key={`${m}-span`}>{m}</span>
+          <br key={`${m}-br`} />
+        </>
+      ))
+
+      toast.error('Some files were rejected.', {
+        description: m,
+      })
+    },
     maxSize,
-    maxFiles: maxFiles,
+    maxFiles,
   })
 
-  // TODO: add a middle step which opens a dialog, shows the selected file and lets you either cancel or upload
-
-  if (variant === 'button') {
-    return (
-      <>
-        <input {...getInputProps()} />
-        <Button
-          {...getRootProps()}
-          className={cn(
-            'border border-transparent',
-            isDragActive && 'bg-primary/20 text-primary border-primary border'
-          )}
-        >
-          <LuUploadCloud />
-          {isDragActive ? <>Drop here...</> : <>Upload files</>}
-        </Button>
-      </>
-    )
+  return {
+    ...dropzone,
+    isUploading: mutation.isPending,
   }
+}
+
+export function ResourceDropzone(props: ResourceUploaderProps) {
+  const { getRootProps, getInputProps, isDragActive } = useResourceUploader(props)
+  // TODO: add a middle step which opens a dialog, shows the selected file and lets you either cancel or upload
 
   return (
     <div
       {...getRootProps()}
       className={cn(
-        'border-2 transition text-muted-foreground duration-200 flex flex-col gap-4 hover:bg-accent/50 border-dashed border-border rounded-xl p-5 text-center cursor-pointer',
+        'border-2 text-sm transition text-muted-foreground duration-200 flex flex-col gap-4 hover:bg-accent/50 border-dashed border-border rounded-xl p-5 text-center cursor-pointer',
         isDragActive && 'bg-primary/20 border-primary text-primary'
       )}
     >
@@ -102,5 +108,36 @@ export function ResourceUploader({
         <p>Drag 'n' drop some files here, or click to select files</p>
       )}
     </div>
+  )
+}
+
+export function ResourceButtonUpload(
+  props: ResourceUploaderProps & {
+    buttonProps?: React.ComponentProps<typeof Button>
+  }
+) {
+  const { getRootProps, getInputProps, isDragActive, isUploading } = useResourceUploader(props)
+  // TODO: add a middle step which opens a dialog, shows the selected file and lets you either cancel or upload
+
+  return (
+    <>
+      <input {...getInputProps()} type='button' />
+      <Button
+        {...props.buttonProps}
+        {...getRootProps()}
+        type='button'
+        role='button'
+        isLoading={isUploading}
+        loadingText='Uploading...'
+        className={cn(
+          'border',
+          isDragActive && 'bg-primary/20 text-primary border-primary border',
+          props.buttonProps?.className
+        )}
+      >
+        <LuUploadCloud />
+        {isDragActive ? <>Drop here...</> : <>Upload files</>}
+      </Button>
+    </>
   )
 }

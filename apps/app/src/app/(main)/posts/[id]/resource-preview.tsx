@@ -71,6 +71,7 @@ export function ResourcePreview({
 
         {onRemove && (
           <Button
+            type='button'
             className='absolute z-20 rounded-full h-7 w-7 translate-x-1/2 -translate-y-1/2 top-0 right-0 p-1 text-sm'
             onClick={onRemove}
             size='icon'

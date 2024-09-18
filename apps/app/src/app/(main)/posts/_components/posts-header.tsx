@@ -24,7 +24,7 @@ export function PostsHeader() {
     mutationFn: async (...args: Parameters<typeof apiClient.posts.index.post>) => {
       const res = await apiClient.posts.index.post(...args)
       if (res.error) {
-        throw new Error(res.error.value.message)
+        throw new Error('Failed to create post')
       }
       return res
     },
