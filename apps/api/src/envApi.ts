@@ -99,7 +99,7 @@ export const envApi = createEnv({
 
     SERVER_URL: process.env.SERVER_URL,
 
-    API_KEY_ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
+    API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
 
     DEFAULT_DRIVER: process.env.DEFAULT_DRIVER,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
