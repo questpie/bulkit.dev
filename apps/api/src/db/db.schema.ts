@@ -63,6 +63,7 @@ export const postsTable = pgTable(
       .notNull(),
     organizationId: text('organization_id').notNull(),
     deletedAt: timestamp('deleted_at', { mode: 'string' }),
+
     currentVersion: integer('current_version').notNull().default(1),
   },
   (table) => ({
@@ -114,11 +115,6 @@ export const threadPostsTable = pgTable(
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
 
-    /**
-     * If we need to override the post for a specific platform, we can do it by specifying it here.
-     */
-    platform: text('platform', { enum: PLATFORMS }),
-
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
@@ -154,11 +150,6 @@ export const regularPostsTable = pgTable(
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
-
-    /**
-     * If we need to override the post for a specific platform, we can do it by specifying it here.
-     */
-    platform: text('platform', { enum: PLATFORMS }),
 
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
@@ -196,11 +187,6 @@ export const storyPostsTable = pgTable(
     resourceId: text('resource_id'),
     version: integer('version').notNull().default(1),
 
-    /**
-     * If we need to override the post for a specific platform, we can do it by specifying it here.
-     */
-    platform: text('platform', { enum: PLATFORMS }),
-
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
@@ -225,11 +211,6 @@ export const shortPostsTable = pgTable(
     resourceId: text('resource_id'),
     description: text('description').notNull(),
     version: integer('version').notNull().default(1),
-
-    /**
-     * If we need to override the post for a specific platform, we can do it by specifying it here.
-     */
-    platform: text('platform', { enum: PLATFORMS }),
 
     createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),

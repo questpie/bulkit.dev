@@ -4,11 +4,11 @@ import {
   socialMediaIntegrationsTable,
   type InsertChannel,
   type InsertSocialMediaIntegration,
-  type SelectPost,
   type SelectSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
+import type { Post } from '@bulkit/api/modules/posts/dal/posts.dal'
 import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { generateCodeVerifier, type OAuth2RequestError } from 'arctic'
@@ -71,7 +71,7 @@ export abstract class ChannelManager {
         organizationId,
         accessToken,
         refreshToken,
-        tokenExpiry: accessTokenExpiresAt,
+        tokenExpiry: accessTokenExpiresAt ? accessTokenExpiresAt.toISOString() : undefined,
       })
 
       // Upsert the channel
@@ -164,7 +164,7 @@ export abstract class ChannelManager {
         .set({
           accessToken,
           refreshToken: refreshToken ?? integration.refreshToken,
-          tokenExpiry: accessTokenExpiresAt,
+          tokenExpiry: accessTokenExpiresAt ? accessTokenExpiresAt.toISOString() : undefined,
         })
         .where(eq(socialMediaIntegrationsTable.id, integration.id))
         .returning()
@@ -175,11 +175,23 @@ export abstract class ChannelManager {
     }
   }
 
-  public async sendPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void> {}
+  public async publish(channel: ChannelWithIntegration, post: Post): Promise<void> {}
 
   abstract allowedPostTypes: PostType[]
-  abstract postShort(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
-  abstract postStory(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
-  abstract postThread(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
-  abstract postPost(channel: ChannelWithIntegration, post: SelectPost): Promise<void>
+  abstract postShort(
+    channel: ChannelWithIntegration,
+    post: Extract<Post, { type: 'short' }>
+  ): Promise<void>
+  abstract postStory(
+    channel: ChannelWithIntegration,
+    post: Extract<Post, { type: 'story' }>
+  ): Promise<void>
+  abstract postThread(
+    channel: ChannelWithIntegration,
+    post: Extract<Post, { type: 'thread' }>
+  ): Promise<void>
+  abstract postPost(
+    channel: ChannelWithIntegration,
+    post: Extract<Post, { type: 'post' }>
+  ): Promise<void>
 }
