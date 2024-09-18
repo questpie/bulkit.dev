@@ -113,7 +113,13 @@ export const threadPostsTable = pgTable(
     order: integer('order').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
-    createdBy: text('created_by').notNull(), // Added createdBy
+
+    /**
+     * If we need to override the post for a specific platform, we can do it by specifying it here.
+     */
+    platform: text('platform', { enum: PLATFORMS }),
+
+    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
@@ -148,7 +154,13 @@ export const regularPostsTable = pgTable(
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
     version: integer('version').notNull().default(1),
-    createdBy: text('created_by').notNull(), // Added createdBy
+
+    /**
+     * If we need to override the post for a specific platform, we can do it by specifying it here.
+     */
+    platform: text('platform', { enum: PLATFORMS }),
+
+    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
@@ -183,7 +195,13 @@ export const storyPostsTable = pgTable(
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
     version: integer('version').notNull().default(1),
-    createdBy: text('created_by').notNull(), // Added createdBy
+
+    /**
+     * If we need to override the post for a specific platform, we can do it by specifying it here.
+     */
+    platform: text('platform', { enum: PLATFORMS }),
+
+    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
@@ -207,7 +225,13 @@ export const shortPostsTable = pgTable(
     resourceId: text('resource_id'),
     description: text('description').notNull(),
     version: integer('version').notNull().default(1),
-    createdBy: text('created_by').notNull(), // Added createdBy
+
+    /**
+     * If we need to override the post for a specific platform, we can do it by specifying it here.
+     */
+    platform: text('platform', { enum: PLATFORMS }),
+
+    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
   },
   (table) => ({
@@ -398,7 +422,7 @@ export const scheduledPostsTable = pgTable('scheduled_posts', {
   postId: text('post_id').notNull(),
   channelId: text('channel_id').notNull(), // Changed from platform to channelId
   scheduledAt: timestamp('scheduled_at', { mode: 'string' }).notNull(),
-  status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'), // pending, published, failed
+  status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'), // ascheduled, published, failed
   publishedAt: timestamp('published_at', { mode: 'string' }),
   failureReason: text('failure_reason'),
   organizationId: text('organization_id').notNull(),

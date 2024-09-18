@@ -14,6 +14,7 @@ import {
   type WorkerListener,
   type WorkerOptions,
 } from 'bullmq'
+export { UnrecoverableError } from 'bullmq'
 
 export type BaseJobOptions<T extends TSchema = TAnySchema> = {
   name: string
