@@ -10,6 +10,13 @@ export const envApi = createEnv({
       Type.String({ default: generalEnv.PUBLIC_NODE_ENV === 'development' ? 'debug' : 'info' })
     ),
 
+    API_KEY_ENCRYPTION_SECRET: Type.String({
+      minLength: 64,
+      maxLength: 64,
+      description:
+        'The secret key used to encrypt and decrypt API keys. Must be 64 characters long.',
+    }),
+
     // database
     DATABASE_URL: Type.String(),
 
@@ -91,6 +98,8 @@ export const envApi = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
 
     SERVER_URL: process.env.SERVER_URL,
+
+    API_KEY_ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
 
     DEFAULT_DRIVER: process.env.DEFAULT_DRIVER,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
