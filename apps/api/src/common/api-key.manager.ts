@@ -63,4 +63,7 @@ class ApiKeyManager {
   }
 }
 
+/**
+ * Use this instance to encrypt and decrypt API keys for AI services.
+ */
 export const apiKeyManager = new ApiKeyManager()
