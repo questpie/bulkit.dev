@@ -20,13 +20,16 @@ import {
   FormLabel,
   FormMessage,
 } from '@bulkit/ui/components/ui/form'
+import { Separator } from '@bulkit/ui/components/ui/separator'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { Textarea } from '@bulkit/ui/components/ui/textarea'
 import { cn } from '@bulkit/ui/lib'
 import { typeboxResolver } from '@hookform/resolvers/typebox'
 import { Type } from '@sinclair/typebox'
 import { useMutation } from '@tanstack/react-query'
+import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
+import { Fragment } from 'react'
 import { useFieldArray, useForm, useFormContext, type FieldPath } from 'react-hook-form'
 import { LuPlus, LuTrash2 } from 'react-icons/lu'
 
@@ -47,7 +50,9 @@ export function PostFormProvider(props: PostFormProviderProps) {
   const router = useRouter()
   const updateMutation = useMutation({
     mutationFn: apiClient.posts.index.put,
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.error) return
+      form.reset(res.data)
       router.refresh()
     },
   })
@@ -79,7 +84,7 @@ export function RegularPostFields() {
   const lastMediaOrder = mediaArray.fields[mediaArray.fields.length - 1]?.order ?? 1
 
   return (
-    <div className='flex flex-col gap-4 w-full'>
+    <div className='flex flex-col gap-4 w-full px-4'>
       <FormField
         control={form.control}
         name='text'
@@ -152,7 +157,7 @@ export function StoryPostFields() {
   const form = useFormContext<Extract<Post, { type: 'story' }>>()
 
   return (
-    <div className='flex flex-col gap-4 w-full'>
+    <div className='flex flex-col gap-4 w-full px-4'>
       <FormField
         control={form.control}
         name='resource'
@@ -191,7 +196,7 @@ export function ShortPostFields() {
   const form = useFormContext<Extract<Post, { type: 'short' }>>()
 
   return (
-    <div className='flex flex-col gap-4 w-full'>
+    <div className='flex flex-col gap-4 w-full px-4'>
       <FormField
         control={form.control}
         name='description'
@@ -258,32 +263,39 @@ export function ThreadPostFields() {
     <div className='flex flex-col gap-6 w-full'>
       {itemsArray.fields.map((item, index) => {
         return (
-          <div key={item.id} className='border rounded-md p-4'>
-            <ThreadItem name={`items.${index}`} />
-            <div className='flex justify-end'>
-              <Button
-                variant='outline'
-                disabled={itemsArray.fields.length === 1}
-                onClick={() => itemsArray.remove(index)}
-              >
-                <LuTrash2 /> Remove
-              </Button>
+          <Fragment key={item.id}>
+            <div className='rounded-md p-4 '>
+              <ThreadItem name={`items.${index}`} order={index} />
+              <div className='flex justify-end pt-4'>
+                <Button
+                  variant='outline'
+                  disabled={itemsArray.fields.length === 1}
+                  onClick={() => itemsArray.remove(index)}
+                >
+                  <LuTrash2 /> Remove
+                </Button>
+              </div>
             </div>
-          </div>
+            <Separator />
+          </Fragment>
         )
       })}
 
-      <Button
-        variant='outline'
-        onClick={() => itemsArray.append({ text: '', order: lastItemOrder + 1, media: [] })}
-      >
-        <LuPlus /> Add Thread Item
-      </Button>
+      <div className='flex justify-end px-4'>
+        <Button
+          variant='secondary'
+          onClick={() =>
+            itemsArray.append({ text: '', order: lastItemOrder + 1, media: [], id: nanoid() })
+          }
+        >
+          <LuPlus /> Add Thread Item
+        </Button>
+      </div>
     </div>
   )
 }
 
-function ThreadItem(props: { name: FieldPath<Extract<Post, { type: 'thread' }>> }) {
+function ThreadItem(props: { order: number; name: FieldPath<Extract<Post, { type: 'thread' }>> }) {
   const form = useFormContext<Extract<Post, { type: 'thread' }>>()
   const mediaArray = useFieldArray({
     control: form.control,
@@ -299,7 +311,7 @@ function ThreadItem(props: { name: FieldPath<Extract<Post, { type: 'thread' }>> 
         render={({ field }) => {
           return (
             <FormItem>
-              <FormLabel>Thread content</FormLabel>
+              <FormLabel>{props.order + 1}. Thread content</FormLabel>
 
               <FormControl>
                 <Textarea rows={10} {...field} placeholder='Write your thread here' />

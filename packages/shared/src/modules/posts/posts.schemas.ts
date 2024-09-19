@@ -34,6 +34,7 @@ export const ThreadPostSchema = Type.Object({
   type: Type.Literal('thread'),
   items: Type.Array(
     Type.Object({
+      id: Type.String(),
       text: Type.String(),
       order: Type.Number(),
       media: Type.Array(PostMediaSchema),

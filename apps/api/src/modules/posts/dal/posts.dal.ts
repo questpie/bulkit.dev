@@ -154,6 +154,7 @@ export async function getPost(
 
       for (const [order, threads] of threadsOrderMap) {
         items.push({
+          id: threads[0]!.thread_posts.id,
           order: threads[0]!.thread_posts.order,
           text: threads[0]!.thread_posts.text,
           media: await Promise.all(
@@ -318,7 +319,7 @@ export async function createPost(
         ...post,
         type: post.type as 'thread',
 
-        items: [{ order: 1, text: '', media: [] }],
+        items: [{ order: 1, text: '', media: [], id: threadPost.id }],
       } as Extract<Post, { type: 'thread' }>
     }
     case 'story': {
@@ -553,6 +554,7 @@ async function updateThreadPost(
   return {
     ...post,
     items: updatedThreadPosts.map((threadPost) => ({
+      id: threadPost.id,
       order: threadPost.order,
       text: threadPost.text,
       media: insertedMedia

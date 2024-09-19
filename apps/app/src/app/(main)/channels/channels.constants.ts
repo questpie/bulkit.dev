@@ -1,14 +1,19 @@
 import type { Platform } from '@bulkit/shared/constants/db.constants'
-import type { ReactElement } from 'react'
 import type { IconType } from 'react-icons'
-import { FaTiktok, FaXTwitter } from 'react-icons/fa6'
-import { FiFacebook, FiInstagram, FiLinkedin, FiTwitter, FiX, FiYoutube } from 'react-icons/fi'
+import {
+  PiFacebookLogo,
+  PiInstagramLogo,
+  PiLinkedinLogo,
+  PiTiktokLogo,
+  PiXLogo,
+  PiYoutubeLogo,
+} from 'react-icons/pi'
 
 export const CHANNEL_ICON: Record<Platform, IconType> = {
-  x: FaXTwitter,
-  facebook: FiFacebook,
-  instagram: FiInstagram,
-  linkedin: FiLinkedin,
-  tiktok: FaTiktok,
-  youtube: FiYoutube,
+  x: PiXLogo,
+  facebook: PiFacebookLogo,
+  instagram: PiInstagramLogo,
+  linkedin: PiLinkedinLogo,
+  tiktok: PiTiktokLogo,
+  youtube: PiYoutubeLogo,
 }

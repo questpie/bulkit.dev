@@ -66,7 +66,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
 
         <Separator />
 
-        <div className='px-4 py-4 flex flex-col'>{content}</div>
+        <div className=' py-4 flex flex-col'>{content}</div>
       </div>
     </PostFormProvider>
   )
