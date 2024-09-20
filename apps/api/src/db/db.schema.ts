@@ -132,8 +132,14 @@ export const selectThreadPostSchema = createSelectSchema(threadPostsTable)
 // New table for thread media
 export const threadMediaTable = pgTable('thread_media', {
   id: primaryKeyCol('id'),
-  threadPostId: text('thread_post_id').notNull(),
-  resourceId: text('resource_id').notNull(),
+  threadPostId: text('thread_post_id')
+    .references(() => threadPostsTable.id, {
+      onDelete: 'cascade',
+    })
+    .notNull(),
+  resourceId: text('resource_id')
+    .references(() => resourcesTable.id, { onDelete: 'cascade' })
+    .notNull(),
   order: integer('order').notNull(),
 })
 
@@ -168,8 +174,12 @@ export const selectRegularPostSchema = createSelectSchema(regularPostsTable)
 // New table for regular post media
 export const regularPostMediaTable = pgTable('regular_post_media', {
   id: primaryKeyCol('id'),
-  regularPostId: text('regular_post_id').notNull(),
-  resourceId: text('resource_id').notNull(),
+  regularPostId: text('regular_post_id')
+    .references(() => regularPostsTable.id, { onDelete: 'cascade' })
+    .notNull(),
+  resourceId: text('resource_id')
+    .references(() => resourcesTable.id, { onDelete: 'cascade' })
+    .notNull(),
   order: integer('order').notNull(),
 })
 

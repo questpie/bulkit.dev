@@ -2,7 +2,7 @@ import type { PostType } from '@bulkit/shared/constants/db.constants'
 import type { SelectPost } from '@bulkit/api/db/db.schema'
 import { getOAuthProvider } from '@bulkit/api/modules/auth/oauth'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
-import { ChannelManager } from '@bulkit/api/modules/channels/providers/channel-manager.abstract'
+import { ChannelManager } from '@bulkit/api/modules/channels/abstract/channel.manager'
 
 export class XChannelManager extends ChannelManager {
   allowedPostTypes: PostType[] = ['short', 'story', 'post', 'thread']

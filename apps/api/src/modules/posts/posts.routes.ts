@@ -135,3 +135,32 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       },
     }
   )
+  .patch('/:id/publish', async (ctx) => {})
+  .post('/:id/duplicate', async (ctx) => {
+    return await db.transaction(async (trx) => {
+      const post = await getPost(trx, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
+
+      if (!post) {
+        return ctx.error(404, { message: 'Post not found' })
+      }
+
+      const newPost = await createPost(trx, {
+        orgId: ctx.organization!.id,
+        type: post.type,
+        userId: ctx.auth.user.id,
+        name: `Duplicate of ${post.name}`,
+      })
+
+      await updatePost(trx, {
+        orgId: ctx.organization!.id,
+        post: {
+          ...post,
+          id: newPost.id,
+        },
+        userId: ctx.auth.user.id,
+      })
+    })
+  })

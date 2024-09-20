@@ -46,8 +46,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
   return (
     <PostFormProvider defaultValues={postResp.data} className='flex flex-col'>
       <PostDetailHeader post={postResp.data} />
-
-      <div className=''>
+      <div>
         <div className='pb-4 px-4 w-full flex items-center justify-between'>
           <div className='flex items-center gap-4'>
             <div className='flex flex-col gap-2'>
@@ -57,7 +56,6 @@ export default async function PostDetail(props: { params: { id: string } }) {
               </h3>
             </div>
           </div>
-
           <Button variant='secondary'>
             <LuActivity />
             Activity
@@ -66,7 +64,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
 
         <Separator />
 
-        <div className=' py-4 flex flex-col'>{content}</div>
+        <div className='py-4 flex flex-col'>{content}</div>
       </div>
     </PostFormProvider>
   )

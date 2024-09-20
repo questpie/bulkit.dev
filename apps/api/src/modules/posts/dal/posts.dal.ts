@@ -344,13 +344,13 @@ export async function createPost(
       throw new Error(`Unsupported post type: ${opts.type}`)
   }
 }
-
 export async function updatePost(
   db: TransactionLike,
   opts: {
     orgId: string
     userId: string
     post: Post
+    keepVersion?: boolean
   }
 ): Promise<Post | null> {
   const existingPost = await getPost(db, { orgId: opts.orgId, postId: opts.post.id })
@@ -359,19 +359,26 @@ export async function updatePost(
     return null
   }
 
-  // increase post version
-  const updatedPost = await db
-    .update(postsTable)
-    .set({
-      currentVersion: existingPost.currentVersion + 1,
-    })
-    .where(eq(postsTable.id, opts.post.id))
-    .returning({
-      currentVersion: postsTable.currentVersion,
-    })
-    .then((res) => res[0]!)
+  let updatedPost: { currentVersion: number }
 
-  // update details
+  if (opts.keepVersion) {
+    // Keep the current version
+    updatedPost = { currentVersion: existingPost.currentVersion }
+  } else {
+    // Increase post version
+    updatedPost = await db
+      .update(postsTable)
+      .set({
+        currentVersion: existingPost.currentVersion + 1,
+      })
+      .where(eq(postsTable.id, opts.post.id))
+      .returning({
+        currentVersion: postsTable.currentVersion,
+      })
+      .then((res) => res[0]!)
+  }
+
+  // Update details
   const updatedDetails = await db
     .insert(postDetailsTable)
     .values({
@@ -390,13 +397,13 @@ export async function updatePost(
 
   switch (opts.post.type) {
     case 'short':
-      return await updateShortPost(db, opts as any)
+      return await updateShortPost(db, { ...opts, keepVersion: opts.keepVersion } as any)
     case 'post':
-      return await updateRegularPost(db, opts as any)
+      return await updateRegularPost(db, { ...opts, keepVersion: opts.keepVersion } as any)
     case 'thread':
-      return await updateThreadPost(db, opts as any)
+      return await updateThreadPost(db, { ...opts, keepVersion: opts.keepVersion } as any)
     case 'story':
-      return await updateStoryPost(db, opts as any)
+      return await updateStoryPost(db, { ...opts, keepVersion: opts.keepVersion } as any)
     default:
       throw new Error(`Unsupported post type: ${(opts.post as any).type}`)
   }
@@ -408,9 +415,18 @@ async function updateShortPost(
     orgId: string
     userId: string
     post: Extract<Post, { type: 'short' }>
+    keepVersion?: boolean
   }
 ): Promise<Post> {
-  const { post, userId } = opts
+  const { post, userId, keepVersion } = opts
+
+  if (keepVersion) {
+    await db
+      .delete(shortPostsTable)
+      .where(
+        and(eq(shortPostsTable.postId, post.id), eq(shortPostsTable.version, post.currentVersion))
+      )
+  }
 
   const updatedShortPost = await db
     .insert(shortPostsTable)
@@ -437,9 +453,21 @@ async function updateRegularPost(
     orgId: string
     userId: string
     post: Extract<Post, { type: 'post' }>
+    keepVersion?: boolean
   }
 ): Promise<Post> {
-  const { post, userId } = opts
+  const { post, userId, keepVersion } = opts
+
+  if (keepVersion) {
+    await db
+      .delete(regularPostsTable)
+      .where(
+        and(
+          eq(regularPostsTable.postId, post.id),
+          eq(regularPostsTable.version, post.currentVersion)
+        )
+      )
+  }
 
   const updatedRegularPost = await db
     .insert(regularPostsTable)
@@ -452,10 +480,17 @@ async function updateRegularPost(
     .returning()
     .then((res) => res[0]!)
 
-  // fix order
+  // Fix order
   const sortedMedia = post.media.sort((a, b) => a.order - b.order)
   for (let i = 0; i < sortedMedia.length; i++) {
     sortedMedia[i]!.order = i + 1
+  }
+
+  // Delete existing media if keeping version
+  if (keepVersion) {
+    await db
+      .delete(regularPostMediaTable)
+      .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
   }
 
   // Insert new media
@@ -475,8 +510,6 @@ async function updateRegularPost(
     resourceByOrderMap.set(m.order, m.resource)
   }
 
-  // just insert new media there is no need to handle _create, we just need to fix the order if not right
-
   return {
     ...post,
     text: updatedRegularPost.text,
@@ -494,11 +527,12 @@ async function updateThreadPost(
     orgId: string
     userId: string
     post: Extract<Post, { type: 'thread' }>
+    keepVersion?: boolean
   }
 ): Promise<Post> {
-  const { post, userId } = opts
+  const { post, userId, keepVersion } = opts
 
-  // fix order
+  // Fix order
   const sortedItems = post.items.sort((a, b) => a.order - b.order)
   for (let i = 0; i < sortedItems.length; i++) {
     sortedItems[i]!.order = i + 1
@@ -512,6 +546,14 @@ async function updateThreadPost(
     for (let i = 0; i < sortedMedia.length; i++) {
       sortedMedia[i]!.order = i + 1
     }
+  }
+
+  if (keepVersion) {
+    await db
+      .delete(threadPostsTable)
+      .where(
+        and(eq(threadPostsTable.postId, post.id), eq(threadPostsTable.version, post.currentVersion))
+      )
   }
 
   // Insert new thread version
@@ -574,9 +616,18 @@ async function updateStoryPost(
     orgId: string
     userId: string
     post: Extract<Post, { type: 'story' }>
+    keepVersion?: boolean
   }
 ): Promise<Extract<Post, { type: 'story' }>> {
-  const { post, userId } = opts
+  const { post, userId, keepVersion } = opts
+
+  if (keepVersion) {
+    await db
+      .delete(storyPostsTable)
+      .where(
+        and(eq(storyPostsTable.postId, post.id), eq(storyPostsTable.version, post.currentVersion))
+      )
+  }
 
   await db
     .insert(storyPostsTable)
