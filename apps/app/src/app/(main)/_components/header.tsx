@@ -1,4 +1,5 @@
 import { Button, type ButtonProps } from '@bulkit/ui/components/ui/button'
+import { cn } from '@bulkit/ui/lib'
 import type { PropsWithChildren, ReactNode } from 'react'
 
 type HeaderProps = {
@@ -27,7 +28,11 @@ export function HeaderButton(
   }
 ) {
   return (
-    <Button {...props} size='default' className='w-9 px-0 py-0 md:px-4 md:py-2 md:w-auto'>
+    <Button
+      {...props}
+      size='default'
+      className={cn('w-9 px-0 py-0 md:px-4 md:py-2 md:w-auto', props.className)}
+    >
       {props.icon}
       {props.label && <span className='hidden md:inline'>{props.label}</span>}
     </Button>

@@ -68,7 +68,6 @@ export function PostFormProvider(props: PostFormProviderProps) {
     mutationFn: apiClient.posts.index.put,
     onSuccess: (res) => {
       if (res.error) return
-      console.log(res.data)
       form.reset(res.data)
       router.refresh()
     },

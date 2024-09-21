@@ -64,7 +64,7 @@ export function Sidebar() {
           </nav>
         </div>
 
-        <div className='flex gap-4 md:flex-row flex-col justify-around items-center border-t py-4'>
+        <div className='flex gap-4 md:flex-row flex-col justify-around items-center border-t py-2 h-16'>
           {/* <Button size='icon' variant='outline'>
           <LuUser />
         </Button> */}

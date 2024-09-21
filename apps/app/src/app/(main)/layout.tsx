@@ -32,7 +32,7 @@ export default async function MainLayout(props: PropsWithChildren) {
 
   return (
     <OrganizationProvider organization={organization}>
-      <div className='flex border-x xl:border-border h-screen max-w-screen-xl w-full mx-auto'>
+      <div className='flex border-x xl:border-border h-screen max-w-screen-2xl w-full mx-auto'>
         <Sidebar />
         <main className='flex flex-1 h-screen flex-col items-center justify-between relative'>
           <div className='overflow-auto w-full h-screen pt-24 sm:pb-4 pb-16'>{props.children}</div>
