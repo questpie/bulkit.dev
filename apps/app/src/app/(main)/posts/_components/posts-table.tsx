@@ -27,7 +27,7 @@ export function PostsTable(props: { posts: Post[] }) {
               <TableHead className='pl-4'>Name</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Version</TableHead>
+              {/* <TableHead>Version</TableHead> */}
               <TableHead>Created At</TableHead>
               <TableHead>{/* Actions */}</TableHead>
             </TableRow>
@@ -74,7 +74,7 @@ export function PostTableRow(props: PostTableRowProps) {
           <span className='capitalize'>{props.post.type.toLowerCase()}</span>
         </div>
       </TableCell>
-      <TableCell>v{props.post.currentVersion}</TableCell>
+      {/* <TableCell>v{props.post.currentVersion}</TableCell> */}
 
       <TableCell suppressHydrationWarning>
         {new Date(props.post.createdAt).toLocaleDateString()}
@@ -114,7 +114,7 @@ function PostCard({ post }: PostTableRowProps) {
             <div className='flex items-center gap-2 text-xs text-muted-foreground'>
               <span className='capitalize'>{post.type.toLowerCase()}</span>
               <span>•</span>
-              <span>v{post.currentVersion}</span>
+              {/* <span>v{post.currentVersion}</span> */}
               <span>•</span>
               <span suppressHydrationWarning>{new Date(post.createdAt).toLocaleDateString()}</span>
             </div>

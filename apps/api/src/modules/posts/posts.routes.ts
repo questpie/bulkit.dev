@@ -63,6 +63,30 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       }),
     }
   )
+  .get(
+    '/:id',
+    async (ctx) => {
+      const post = await ctx.postService.getById(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
+
+      if (!post) {
+        return ctx.error(404, { message: 'Post not found' })
+      }
+
+      return post
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        404: t.Object({ message: t.String() }),
+        200: PostSchema,
+      },
+    }
+  )
   .post(
     '/',
     async (ctx) => {
@@ -81,29 +105,6 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         type: StringLiteralEnum(POST_TYPE),
       }),
       response: PostSchema,
-    }
-  )
-  .get(
-    '/:id',
-    async (ctx) => {
-      const post = await ctx.postService.getById(ctx.db, {
-        orgId: ctx.organization!.id,
-        postId: ctx.params.id,
-      })
-      if (!post) {
-        return ctx.error(404, { message: 'Post not found' })
-      }
-
-      return post
-    },
-    {
-      params: t.Object({
-        id: t.String(),
-      }),
-      response: {
-        404: t.Object({ message: t.String() }),
-        200: PostSchema,
-      },
     }
   )
   .put(

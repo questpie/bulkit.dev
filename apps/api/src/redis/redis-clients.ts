@@ -6,7 +6,7 @@ import Elysia from 'elysia'
 /**
  * Specify your redis clients here
  */
-const redisManager = new RedisManager({
+export const redisManager = new RedisManager({
   default: envApi.REDIS_URL,
   queue: {
     ...RedisManager.parseRedisUrl(envApi.REDIS_URL),

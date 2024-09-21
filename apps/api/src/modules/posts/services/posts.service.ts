@@ -346,9 +346,7 @@ export class PostsService {
         description: opts.post.description,
         resourceId: opts.post.resource?.id ?? null,
       })
-      .where(
-        and(eq(shortPostsTable.postId, opts.post.id), eq(postsTable.organizationId, opts.orgId))
-      )
+      .where(and(eq(shortPostsTable.postId, opts.post.id)))
       .returning()
       .then((res) => res[0]!)
 

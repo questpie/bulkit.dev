@@ -1,6 +1,6 @@
 'use client'
 
-import type { Post } from '@bulkit/api/modules/posts/dal/posts.dal'
+import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { Header } from '@bulkit/app/app/(main)/_components/header'
 import { cn } from '@bulkit/transactional/style-utils'
 import { Button } from '@bulkit/ui/components/ui/button'
@@ -23,7 +23,6 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
           >
             {post.status}{' '}
           </span>{' '}
-          • <span>v{post.currentVersion} •</span>
         </>
       }
     >
