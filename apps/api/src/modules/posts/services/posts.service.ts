@@ -10,7 +10,6 @@ import {
   threadPostsTable,
   type InsertThreadMedia,
   type SelectPost,
-  type SelectRegularPostMedia,
 } from '@bulkit/api/db/db.schema'
 import { ioc } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
@@ -80,6 +79,7 @@ export class PostsService {
             eq(regularPostsTable.id, regularPostMediaTable.regularPostId)
           )
           .leftJoin(resourcesTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
+          .orderBy(asc(regularPostMediaTable.order))
 
         if (!regularPosts.length) {
           return null
@@ -93,7 +93,8 @@ export class PostsService {
               .filter((p) => !!p.resources && !!p.regular_post_media)
               .map(async (p) => {
                 return {
-                  ...(p.regular_post_media as SelectRegularPostMedia),
+                  id: p.regular_post_media!.id,
+                  order: p.regular_post_media!.order,
                   resource: {
                     id: p.resources!.id,
                     location: p.resources!.location,
@@ -102,7 +103,7 @@ export class PostsService {
                     isExternal: p.resources!.isExternal,
                     url: await getResourcePublicUrl(p.resources!),
                   },
-                }
+                } satisfies Extract<Post, { type: 'post' }>['media'][number]
               })
           ),
           text: regularPosts[0]!.regular_posts.text,
@@ -387,30 +388,43 @@ export class PostsService {
       .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
 
     // Insert new media
-    const insertedMedia = await db
-      .insert(regularPostMediaTable)
-      .values(
-        sortedMedia.map((m) => ({
-          regularPostId: updatedRegularPost.id,
-          order: m.order,
-          resourceId: m.resource.id,
-        }))
-      )
-      .returning()
-
-    const resourceByOrderMap = new Map<number, any>()
-    for (const m of sortedMedia) {
-      resourceByOrderMap.set(m.order, m.resource)
+    if (sortedMedia.length) {
+      await db
+        .insert(regularPostMediaTable)
+        .values(
+          sortedMedia.map((m) => ({
+            regularPostId: updatedRegularPost.id,
+            order: m.order,
+            resourceId: m.resource.id,
+          }))
+        )
+        .returning()
     }
+
+    const insertedMedia = await db
+      .select()
+      .from(regularPostMediaTable)
+      .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
+      .orderBy(asc(regularPostMediaTable.order))
+      .innerJoin(resourcesTable, eq(resourcesTable.id, regularPostMediaTable.resourceId))
 
     return {
       ...post,
       text: updatedRegularPost.text,
-      media: insertedMedia.map((m) => ({
-        id: m.id,
-        order: m.order,
-        resource: resourceByOrderMap.get(m.order)!,
-      })),
+      media: await Promise.all(
+        insertedMedia.map(async (m) => ({
+          id: m.regular_post_media.id,
+          order: m.regular_post_media.order,
+          resource: {
+            id: m.resources.id,
+            createdAt: m.resources.createdAt,
+            isExternal: m.resources.isExternal,
+            location: m.resources.location,
+            type: m.resources.type,
+            url: await getResourcePublicUrl(m.resources),
+          },
+        }))
+      ),
     }
   }
 
@@ -475,7 +489,9 @@ export class PostsService {
       }
     }
 
-    const insertedMedia = await db.insert(threadMediaTable).values(mediaPayload).returning()
+    const insertedMedia = mediaPayload.length
+      ? await db.insert(threadMediaTable).values(mediaPayload).returning()
+      : []
 
     return {
       ...post,

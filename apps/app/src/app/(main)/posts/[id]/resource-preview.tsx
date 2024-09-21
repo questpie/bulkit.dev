@@ -1,4 +1,4 @@
-import type { Resource } from '@bulkit/api/modules/resources/resources.dal'
+import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import { cn } from '@bulkit/ui/lib'
@@ -67,7 +67,7 @@ export function ResourcePreview({
       <Card className={cn('w-24 h-24 group  relative', className)}>
         {renderThumbnail()}
 
-        <div className='absolute inset-0 flex items-center rounded-xl justify-center bg-background opacity-0 cursor-pointer hover:opacity-50 transition-opacity z-10' />
+        {/* <div className='absolute inset-0 flex items-center rounded-xl justify-center bg-background opacity-0 cursor-pointer hover:opacity-50 transition-opacity z-10' /> */}
 
         {onRemove && (
           <Button
