@@ -13,7 +13,6 @@ export const PostDetailsSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
   status: StringLiteralEnum(POST_STATUS),
-  currentVersion: Type.Number(),
   type: StringLiteralEnum(POST_TYPE),
   createdAt: Type.String(),
 })

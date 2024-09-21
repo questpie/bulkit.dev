@@ -1,22 +1,23 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import {
-  createResources,
-  getResourceById,
-  getResourcesForOrg,
-} from '@bulkit/api/modules/resources/resources.dal'
+import { resourcesServicePlugin } from '@bulkit/api/modules/resources/services/resources.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
 })
+  .use(databasePlugin())
+  .use(resourcesServicePlugin())
   .use(organizationMiddleware)
   .get(
     '/',
     async (ctx) => {
-      return getResourcesForOrg(db, { organizationId: ctx.organization!.id, pagination: ctx.query })
+      return ctx.resourcesService.getAll(ctx.db, {
+        organizationId: ctx.organization!.id,
+        pagination: ctx.query,
+      })
     },
     {
       query: t.Composite([PaginationSchema]),
@@ -25,7 +26,7 @@ export const resourceRoutes = new Elysia({
   .get(
     '/:id',
     async (ctx) => {
-      const r = await getResourceById(db, {
+      const r = await ctx.resourcesService.getById(ctx.db, {
         id: ctx.params.id,
         organizationId: ctx.organization!.id,
       })
@@ -47,9 +48,9 @@ export const resourceRoutes = new Elysia({
   .post(
     '/',
     async (ctx) => {
-      return db
+      return ctx.db
         .transaction(async (trx) => {
-          return createResources(trx, {
+          return ctx.resourcesService.create(trx, {
             organizationId: ctx.organization!.id,
             files: ctx.body.files,
           })

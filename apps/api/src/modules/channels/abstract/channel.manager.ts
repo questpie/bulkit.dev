@@ -1,4 +1,4 @@
-import { db, type TransactionLike } from '@bulkit/api/db/db.client'
+import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
   socialMediaIntegrationsTable,
@@ -7,8 +7,8 @@ import {
   type SelectSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
 import type { OAuth2Provider } from '@bulkit/api/modules/auth/oauth'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/channels.dal'
-import type { Post } from '@bulkit/api/modules/posts/dal/posts.dal'
+import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
+import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { generateCodeVerifier, type OAuth2RequestError } from 'arctic'
@@ -26,6 +26,7 @@ export abstract class ChannelManager {
   }
 
   async getAuthorizationUrl(
+    db: TransactionLike,
     organizationId: string,
     cookie: Record<string, Cookie<string | undefined>>,
     redirectTo?: string
@@ -45,6 +46,7 @@ export abstract class ChannelManager {
   }
 
   async handleCallback(
+    db: TransactionLike,
     code: string,
     organizationId: string,
     cookie: Record<string, Cookie<string | undefined>>
@@ -136,7 +138,10 @@ export abstract class ChannelManager {
     return integration!
   }
 
-  protected async refreshAccessToken(integrationId: string): Promise<SelectSocialMediaIntegration> {
+  protected async refreshAccessToken(
+    db: TransactionLike,
+    integrationId: string
+  ): Promise<SelectSocialMediaIntegration> {
     if (!this.oauthProvider.refreshAccessToken) {
       throw new Error('This provider does not support refreshing access tokens')
     }

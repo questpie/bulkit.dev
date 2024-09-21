@@ -1,14 +1,10 @@
-import { BearerSchema } from '@bulkit/api/common/common.schemas'
-import { db } from '@bulkit/api/db/db.client'
-import { getSuperAdmin } from '@bulkit/api/modules/auth/auth.dal'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import {
-  getOrganizationById,
-  getUserOrganization,
-} from '@bulkit/api/modules/organizations/organizations.dal'
+import { authServicePlugin } from '@bulkit/api/modules/auth/serivces/auth.service'
+import { organizationsServicePlugin } from '@bulkit/api/modules/organizations/services/organizations.service'
 import type { UserRole } from '@bulkit/shared/constants/db.constants'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
-import Elysia, { t } from 'elysia'
+import Elysia from 'elysia'
 
 // Constants
 
@@ -19,7 +15,10 @@ export const organizationMiddleware = new Elysia({
   name: 'organization.middleware',
 })
   .use(protectedMiddleware)
-  .resolve(async ({ headers, auth }) => {
+  .use(databasePlugin())
+  .use(authServicePlugin())
+  .use(organizationsServicePlugin())
+  .resolve(async ({ headers, authService, organizationsService, db, auth }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
 
     if (!organizationId) {
@@ -27,10 +26,10 @@ export const organizationMiddleware = new Elysia({
     }
 
     // check if user isn't a superAdmin
-    const superAdmin = await getSuperAdmin(db, auth.user.id)
+    const superAdmin = await authService.getSuperAdmin(db, auth.user.id)
 
     if (superAdmin) {
-      const organization = await getOrganizationById(db, organizationId)
+      const organization = await organizationsService.getById(db, organizationId)
 
       if (!organization) {
         return {
@@ -47,7 +46,7 @@ export const organizationMiddleware = new Elysia({
     }
 
     return {
-      organization: await getUserOrganization(db, {
+      organization: await organizationsService.getForUser(db, {
         organizationId,
         userId: auth.user.id,
       }),

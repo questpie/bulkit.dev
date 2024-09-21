@@ -1,5 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import {
   insertOrganizationInviteSchema,
   insertOrganizationSchema,
@@ -22,9 +22,10 @@ export const organizationRoutes = new Elysia({
   },
 })
   .use(protectedMiddleware)
+  .use(databasePlugin())
   .post(
     '/',
-    async ({ body, auth }) => {
+    async ({ body, db, auth }) => {
       return db.transaction(async (trx) => {
         const organization = await trx
           .insert(organizationsTable)
@@ -57,7 +58,7 @@ export const organizationRoutes = new Elysia({
   )
   .get(
     '/',
-    async ({ auth, query }) => {
+    async ({ auth, db, query }) => {
       const limit = Number(query.limit) || 10
       const cursor = query.cursor ? Number(query.cursor) : 0
       const userOrganizations = await db
@@ -102,7 +103,7 @@ export const organizationRoutes = new Elysia({
   )
   .get(
     '/:id',
-    async ({ params, auth, error }) => {
+    async ({ params, auth, db, error }) => {
       const organization = await db
         .select()
         .from(organizationsTable)
@@ -139,7 +140,7 @@ export const organizationRoutes = new Elysia({
   )
   .post(
     '/:id/invite',
-    async ({ params, body, auth, error }) => {
+    async ({ params, body, db, auth, error }) => {
       const userOrg = await db
         .select()
         .from(userOrganizationsTable)
@@ -180,7 +181,7 @@ export const organizationRoutes = new Elysia({
   )
   .post(
     '/invite/:token/accept',
-    async ({ params, auth }) => {
+    async ({ params, db, auth }) => {
       const invite = await db
         .select()
         .from(organizationInvitesTable)
@@ -216,7 +217,7 @@ export const organizationRoutes = new Elysia({
   )
   .get(
     '/invites',
-    async ({ auth }) => {
+    async ({ auth, db }) => {
       const invites = await db
         .select({
           id: organizationInvitesTable.id,

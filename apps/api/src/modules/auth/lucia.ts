@@ -1,4 +1,4 @@
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { sessionsTable, usersTable } from '@bulkit/api/db/db.schema'
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { generalEnv } from '@bulkit/shared/env/general.env'
@@ -6,7 +6,11 @@ import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
 import { Google } from 'arctic'
 import { Lucia } from 'lucia'
 
-const adapter = new DrizzlePostgreSQLAdapter(db, sessionsTable, usersTable)
+const adapter = new DrizzlePostgreSQLAdapter(
+  databasePlugin().decorator.db,
+  sessionsTable,
+  usersTable
+)
 
 export const lucia = new Lucia(adapter, {
   sessionCookie: {

@@ -20,14 +20,86 @@ import {
   POST_TYPE,
   SCHEDULED_POST_STATUS,
   USER_ROLE,
+  WORKFLOW_STEP_TYPES,
 } from '../../../../packages/shared/src/constants/db.constants'
+import type { WorkflowStepConfig } from '@bulkit/shared/modules/workflows/workflows.constants'
 
+/**
+ * Primary key generates a unique id using cuid2 thats 16
+ */
 const primaryKeyCol = (name = 'id') =>
   text(name)
     .$default(() => cuid2.createId())
     .primaryKey()
 
-const verificationTokenCuid = cuid2.init({ length: 63 })
+const longCuid = cuid2.init({ length: 64 })
+
+const tokenCol = (name = 'token') => text(name).$default(() => longCuid())
+
+// Workflows
+export const workflowsTable = pgTable('workflows', {
+  id: primaryKeyCol(),
+  name: text('name').notNull(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
+})
+
+// Workflow steps table with parentStepId
+export const workflowStepsTable = pgTable('workflow_steps', {
+  id: primaryKeyCol(),
+  workflowId: text('workflow_id')
+    .notNull()
+    .references(() => workflowsTable.id),
+  parentStepId: text('parent_step_id'),
+  type: text('type', { enum: WORKFLOW_STEP_TYPES }).notNull(),
+  config: jsonb('config').$type<WorkflowStepConfig>().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
+})
+
+// Workflow executions table
+export const workflowExecutionsTable = pgTable('workflow_executions', {
+  id: primaryKeyCol(),
+  workflowId: text('workflow_id')
+    .notNull()
+    .references(() => workflowsTable.id),
+  status: text('status', { enum: ['pending', 'in_progress', 'completed', 'failed'] }).notNull(),
+  currentStepId: text('current_step_id').references(() => workflowStepsTable.id),
+  startedAt: timestamp('started_at', { mode: 'string' }),
+  completedAt: timestamp('completed_at', { mode: 'string' }),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string' })
+    .defaultNow()
+    .$onUpdate(() => new Date().toISOString())
+    .notNull(),
+})
+
+// Reposts table
+export const repostsTable = pgTable('reposts', {
+  id: primaryKeyCol(),
+  originalPostId: text('original_post_id')
+    .notNull()
+    .references(() => postsTable.id),
+  repostedPostId: text('reposted_post_id')
+    .notNull()
+    .references(() => postsTable.id),
+  workflowStepId: text('workflow_step_id')
+    .notNull()
+    .references(() => workflowStepsTable.id),
+  channelId: text('channel_id')
+    .notNull()
+    .references(() => channelsTable.id),
+  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+})
 
 // Resources table for media assets
 export type ResourceType = 'image' | 'video' | 'audio'
@@ -55,16 +127,15 @@ export const postsTable = pgTable(
   'posts',
   {
     id: primaryKeyCol('id'),
+    name: text('name').notNull(),
+    status: text('status', { enum: POST_STATUS }).notNull(),
+    organizationId: text('organization_id').notNull(),
     type: text('type', { enum: POST_TYPE }).notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'string' })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
-    organizationId: text('organization_id').notNull(),
-    deletedAt: timestamp('deleted_at', { mode: 'string' }),
-
-    currentVersion: integer('current_version').notNull().default(1),
   },
   (table) => ({
     orgIdIdx: index().on(table.organizationId),
@@ -77,50 +148,24 @@ export const selectPostSchema = createSelectSchema(postsTable)
 export type SelectPost = typeof postsTable.$inferSelect
 export type InsertPost = typeof postsTable.$inferInsert
 
-export const postDetailsTable = pgTable(
-  'post_details',
-  {
-    id: primaryKeyCol('id'),
-    postId: text('post_id')
-      .notNull()
-      .references(() => postsTable.id),
-    name: text('name').notNull(),
-    status: text('status', { enum: POST_STATUS }).notNull(),
-    createdAt: timestamp('changed_at', { mode: 'string' }).defaultNow().notNull(),
-    createdBy: text('changed_by')
-      .notNull()
-      .references(() => usersTable.id),
-    version: integer('version').notNull().default(1),
-  },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-    versionIdx: index().on(table.version),
-    statusIdx: index().on(table.status),
-  })
-)
-
-export const insertPostDetailSchema = createInsertSchema(postDetailsTable)
-export const selectPostDetailSchema = createSelectSchema(postDetailsTable)
-
-export type SelectPostDetail = typeof postDetailsTable.$inferSelect
-export type InsertPostDetail = typeof postDetailsTable.$inferInsert
-
 // New table for thread posts
 export const threadPostsTable = pgTable(
   'thread_posts',
   {
     id: primaryKeyCol('id'),
-    postId: text('post_id').notNull(),
+    postId: text('post_id')
+      .references(() => postsTable.id)
+      .notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
-    version: integer('version').notNull().default(1),
-
-    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
-    versionIdx: index().on(table.version),
+    orderIdx: uniqueIndex().on(table.order, table.postId),
   })
 )
 
@@ -130,18 +175,30 @@ export const insertThreadPostSchema = createInsertSchema(threadPostsTable)
 export const selectThreadPostSchema = createSelectSchema(threadPostsTable)
 
 // New table for thread media
-export const threadMediaTable = pgTable('thread_media', {
-  id: primaryKeyCol('id'),
-  threadPostId: text('thread_post_id')
-    .references(() => threadPostsTable.id, {
-      onDelete: 'cascade',
-    })
-    .notNull(),
-  resourceId: text('resource_id')
-    .references(() => resourcesTable.id, { onDelete: 'cascade' })
-    .notNull(),
-  order: integer('order').notNull(),
-})
+export const threadMediaTable = pgTable(
+  'thread_media',
+  {
+    id: primaryKeyCol('id'),
+    threadPostId: text('thread_post_id')
+      .references(() => threadPostsTable.id, {
+        onDelete: 'cascade',
+      })
+      .notNull(),
+    resourceId: text('resource_id')
+      .references(() => resourcesTable.id, { onDelete: 'cascade' })
+      .notNull(),
+    order: integer('order').notNull(),
+
+    createAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
+  },
+  (table) => ({
+    treadPostIdIdx: index().on(table.threadPostId),
+    orderIdx: uniqueIndex().on(table.threadPostId, table.order),
+  })
+)
 
 export type SelectThreadMedia = typeof threadMediaTable.$inferSelect
 export type InsertThreadMedia = typeof threadMediaTable.$inferInsert
@@ -155,14 +212,14 @@ export const regularPostsTable = pgTable(
     id: primaryKeyCol('id'),
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
-    version: integer('version').notNull().default(1),
 
-    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
-    versionIdx: index().on(table.version),
   })
 )
 
@@ -172,16 +229,28 @@ export const insertRegularPostSchema = createInsertSchema(regularPostsTable)
 export const selectRegularPostSchema = createSelectSchema(regularPostsTable)
 
 // New table for regular post media
-export const regularPostMediaTable = pgTable('regular_post_media', {
-  id: primaryKeyCol('id'),
-  regularPostId: text('regular_post_id')
-    .references(() => regularPostsTable.id, { onDelete: 'cascade' })
-    .notNull(),
-  resourceId: text('resource_id')
-    .references(() => resourcesTable.id, { onDelete: 'cascade' })
-    .notNull(),
-  order: integer('order').notNull(),
-})
+export const regularPostMediaTable = pgTable(
+  'regular_post_media',
+  {
+    id: primaryKeyCol('id'),
+    regularPostId: text('regular_post_id')
+      .references(() => regularPostsTable.id, { onDelete: 'cascade' })
+      .notNull(),
+    resourceId: text('resource_id')
+      .references(() => resourcesTable.id, { onDelete: 'cascade' })
+      .notNull(),
+    order: integer('order').notNull(),
+
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
+  },
+  (table) => ({
+    regularPostIdIdx: index().on(table.regularPostId),
+    orderIdx: uniqueIndex().on(table.regularPostId, table.order),
+  })
+)
 
 export type SelectRegularPostMedia = typeof regularPostMediaTable.$inferSelect
 export type InsertRegularPostMedia = typeof regularPostMediaTable.$inferInsert
@@ -195,15 +264,14 @@ export const storyPostsTable = pgTable(
     id: primaryKeyCol('id'),
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
-    version: integer('version').notNull().default(1),
 
-    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' }).$onUpdate(() =>
+      new Date().toISOString()
+    ),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
-    resourceIdIdx: index().on(table.resourceId),
-    versionIdx: index().on(table.version),
   })
 )
 
@@ -220,15 +288,15 @@ export const shortPostsTable = pgTable(
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
     description: text('description').notNull(),
-    version: integer('version').notNull().default(1),
 
-    createdBy: text('created_by').notNull(),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' }).$onUpdate(() =>
+      new Date().toISOString()
+    ),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
     resourceIdIdx: index().on(table.resourceId),
-    versionIdx: index().on(table.version),
   })
 )
 
@@ -355,9 +423,7 @@ export const selectOrganizationSchema = createSelectSchema(organizationsTable)
 
 // Add this new table definition
 export const organizationInvitesTable = pgTable('organization_invites', {
-  id: text('id')
-    .primaryKey()
-    .$default(() => verificationTokenCuid()),
+  id: tokenCol('id').primaryKey(),
   organizationId: text('organization_id').notNull(),
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
@@ -408,16 +474,77 @@ export const insertChannelSchema = createInsertSchema(channelsTable)
 export const selectChannelSchema = createSelectSchema(channelsTable)
 
 // Scheduled Posts table (to handle the relationship between posts and platforms)
-export const scheduledPostsTable = pgTable('scheduled_posts', {
-  id: primaryKeyCol(),
-  postId: text('post_id').notNull(),
-  channelId: text('channel_id').notNull(), // Changed from platform to channelId
-  scheduledAt: timestamp('scheduled_at', { mode: 'string' }).notNull(),
-  status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'), // ascheduled, published, failed
-  publishedAt: timestamp('published_at', { mode: 'string' }),
-  failureReason: text('failure_reason'),
-  organizationId: text('organization_id').notNull(),
-})
+export const scheduledPostsTable = pgTable(
+  'scheduled_posts',
+  {
+    id: primaryKeyCol(),
+    postId: text('post_id').notNull(),
+    channelId: text('channel_id')
+      .references(() => channelsTable.id)
+      .notNull(),
+    scheduledAt: timestamp('scheduled_at', { mode: 'string' }).notNull(),
+    status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'),
+    publishedAt: timestamp('published_at', { mode: 'string' }),
+    failureReason: text('failure_reason'),
+    organizationId: text('organization_id')
+      .references(() => organizationsTable.id)
+      .notNull(),
+  },
+  (table) => ({
+    postIdIdx: index().on(table.postId),
+    channelIdIdx: index().on(table.channelId),
+    statusIdx: index().on(table.status),
+    orgIdIdx: index().on(table.organizationId),
+  })
+)
+
+// New table for metrics history
+export const postMetricsHistoryTable = pgTable(
+  'post_metrics_history',
+  {
+    id: primaryKeyCol(),
+    scheduledPostId: text('scheduled_post_id')
+      .notNull()
+      .references(() => scheduledPostsTable.id),
+
+    /** The number of likes or reactions the post has received */
+    likes: integer('likes').notNull(),
+
+    /** The number of comments or replies made on the post */
+    comments: integer('comments').notNull(),
+
+    /** The number of times the post has been shared by users */
+    shares: integer('shares').notNull(),
+
+    /* The total number of times the post has been displayed, including multiple views by the same user */
+    impressions: integer('impressions').notNull(),
+
+    /* The number of unique users who have seen the post, this may be hard to calculate */
+    reach: integer('reach').notNull(),
+
+    /** The number of times users have clicked on any links within the post */
+    clicks: integer('clicks').notNull(),
+
+    createdAt: timestamp('timestamp', { mode: 'string' }).notNull(),
+  },
+  (table) => ({
+    scheduledPostIdIdx: index().on(table.scheduledPostId),
+    craetedAtIdx: index().on(table.createdAt),
+  })
+)
+
+export type SelectPostMetricsHistory = typeof postMetricsHistoryTable.$inferSelect
+export type InsertPostMetricsHistory = typeof postMetricsHistoryTable.$inferInsert
+export const insertPostMetricsHistorySchema = createInsertSchema(postMetricsHistoryTable)
+export const selectPostMetricsHistorySchema = createSelectSchema(postMetricsHistoryTable)
+
+// Add relations for the new table
+export const postMetricsHistoryRelations = relations(postMetricsHistoryTable, ({ one }) => ({
+  scheduledPost: one(scheduledPostsTable, {
+    fields: [postMetricsHistoryTable.scheduledPostId],
+    references: [scheduledPostsTable.id],
+  }),
+}))
 
 export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
 export type InsertScheduledPost = typeof scheduledPostsTable.$inferInsert
@@ -471,7 +598,6 @@ export const postsRelations = relations(postsTable, ({ one, many }) => ({
   scheduledPosts: many(scheduledPostsTable),
   comments: many(commentsTable),
 }))
-
 export const commentsRelations = relations(commentsTable, ({ one }) => ({
   post: one(postsTable, {
     fields: [commentsTable.postId],
@@ -502,7 +628,7 @@ export const channelsRelations = relations(channelsTable, ({ one, many }) => ({
 }))
 
 // Update scheduledPostsRelations to reference channels
-export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one }) => ({
+export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one, many }) => ({
   post: one(postsTable, {
     fields: [scheduledPostsTable.postId],
     references: [postsTable.id],
@@ -516,6 +642,7 @@ export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one }) 
     fields: [scheduledPostsTable.organizationId],
     references: [organizationsTable.id],
   }),
+  metricsHistory: many(postMetricsHistoryTable), // Add this lines
 }))
 
 // Update socialMediaIntegrationsRelations to include the reverse relation
@@ -600,6 +727,9 @@ export const superAdminsTable = pgTable('super_admins', {
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .primaryKey(),
   createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  updadedAt: timestamp('updated_at', { mode: 'string' })
+    .$defaultFn(() => new Date().toISOString())
+    .notNull(),
 })
 
 export type SelectSuperAdmin = typeof superAdminsTable.$inferSelect
@@ -670,9 +800,7 @@ export const sessionRelations = relations(sessionsTable, ({ one }) => ({
 export type EmailVerificationType = 'magic-link' | 'auth-code'
 
 export const emailVerificationsTable = pgTable('email_verifications', {
-  id: text('id')
-    .primaryKey()
-    .$default(() => verificationTokenCuid()),
+  id: tokenCol('id').primaryKey(),
   email: text('email').notNull(),
   expiresAt: timestamp('expires_at', {
     withTimezone: true,

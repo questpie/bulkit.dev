@@ -1,7 +1,7 @@
 import { rateLimit } from '@bulkit/api/common/rate-limit'
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
-import { buildAuthObject, protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { lucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { and, eq } from 'drizzle-orm'
@@ -9,10 +9,11 @@ import Elysia, { t } from 'elysia'
 import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
+  .use(databasePlugin())
   .use(rateLimit())
   .post(
     '/',
-    async ({ body, error, request }) => {
+    async ({ body, error, db, request }) => {
       const { authToken } = body
 
       const [storedToken] = await db

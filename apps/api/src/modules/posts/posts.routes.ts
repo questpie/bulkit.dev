@@ -1,8 +1,7 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { db } from '@bulkit/api/db/db.client'
-import { postDetailsTable, postsTable } from '@bulkit/api/db/db.schema'
+import { postsTable } from '@bulkit/api/db/db.schema'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { createPost, getPost, updatePost } from '@bulkit/api/modules/posts/dal/posts.dal'
+import { postServicePlugin } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { PostDetailsSchema, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
@@ -11,29 +10,27 @@ import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
+  .use(postServicePlugin())
   .use(organizationMiddleware)
   .get(
     '/',
     async (ctx) => {
       const { limit, cursor } = ctx.query
 
-      const posts = await db
+      const posts = await ctx.db
         .select({
           id: postsTable.id,
-          name: postDetailsTable.name,
-          status: postDetailsTable.status,
-          currentVersion: postsTable.currentVersion,
+          name: postsTable.name,
+          status: postsTable.status,
           type: postsTable.type,
           createdAt: postsTable.createdAt,
         })
         .from(postsTable)
-        .innerJoin(postDetailsTable, eq(postsTable.id, postDetailsTable.postId))
         .where(
           and(
             eq(postsTable.organizationId, ctx.organization!.id),
-            eq(postDetailsTable.version, postsTable.currentVersion),
             ctx.query.type ? eq(postsTable.type, ctx.query.type) : undefined,
-            ctx.query.status ? eq(postDetailsTable.status, ctx.query.status) : undefined
+            ctx.query.status ? eq(postsTable.status, ctx.query.status) : undefined
           )
         )
         .orderBy(desc(postsTable.createdAt))
@@ -69,11 +66,10 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .post(
     '/',
     async (ctx) => {
-      return db.transaction(async (trx) => {
-        const post = await createPost(trx, {
+      return ctx.db.transaction(async (trx) => {
+        const post = await ctx.postService.create(trx, {
           orgId: ctx.organization!.id,
           type: ctx.body.type,
-          userId: ctx.auth.user.id,
         })
 
         return post
@@ -90,7 +86,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .get(
     '/:id',
     async (ctx) => {
-      const post = await getPost(db, {
+      const post = await ctx.postService.getById(ctx.db, {
         orgId: ctx.organization!.id,
         postId: ctx.params.id,
       })
@@ -113,11 +109,10 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .put(
     '/',
     async (ctx) => {
-      return db.transaction(async (trx) => {
-        const post = await updatePost(trx, {
+      return ctx.db.transaction(async (trx) => {
+        const post = await ctx.postService.update(trx, {
           orgId: ctx.organization!.id,
           post: ctx.body,
-          userId: ctx.auth.user.id,
         })
 
         if (!post) {
@@ -137,8 +132,8 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   )
   .patch('/:id/publish', async (ctx) => {})
   .post('/:id/duplicate', async (ctx) => {
-    return await db.transaction(async (trx) => {
-      const post = await getPost(trx, {
+    return await ctx.db.transaction(async (trx) => {
+      const post = await ctx.postService.getById(trx, {
         orgId: ctx.organization!.id,
         postId: ctx.params.id,
       })
@@ -147,20 +142,18 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         return ctx.error(404, { message: 'Post not found' })
       }
 
-      const newPost = await createPost(trx, {
+      const newPost = await ctx.postService.create(trx, {
         orgId: ctx.organization!.id,
         type: post.type,
-        userId: ctx.auth.user.id,
         name: `Duplicate of ${post.name}`,
       })
 
-      await updatePost(trx, {
+      return ctx.postService.update(trx, {
         orgId: ctx.organization!.id,
         post: {
           ...post,
           id: newPost.id,
         },
-        userId: ctx.auth.user.id,
       })
     })
   })

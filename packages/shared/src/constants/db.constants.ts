@@ -1,3 +1,16 @@
+// ALL constants and enums must reside here because drizzle kit has trouble resolving ts aliases.
+// So to make it easier and still be able to share constants with FE, we will export them from here.
+
+/**
+ * Users and organizations
+ */
+
+export const USER_ROLE = ['owner', 'member'] as const
+export type UserRole = (typeof USER_ROLE)[number]
+
+/**
+ * Posts
+ */
 export const POST_TYPE = ['short', 'story', 'post', 'thread'] as const
 export type PostType = (typeof POST_TYPE)[number]
 
@@ -31,10 +44,14 @@ export const PLATFORM_TO_NAME = {
   // google: 'Google',
 }
 
-export type Platform = (typeof PLATFORMS)[number]
+export const SCHEDULED_POST_STATUS = ['pending', 'published', 'failed'] as const
+export type ScheduledPostStatus = (typeof SCHEDULED_POST_STATUS)[number]
 
-export const USER_ROLE = ['owner', 'member'] as const
-export type UserRole = (typeof USER_ROLE)[number]
+/**
+ * Channels
+ */
+
+export type Platform = (typeof PLATFORMS)[number]
 
 /**
  *
@@ -48,5 +65,10 @@ export type UserRole = (typeof USER_ROLE)[number]
 export const CHANNEL_STATUS = ['active', 'inactive', 'error'] as const
 export type ChannelStatus = (typeof CHANNEL_STATUS)[number]
 
-export const SCHEDULED_POST_STATUS = ['pending', 'published', 'failed'] as const
-export type ScheduledPostStatus = (typeof SCHEDULED_POST_STATUS)[number]
+/**
+ * Workflows
+ */
+
+export const WORKFLOW_STEP_TYPES = ['publish', 'wait', 'repost', 'condition'] as const
+
+export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]

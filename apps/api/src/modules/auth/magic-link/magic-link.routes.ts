@@ -1,5 +1,5 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
 import { mailClient } from '@bulkit/api/mail/mail.client'
@@ -10,10 +10,11 @@ import { Elysia, t } from 'elysia'
 import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
 
 export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
+  .use(databasePlugin())
   .use(applyRateLimit({ limit: 10, window: 60 }))
   .post(
     '/',
-    async ({ body }) => {
+    async ({ body, db }) => {
       const { email } = body
 
       // Store token in database
@@ -62,7 +63,7 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
   )
   .get(
     '/verify',
-    async ({ query, error, redirect }) => {
+    async ({ query, db, error, redirect }) => {
       const { token } = query
 
       const storedToken = await db

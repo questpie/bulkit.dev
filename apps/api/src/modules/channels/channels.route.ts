@@ -1,5 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { db } from '@bulkit/api/db/db.client'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { FacebookChannelManager } from '@bulkit/api/modules/channels/providers/fb/fb-channel.manager'
 import { InstagramChannelManager } from '@bulkit/api/modules/channels/providers/instagram/instagram-channel.manager'
@@ -37,6 +37,7 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
     prefix: `/${platform}`,
     detail: { tags: [PLATFORM_TO_NAME[platform]] },
   })
+    .use(databasePlugin())
     .derive({ as: 'scoped' }, () => ({ channelManager: getChannelManager(platform) }))
     .guard((app) =>
       app
@@ -46,8 +47,9 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
         })
         .get(
           '/auth',
-          async ({ channelManager, organization, cookie, query }) => {
+          async ({ channelManager, organization, db, cookie, query }) => {
             const authUrl = await channelManager.getAuthorizationUrl(
+              db,
               organization!.id,
               cookie,
               query.redirectTo
@@ -78,11 +80,11 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
     )
     .get(
       '/callback',
-      async ({ query, channelManager, cookie, redirect }) => {
+      async ({ query, channelManager, db, cookie, redirect }) => {
         const { code, state } = query
 
         const { organizationId, redirectTo } = JSON.parse(Buffer.from(state, 'base64').toString())
-        const { channel } = await channelManager.handleCallback(code, organizationId, cookie)
+        const { channel } = await channelManager.handleCallback(db, code, organizationId, cookie)
 
         if (redirectTo) {
           // {{cId}} can also be encoded in the URL so we need to decode it
@@ -104,6 +106,7 @@ export function createChannelRoutes<const TPlatform extends Platform>(platform: 
 }
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
+  .use(databasePlugin())
   .use(createChannelRoutes('youtube'))
   .use(createChannelRoutes('instagram'))
   .use(createChannelRoutes('facebook'))
@@ -117,7 +120,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { limit = 10, cursor, platform } = ctx.query
 
-      const channels = await db
+      const channels = await ctx.db
         .select()
         .from(channelsTable)
         .where(
@@ -164,7 +167,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { id } = ctx.params
 
-      const channel = await db.query.channelsTable.findFirst({
+      const channel = await ctx.db.query.channelsTable.findFirst({
         where: and(
           eq(channelsTable.id, id),
           eq(channelsTable.organizationId, ctx.organization!.id)

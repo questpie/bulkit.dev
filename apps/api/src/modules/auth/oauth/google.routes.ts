@@ -2,12 +2,13 @@ import { generateCodeVerifier, generateState } from 'arctic'
 import { and, eq } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
 import { google, lucia } from '../lucia'
-import { db } from '@bulkit/api/db/db.client'
 import { oauthAccountsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { generalEnv } from '@bulkit/shared/env/general.env'
+import { databasePlugin } from '@bulkit/api/db/db.client'
 
 export const googleRoutes = new Elysia()
+  .use(databasePlugin())
   .get(
     '/google',
     async ({ redirect, cookie, query }) => {
@@ -48,7 +49,7 @@ export const googleRoutes = new Elysia()
   )
   .get(
     '/google/callback',
-    async ({ query, cookie, error, redirect, request }) => {
+    async ({ query, cookie, error, db, redirect, request }) => {
       const storedState = cookie.state?.value
       const storedCodeVerifier = cookie.code_verifier?.value
 
