@@ -1,20 +1,22 @@
 'use client'
-import { useState, useEffect } from 'react'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
+import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
-import Image from 'next/image'
-import { useFormContext } from 'react-hook-form'
-import { PiBookmarkSimple, PiChatTeardrop, PiHeart, PiPaperPlaneTilt } from 'react-icons/pi'
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
   CarouselNext,
+  CarouselPrevious,
 } from '@bulkit/ui/components/ui/carousel'
+import Image from 'next/image'
+import { useState } from 'react'
+import { useFormContext } from 'react-hook-form'
+import { PiBookmarkSimple, PiChatTeardrop, PiHeart, PiPaperPlaneTilt } from 'react-icons/pi'
 
 export function InstagramPreview(props: PreviewPostProps) {
   const { watch } = useFormContext<Post>()
@@ -73,31 +75,33 @@ function PostFooter() {
   )
 }
 
+function PostCarousel(props: { resources: Resource[] }) {
+  return (
+    <Carousel className='relative'>
+      <CarouselContent>
+        {props.resources.map((resource) => (
+          <CarouselItem key={resource.id} className='relative w-full aspect-square'>
+            <ResourcePreview hideActions resource={resource} className='border-none rounded-none' />
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselPrevious className='disabled:hidden absolute left-4 -translate-y-1/2 top-1/2 z-10' />
+      <CarouselNext className='disabled:hidden absolute right-4 -translate-y-1/2 top-1/2 z-10' />
+      {/* <CarouselPrevious />
+          <CarouselNext /> */}
+    </Carousel>
+  )
+}
+
 function RegularPostPreview({
   postData,
   previewUser,
 }: { postData: Post & { type: 'post' }; previewUser: PreviewPostProps['previewUser'] }) {
+  const resources = postData.media.map((m) => m.resource)
   return (
     <div>
       <PostHeader previewUser={previewUser} />
-      {postData.media.length > 0 && (
-        <Carousel>
-          <CarouselContent>
-            {postData.media.map((media) => (
-              <CarouselItem key={media.id} className='relative w-full aspect-square'>
-                <Image
-                  src={media.resource.url}
-                  alt={media.resource.location}
-                  layout='fill'
-                  objectFit='cover'
-                />
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          {/* <CarouselPrevious />
-          <CarouselNext /> */}
-        </Carousel>
-      )}
+      <PostCarousel resources={resources} />
       <PostFooter />
       <div className='px-3 pb-3'>
         <TextPreview text={postData.text} className={{ root: 'text-sm' }} />
@@ -140,13 +144,12 @@ function StoryPreview({
   previewUser,
 }: { postData: Post & { type: 'story' }; previewUser: PreviewPostProps['previewUser'] }) {
   return (
-    <div className='relative aspect-[9/16] bg-gray-100'>
+    <div className='relative aspect-[9/16] bg-muted'>
       {postData.resource && (
-        <Image
-          src={postData.resource.url}
-          alt={postData.resource.location}
-          layout='fill'
-          objectFit='cover'
+        <ResourcePreview
+          resource={postData.resource}
+          hideActions
+          className='aspect-auto h-full w-auto border-none'
         />
       )}
       <div className='absolute top-4 left-4 flex items-center'>
@@ -166,27 +169,12 @@ function CarouselPostPreview({
 }: { postData: Post & { type: 'thread' }; previewUser: PreviewPostProps['previewUser'] }) {
   const combinedText = postData.items.map((item, i) => `${item.text}`).join('\n\n')
 
-  const media = postData.items.flatMap((item) => item.media)
+  const resources = postData.items.flatMap((item) => item.media).map((m) => m.resource)
 
   return (
     <div>
       <PostHeader previewUser={previewUser} />
-      <Carousel>
-        <CarouselContent>
-          {media.map((item) => (
-            <CarouselItem key={item.id} className='relative w-full aspect-square'>
-              <Image
-                src={item.resource.url}
-                alt={item.resource.location}
-                layout='fill'
-                objectFit='cover'
-              />
-            </CarouselItem>
-          ))}
-          {/* <CarouselPrevious />
-          <CarouselNext /> */}
-        </CarouselContent>
-      </Carousel>
+      <PostCarousel resources={resources} />
       <PostFooter />
       <div className='px-3 pb-3'>
         <TextPreview text={combinedText} className={{ root: 'text-sm' }} />

@@ -237,7 +237,7 @@ function MediaItem(props: {
         key={props.media.id}
         onRemove={props.onRemove}
         resource={props.media.resource}
-        className={cn(isDragging && 'opacity-50')}
+        className={cn('h-24 w-24', isDragging && 'opacity-50')}
       />
     </div>
   )
@@ -266,6 +266,7 @@ export function StoryPostFields() {
               {!!field.value && (
                 <div className='flex flex-row gap-4 flex-wrap w-full'>
                   <ResourcePreview
+                    className='h-24 w-24'
                     onRemove={() => {
                       field.onChange(null)
                     }}
@@ -323,6 +324,7 @@ export function ShortPostFields() {
               {!!field.value && (
                 <div className='flex flex-row gap-4 flex-wrap w-full'>
                   <ResourcePreview
+                    className='h-24 w-24'
                     onRemove={() => {
                       field.onChange(null)
                     }}

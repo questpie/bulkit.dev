@@ -62,7 +62,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
       <div className='flex flex-row w-full flex-1 h-full -mt-4'>
         <div className='py-4 flex flex-col flex-1'>{content}</div>
 
-        <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4  px-4 border-border py-4'>
+        <div className='hidden md:flex w-full h-full overflow-auto max-w-lg border-l flex-col gap-4  px-4 border-border py-4'>
           <h4 className='text-lg font-bold'>Preview</h4>
           <PostPreview />
         </div>

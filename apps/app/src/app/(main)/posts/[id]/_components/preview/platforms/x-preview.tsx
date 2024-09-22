@@ -2,10 +2,13 @@
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
+import type { PostType } from '@bulkit/shared/constants/db.constants'
+import { getRelativeTimeString } from '@bulkit/shared/utils/date-utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
-import Image from 'next/image'
-import { useState } from 'react'
+import { cn } from '@bulkit/ui/lib'
+import { useState, type PropsWithChildren } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { PiBookmarkSimple, PiChartBar, PiChatTeardrop, PiHeart, PiRepeat } from 'react-icons/pi'
 
@@ -30,16 +33,20 @@ export function XPreview(props: PreviewPostProps) {
   return (
     <div className='bg-background relative'>
       {renderPreview()}
-      <div className='mt-4 flex items-center text-muted-foreground'>
+      {/* <div className='mt-4 flex items-center text-muted-foreground'>
         <Icon className='mr-2' />
         <span suppressHydrationWarning>{new Date(postData.createdAt).toLocaleString()}</span>
-      </div>
+      </div> */}
     </div>
   )
 }
 
+export type XPreviewProps<Type extends PostType = PostType> = {
+  postData: Post & { type: Type }
+  previewUser: PreviewPostProps['previewUser']
+}
+
 function PostFooter() {
-  // helps to prevent rerenders
   const [comments] = useState(Math.floor(Math.random() * 100))
   const [retweets] = useState(Math.floor(Math.random() * 100))
   const [likes] = useState(Math.floor(Math.random() * 100))
@@ -70,22 +77,35 @@ function PostFooter() {
   )
 }
 
-function RegularPostPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'post' }; previewUser: PreviewPostProps['previewUser'] }) {
+function PostLayout(props: PropsWithChildren<{ className?: string }>) {
+  return <div className={cn('relative pl-12', props.className)}>{props.children}</div>
+}
+
+function PostHeader(props: XPreviewProps) {
   return (
-    <div className='mb-4 relative pl-12'>
+    <>
       <div className='absolute left-1 top-0'>
         <Avatar>
-          <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-          <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
+          <AvatarFallback>{props.previewUser.name[0]}</AvatarFallback>
+          <AvatarImage src={props.previewUser.avatar} alt={props.previewUser.name} />
         </Avatar>
       </div>
       <div className='flex items-center gap-2 ml-2'>
-        <span className='font-bold text-sm'>{previewUser.name}</span>
-        <span className='text-muted-foreground text-xs'>@{previewUser.username}</span>
+        <span className='font-bold text-sm'>{props.previewUser.name}</span>
+        <span className='text-muted-foreground text-xs'>@{props.previewUser.username}</span>
+        <span className='text-muted-foreground text-xs'>·</span>
+        <span className='text-muted-foreground text-xs' suppressHydrationWarning>
+          {getRelativeTimeString({ date: new Date(props.postData.createdAt) })}
+        </span>
       </div>
+    </>
+  )
+}
+
+function RegularPostPreview({ postData, previewUser }: XPreviewProps<'post'>) {
+  return (
+    <PostLayout>
+      <PostHeader postData={postData} previewUser={previewUser} />
       <TextPreview text={postData.text} className={{ root: 'mb-2 ml-2' }} />
       {postData.media.length > 0 && (
         <div
@@ -96,13 +116,7 @@ function RegularPostPreview({
               key={media.id}
               className={`relative ${postData.media.length === 3 && index === 0 ? 'col-span-2' : ''}`}
             >
-              <Image
-                src={media.resource.url}
-                alt={media.resource.location}
-                width={400}
-                height={400}
-                className='rounded-md object-cover w-full h-full'
-              />
+              <ResourcePreview resource={media.resource} hideActions />
               {index === 3 && postData.media.length > 4 && (
                 <div className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md'>
                   <span className='text-white font-bold'>+{postData.media.length - 4} more</span>
@@ -113,44 +127,18 @@ function RegularPostPreview({
         </div>
       )}
       <PostFooter />
-    </div>
+    </PostLayout>
   )
 }
 
-function ShortPostPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'short' }; previewUser: PreviewPostProps['previewUser'] }) {
+function ShortPostPreview({ postData, previewUser }: XPreviewProps<'short'>) {
   return (
-    <div className='mb-4 relative pl-12'>
-      <div className='absolute left-1 top-0'>
-        <Avatar>
-          <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-          <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
-        </Avatar>
-      </div>
-      <div className='flex items-center gap-2 ml-2'>
-        <span className='font-bold text-sm'>{previewUser.name}</span>
-        <span className='text-muted-foreground text-xs'>@{previewUser.username}</span>
-      </div>
+    <PostLayout>
+      <PostHeader postData={postData} previewUser={previewUser} />
       <TextPreview text={postData.description} className={{ root: 'mb-2 ml-2' }} />
       {postData.resource && (
         <div className='relative w-full aspect-video'>
-          {postData.resource.type.startsWith('video') ? (
-            <video
-              src={postData.resource.url}
-              className='w-full h-full object-cover rounded-md'
-              controls
-            />
-          ) : (
-            <Image
-              src={postData.resource.url}
-              alt={postData.resource.location}
-              layout='fill'
-              objectFit='cover'
-              className='rounded-md'
-            />
-          )}
+          <ResourcePreview resource={postData.resource} hideActions />
           {postData.resource.type.startsWith('video') && (
             <div className='absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-sm px-1 rounded'>
               0:00
@@ -159,12 +147,8 @@ function ShortPostPreview({
         </div>
       )}
       <PostFooter />
-    </div>
+    </PostLayout>
   )
-}
-
-function StoryPostPreview({ postData }: { postData: Post & { type: 'story' } }) {
-  return null
 }
 
 function ThreadPostPreview({
@@ -172,20 +156,11 @@ function ThreadPostPreview({
   previewUser,
 }: { postData: Post & { type: 'thread' }; previewUser: PreviewPostProps['previewUser'] }) {
   return (
-    <div className='mb-4'>
+    <>
       {postData.items.map((item, index) => (
-        <div key={item.id} className='relative pl-12 pt-1 pb-4'>
+        <PostLayout key={item.id} className='pt-1 pb-4'>
           {<div className='absolute top-0 left-6 w-0.5 h-full bg-border' />}
-          <div className='absolute left-1 top-0'>
-            <Avatar>
-              <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-              <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
-            </Avatar>
-          </div>
-          <div className='flex items-center gap-2 ml-2'>
-            <span className='font-bold text-sm'>{previewUser.name}</span>
-            <span className='text-muted-foreground text-xs'>@{previewUser.username}</span>
-          </div>
+          <PostHeader postData={postData} previewUser={previewUser} />
           <TextPreview text={item.text} className={{ root: 'mb-2 ml-2' }} />
           {item.media.length > 0 && (
             <div
@@ -196,20 +171,11 @@ function ThreadPostPreview({
                   key={media.id}
                   className={`relative ${item.media.length === 3 && mediaIndex === 0 ? 'col-span-2' : ''}`}
                 >
-                  {media.resource.type.startsWith('video') ? (
-                    <video
-                      src={media.resource.url}
-                      className='w-full h-full object-cover rounded-md'
-                    />
-                  ) : (
-                    <Image
-                      src={media.resource.url}
-                      alt={media.resource.location}
-                      width={150}
-                      height={150}
-                      className='rounded-md object-cover w-full h-full'
-                    />
-                  )}
+                  <ResourcePreview
+                    resource={media.resource}
+                    hideActions
+                    className='w-auto h-auto aspect-square'
+                  />
                   {mediaIndex === 3 && item.media.length > 4 && (
                     <div className='absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-md'>
                       <span className='text-white text-lg font-bold'>
@@ -222,11 +188,8 @@ function ThreadPostPreview({
             </div>
           )}
           <PostFooter />
-        </div>
+        </PostLayout>
       ))}
-      <div className='mt-2 text-muted-foreground'>
-        <span>Show this thread</span>
-      </div>
-    </div>
+    </>
   )
 }

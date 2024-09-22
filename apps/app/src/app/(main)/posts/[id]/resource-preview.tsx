@@ -32,6 +32,7 @@ type ResourcePreviewProps = {
   resource: Resource
   variant?: 'square' | 'wide'
   className?: string
+  hideActions?: boolean
   onRemove?: () => void
   allowPreview?: boolean
 }
@@ -55,6 +56,7 @@ export function ResourcePreview({
   className,
   onRemove,
   allowPreview = true,
+  hideActions = false,
 }: ResourcePreviewProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
@@ -100,13 +102,7 @@ export function ResourcePreview({
     <div className='relative w-full h-full'>
       {thumbnailUrl ? (
         <>
-          <Image
-            src={thumbnailUrl}
-            alt={resource.location}
-            layout='fill'
-            objectFit='cover'
-            className='rounded-md'
-          />
+          <Image src={thumbnailUrl} alt={resource.location} layout='fill' objectFit='cover' />
         </>
       ) : (
         <div className='flex flex-col justify-center items-center h-full text-center gap-2'>
@@ -114,7 +110,7 @@ export function ResourcePreview({
         </div>
       )}
       {isVideo && thumbnailUrl ? (
-        <div className='absolute inset-0 flex rounded-lg items-center justify-center bg-black/30'>
+        <div className='absolute inset-0 flex items-center justify-center bg-black/30'>
           <LuPlay className='w-8 h-8 text-white' />
         </div>
       ) : null}
@@ -125,12 +121,12 @@ export function ResourcePreview({
     setIsPreviewOpen(true)
   }
 
-  const renderDropdown = () => (
+  const renderActionsDropdown = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           type='button'
-          className='absolute group-hover:opacity-100 opacity-0 z-20 rounded-full h-6 w-6 -top-2 -right-2 p-1 text-sm'
+          className='absolute group-hover:opacity-100 opacity-0 z-20 rounded-full h-6 w-6 top-0 right-0 p-1 text-sm'
           size='icon'
           variant='outline'
         >
@@ -158,9 +154,11 @@ export function ResourcePreview({
   if (variant === 'square') {
     return (
       <>
-        <Card className={cn('w-24 h-24 group relative', className)}>
+        <Card
+          className={cn('w-auto h-auto aspect-square group relative overflow-hidden', className)}
+        >
           {renderThumbnail()}
-          {renderDropdown()}
+          {!hideActions && renderActionsDropdown()}
         </Card>
         {isPreviewOpen && (
           <ResourceDialogPreview resource={resource} onClose={() => setIsPreviewOpen(false)} />
@@ -171,12 +169,12 @@ export function ResourcePreview({
 
   return (
     <>
-      <Card className={cn('flex flex-row items-center gap-4 p-2', className)}>
+      <Card className={cn('flex flex-row items-center gap-4 p-2 overflow-hidden', className)}>
         <div className='w-16 h-16 flex-shrink-0'>{renderThumbnail()}</div>
         <div className='flex-grow min-w-0'>
           <p className='text-sm font-medium truncate'>{resource.location.split('/').pop()}</p>
         </div>
-        {renderDropdown()}
+        {!hideActions && renderActionsDropdown()}
       </Card>
       {isPreviewOpen && (
         <ResourceDialogPreview resource={resource} onClose={() => setIsPreviewOpen(false)} />
@@ -202,7 +200,9 @@ export function ResourceDialogPreview({ resource, onClose }: ResourceDialogPrevi
           <img src={resource.url} alt={resource.location} style={{ maxWidth: '100%' }} />
         )}
         {resource.type.startsWith('video/') && (
-          <video src={resource.url} controls style={{ maxWidth: '100%' }} />
+          <video src={resource.url} controls style={{ maxWidth: '100%' }}>
+            <track kind='captions' />
+          </video>
         )}
         {/* Add more preview types as needed */}
       </ResponsiveDialogContent>
