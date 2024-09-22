@@ -199,17 +199,23 @@ function MediaItem(props: {
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} className='relative group'>
+      <div
+        {...attributes}
+        {...listeners}
+        className='absolute w-full h-full z-10 p-1 flex items-center justify-center bg-black/50 rounded-lg  cursor-move opacity-0 group-hover:opacity-100 transition-opacity'
+      >
+        <PiDotsSixBold className='text-white' size={32} />
+      </div>
       <ResourcePreview
         key={props.media.id}
         onRemove={props.onRemove}
         resource={props.media.resource}
-        className={cn(isDragging && 'cursor-move')}
+        className={cn(isDragging && 'opacity-50')}
       />
     </div>
   )
 }
-
 export function StoryPostFields() {
   const form = useFormContext<Extract<Post, { type: 'story' }>>()
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { apiClient } from '@bulkit/app/api/api.client'
+import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/x-preview'
 import { type Platform, PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
@@ -10,19 +12,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
-import { type ReactNode, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { type ComponentType, useState } from 'react'
 
-const PLATFORM_PREVIEW: Record<Platform, ReactNode> = {
-  x: <XPreview />,
-  facebook: null,
-  instagram: null,
-  linkedin: null,
-  tiktok: null,
-  youtube: null,
+const PLATFORM_PREVIEW: Record<Platform, ComponentType<PreviewPostProps>> = {
+  x: XPreview,
+  // TODO: add more platforms
+  facebook: XPreview,
+  instagram: XPreview,
+  linkedin: XPreview,
+  tiktok: XPreview,
+  youtube: XPreview,
+}
+
+export type PreviewPostProps = {
+  previewUser: {
+    name: string
+    username: string
+    avatar: string
+  }
 }
 
 export function PostPreview() {
   const [platform, setPlatform] = useState<Platform>('x')
+
+  const PreviewComponent = PLATFORM_PREVIEW[platform]
+
+  const authData = useAuthData()
+  const channelQuery = useQuery({
+    queryKey: ['channels', platform],
+    queryFn: async () => {
+      const res = await apiClient.channels.index.get({
+        query: {
+          limit: 1,
+          cursor: 0,
+          platform,
+        },
+      })
+
+      return res.data?.data[0]
+    },
+  })
 
   return (
     <div className='flex flex-col gap-6'>
@@ -46,7 +76,13 @@ export function PostPreview() {
         </SelectContent>
       </Select>
 
-      {PLATFORM_PREVIEW[platform]}
+      <PreviewComponent
+        previewUser={{
+          name: (channelQuery.data?.name || authData?.user.name) ?? '',
+          username: (channelQuery.data?.name || authData?.user.email) ?? '',
+          avatar: channelQuery.data?.imageUrl || '',
+        }}
+      />
     </div>
   )
 }
