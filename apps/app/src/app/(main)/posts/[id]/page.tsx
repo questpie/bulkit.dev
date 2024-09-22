@@ -2,7 +2,7 @@ import { apiServer } from '@bulkit/app/api/api.server'
 import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PostDetailHeader } from '@bulkit/app/app/(main)/posts/[id]/_components/post-detail-header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/x-preview'
+import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
 import {
   PostFormProvider,
   RegularPostFields,

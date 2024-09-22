@@ -1,11 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import Image from 'next/image'
+import { useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { PiBookmarkSimple, PiChartBar, PiChatTeardrop, PiHeart, PiRepeat } from 'react-icons/pi'
 

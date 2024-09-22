@@ -3,7 +3,8 @@
 import { apiClient } from '@bulkit/app/api/api.client'
 import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
-import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/x-preview'
+import { InstagramPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/instagram-preview'
+import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
 import { type Platform, PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import {
   Select,
@@ -17,9 +18,9 @@ import { type ComponentType, useState } from 'react'
 
 const PLATFORM_PREVIEW: Record<Platform, ComponentType<PreviewPostProps>> = {
   x: XPreview,
+  instagram: InstagramPreview,
   // TODO: add more platforms
   facebook: XPreview,
-  instagram: XPreview,
   linkedin: XPreview,
   tiktok: XPreview,
   youtube: XPreview,
