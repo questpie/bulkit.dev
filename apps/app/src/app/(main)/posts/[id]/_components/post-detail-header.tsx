@@ -2,11 +2,17 @@
 
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
+import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { cn } from '@bulkit/transactional/style-utils'
-import { Button } from '@bulkit/ui/components/ui/button'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@bulkit/ui/components/ui/responsive-dialog'
 import { useFormContext } from 'react-hook-form'
-import { LuSave, LuSend } from 'react-icons/lu'
-import { PiChair, PiChat, PiEye } from 'react-icons/pi'
+import { PiChat, PiEye } from 'react-icons/pi'
 
 export type PostDetailHeaderProps = {
   post: Post
@@ -33,7 +39,23 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
       >
         <div className='flex flex-row gap-4 items-center'>
           <HeaderButton variant='outline' icon={<PiChat />} label='Comments' />
-          <HeaderButton variant='outline' icon={<PiEye />} label='Preview' className='md:hidden' />
+          <ResponsiveDialog>
+            <ResponsiveDialogTrigger asChild>
+              <HeaderButton
+                variant='outline'
+                icon={<PiEye />}
+                label='Preview'
+                className='md:hidden'
+              />
+            </ResponsiveDialogTrigger>
+            <ResponsiveDialogContent mobileProps={{ className: 'p-4' }}>
+              <ResponsiveDialogHeader>
+                <ResponsiveDialogTitle>Preview</ResponsiveDialogTitle>
+              </ResponsiveDialogHeader>
+
+              <PostPreview />
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
         </div>
 
         {/* {post.status === 'draft' ? (
@@ -53,7 +75,7 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
         )} */}
       </Header>
 
-      <div className='h-16 mb-14  md:mb-0 sm:border-t justify-end bg-background z-10  flex flex-row px-4 items-center absolute bottom-0 w-full left-0'>
+      {/* <div className='h-16 mb-14  md:mb-0 sm:border-t justify-end bg-background z-10  flex flex-row px-4 items-center absolute bottom-0 w-full left-0'>
         <Button
           type='submit'
           disabled={!form.formState.isDirty}
@@ -64,7 +86,7 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
           <LuSave />
           Save
         </Button>
-      </div>
+      </div> */}
     </>
   )
 }

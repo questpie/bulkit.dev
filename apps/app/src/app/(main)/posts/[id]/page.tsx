@@ -1,8 +1,6 @@
 import { apiServer } from '@bulkit/app/api/api.server'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PostDetailHeader } from '@bulkit/app/app/(main)/posts/[id]/_components/post-detail-header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
 import {
   PostFormProvider,
   RegularPostFields,
@@ -10,10 +8,6 @@ import {
   StoryPostFields,
   ThreadPostFields,
 } from '@bulkit/app/app/(main)/posts/[id]/post-form'
-import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
-import { PLATFORM_TO_NAME, PLATFORMS } from '@bulkit/shared/constants/db.constants'
-import { Select } from '@bulkit/ui/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@bulkit/ui/components/ui/tabs'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 
@@ -24,7 +18,7 @@ export default async function PostDetail(props: { params: { id: string } }) {
     notFound()
   }
 
-  const Icon = POST_TYPE_ICON[postResp.data.type]
+  // const Icon = POST_TYPE_ICON[postResp.data.type]
 
   let content: ReactNode = null
 

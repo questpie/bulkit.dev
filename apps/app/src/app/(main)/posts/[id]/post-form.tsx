@@ -15,6 +15,11 @@ import {
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@bulkit/ui/components/ui/collapsible'
+import {
   Form,
   FormControl,
   FormField,
@@ -24,6 +29,7 @@ import {
 } from '@bulkit/ui/components/ui/form'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { Textarea } from '@bulkit/ui/components/ui/textarea'
+import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
 import { cn } from '@bulkit/ui/lib'
 import {
   closestCenter,
@@ -45,14 +51,20 @@ import { Type, type Static } from '@sinclair/typebox'
 import { useMutation } from '@tanstack/react-query'
 import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
-import { useFieldArray, useForm, useFormContext, type FieldPath } from 'react-hook-form'
-import { LuPlus, LuTrash2 } from 'react-icons/lu'
-import { PiDotsSixBold } from 'react-icons/pi'
+import objectHash from 'object-hash'
+import { useEffect, useRef } from 'react'
+import { useFieldArray, useForm, useFormContext, useWatch, type FieldPath } from 'react-hook-form'
+import { LuChevronDown, LuPlus, LuTrash2 } from 'react-icons/lu'
+import { PiDotsSixBold, PiDotsSixVerticalBold } from 'react-icons/pi'
 
 type PostFormProviderProps = {
   children?: React.ReactNode
   className?: string
   defaultValues: Post
+}
+
+const calculateFormHash = (obj: object) => {
+  return objectHash(obj, { excludeKeys: (key) => key === 'id' })
 }
 
 export function PostFormProvider(props: PostFormProviderProps) {
@@ -63,20 +75,32 @@ export function PostFormProvider(props: PostFormProviderProps) {
     ),
   })
 
+  const formTriggerRef = useRef<HTMLButtonElement>(null)
+  const values = useWatch({
+    control: form.control,
+  })
+  const debouncedValues = useDebouncedValue(values, 500)
+
+  // AUTOSAVE functionality
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    if (!formTriggerRef.current) return
+    if (form.formState.isDirty) formTriggerRef.current.click()
+  }, [calculateFormHash(debouncedValues)])
+
   const router = useRouter()
   const updateMutation = useMutation({
     mutationFn: apiClient.posts.index.put,
     onSuccess: (res) => {
       if (res.error) return
-      form.reset(res.data)
-      router.refresh()
+      // form.reset(res.data)
+      // router.refresh()
     },
   })
 
-  const handleSubmit = form.handleSubmit((data) => {
+  const handleSubmit = form.handleSubmit(async (data) => {
     return toast.promise(updateMutation.mutateAsync(data), {
       loading: 'Saving post...',
-      success: 'Post saved!',
       error: 'Failed to save post.',
     })
   })
@@ -85,6 +109,8 @@ export function PostFormProvider(props: PostFormProviderProps) {
     <Form {...form}>
       <form className={cn(props.className)} onSubmit={handleSubmit}>
         {props.children}
+
+        <button type='submit' className='hidden' ref={formTriggerRef} />
       </form>
     </Form>
   )
@@ -396,103 +422,143 @@ function ThreadItem(props: {
     name: `${props.name}.media` as 'items.0.media',
   })
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: props.item.id,
     disabled: !props.canDrag,
   })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Transform.toString(transform ? { ...transform, scaleY: 1 } : null),
     transition,
   }
 
   const lastMediaOrder = mediaArray.fields[mediaArray.fields.length - 1]?.order ?? 1
+
+  const sensors = useSensors(useSensor(PointerSensor))
+
+  const handleMediaDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over?.id && active.id !== over?.id) {
+      const oldIndex = mediaArray.fields.findIndex((item) => item.id === active.id)
+      const newIndex = mediaArray.fields.findIndex((item) => item.id === over!.id)
+      mediaArray.move(oldIndex, newIndex)
+      for (let i = 0; i < mediaArray.fields.length; i++) {
+        form.setValue(`${props.name}.media.${i}.order` as any, i + 1)
+      }
+    }
+  }
+
   return (
-    <Card ref={setNodeRef} style={style}>
-      <div
-        {...attributes}
-        {...listeners}
-        className={cn(
-          'flex flex-row p-4 border-border border-b items-center  gap-4 text-sm font-bold justify-between rounded  mb-2',
-          props.canDrag && 'cursor-move hover:bg-accent'
-        )}
-      >
-        <span>Thread {props.item.order}</span> <PiDotsSixBold />
-      </div>
+    <Collapsible className='group/collapsible'>
+      <Card ref={setNodeRef} style={style} className='overflow-hidden touch-none'>
+        <div className='flex flex-row h-14'>
+          <CollapsibleTrigger className='w-full flex-1'>
+            <div
+              className={cn(
+                'flex flex-row h-full px-4 items-center gap-4 text-sm font-bold  rounded'
+              )}
+            >
+              <LuChevronDown className='group-data-[state=open]/collapsible:rotate-180 transition-transform ease-in-out duration-200' />
+              <span>Thread {props.item.order}</span>
+            </div>
+          </CollapsibleTrigger>
+          {props.canDrag && (
+            <div
+              className={cn(
+                'w-14 flex items-center h-full justify-center border-r border-border cursor-move hover:bg-accent'
+              )}
+              {...attributes}
+              {...listeners}
+            >
+              <PiDotsSixVerticalBold />
+            </div>
+          )}
+        </div>
 
-      <div className='p-4 flex flex-col gap-4'>
-        <FormField
-          control={form.control}
-          name={`${props.name}.text` as 'items.0.text'}
-          render={({ field }) => {
-            return (
-              <FormItem>
-                {/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
+        <CollapsibleContent asChild>
+          <div className='p-4 flex flex-col gap-4 border-t border-border'>
+            <FormField
+              control={form.control}
+              name={`${props.name}.text` as 'items.0.text'}
+              render={({ field }) => {
+                return (
+                  <FormItem>
+                    {/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
 
-                <FormControl>
-                  <Textarea rows={10} {...field} placeholder='Write your thread here' />
-                </FormControl>
+                    <FormControl>
+                      <Textarea rows={10} {...field} placeholder='Write your thread here' />
+                    </FormControl>
 
-                <FormMessage />
-              </FormItem>
-            )
-          }}
-        />
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
+            />
 
-        <FormField
-          control={form.control}
-          name={`${props.name}.media` as 'items.0.media'}
-          render={({ field }) => {
-            return (
-              <FormItem className='w-full flex flex-col'>
-                <FormMessage />
+            <p className='text-sm font-medium'>Post Media</p>
+            <div className='flex w-full'>
+              {mediaArray.fields.length < 10 && (
+                <ResourceButtonUpload
+                  maxFiles={10 - mediaArray.fields.length}
+                  onUploaded={(resources) => {
+                    for (const resource of resources) {
+                      mediaArray.append({
+                        id: nanoid(),
+                        // id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
+                        order: lastMediaOrder + 1,
+                        resource,
+                      })
+                    }
+                  }}
+                />
+              )}
+            </div>
 
-                <div className='flex w-full'>
-                  {field.value.length < 4 && (
-                    <ResourceButtonUpload
-                      buttonProps={{ variant: 'outline', className: 'border-border' }}
-                      maxFiles={4 - field.value.length}
-                      onUploaded={(resources) => {
-                        for (const resource of resources) {
-                          mediaArray.append({
-                            id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
-                            order: lastMediaOrder + 1,
-                            resource,
-                          })
-                        }
-                      }}
-                    />
-                  )}
-                </div>
-
-                {!!field.value.length && (
+            {!!mediaArray.fields.length && (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleMediaDragEnd}
+              >
+                <SortableContext items={mediaArray.fields} strategy={horizontalListSortingStrategy}>
                   <div className='flex flex-row gap-4 flex-wrap w-full'>
-                    {field.value.map((media, index) => {
+                    {mediaArray.fields.map((media, index) => {
                       return (
-                        <ResourcePreview
+                        <MediaItem
                           key={media.id}
                           onRemove={() => {
+                            let i = 0
+                            for (const item of mediaArray.fields) {
+                              if (i === index) {
+                                continue
+                              }
+                              mediaArray.update(i, {
+                                ...item,
+                                order: i + 1,
+                              })
+                              i++
+                            }
                             mediaArray.remove(index)
                           }}
-                          resource={media.resource}
+                          media={media}
                         />
                       )
                     })}
                   </div>
-                )}
-              </FormItem>
-            )
-          }}
-        />
+                </SortableContext>
+              </DndContext>
+            )}
 
-        <div className='flex justify-end pt-4'>
-          {props.onRemove && (
-            <Button variant='outline' onClick={props.onRemove}>
-              <LuTrash2 /> Remove
-            </Button>
-          )}
-        </div>
-      </div>
-    </Card>
+            <div className='flex justify-end pt-4'>
+              {props.onRemove && (
+                <Button variant='outline' onClick={props.onRemove}>
+                  <LuTrash2 /> Remove
+                </Button>
+              )}
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   )
 }

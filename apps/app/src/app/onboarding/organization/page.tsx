@@ -12,7 +12,7 @@ export default async function OrganizationOnboardingPage() {
   const firstName = sessionData.data.user.name.split(' ')[0]
 
   return (
-    <main className='flex flex-col h-screen items-center  max-w-lg mx-auto justify-center'>
+    <main className='flex flex-col h-screen items-center bg-background max-w-lg mx-auto justify-center'>
       <div className='space-y-8'>
         <div className='space-y-4'>
           <h1 className='text-4xl font-bold'>Nice to meet you, {firstName}!</h1>
