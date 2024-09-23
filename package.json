@@ -7,7 +7,7 @@
   },
   "scripts": {
     "clean": "bun clean:artifacts && bun clean:lock && bun clean:nm",
-    "clean:artifacts": "bun rimraf \"{packages,apps}/**/dist\" \"{packages,apps}/**/build\" \"{packages,apps}/**/out\" \"{packages,apps}/**/.next\" \"{packages,apps}/**/.expo\"",
+    "clean:artifacts": "bun rimraf --glob '\"{packages,apps}/**/dist\" \"{packages,apps}/**/build\" \"{packages,apps}/**/out\" \"{packages,apps}/**/.next\"'",
     "clean:lock": "bun rimraf --glob './bun.lockb'",
     "clean:nm": "bun rimraf --glob './**/node_modules'",
     "cli": "bun run ./scripts/cli.ts",
