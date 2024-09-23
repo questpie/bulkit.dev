@@ -4,7 +4,11 @@
   "files": ["src"],
   "type": "module",
   "dependencies": {
-    "@bulkit/shared": "workspace:*"
+    "@bulkit/shared": "workspace:*",
+    "accent-cli": "^0.16.2"
+  },
+  "scripts": {
+    "i18n": "bun accent"
   },
   "devDependencies": {
     "@types/bun": "latest"

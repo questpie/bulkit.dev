@@ -1,0 +1,11 @@
+{
+  "apiUrl": "https://accent.d.questpie.com",
+  "files": [
+    {
+      "namePattern": "file",
+      "format": "simple_json",
+      "source": "src/i18n/en/**.json",
+      "target": "src/i18n/%slug%/%document_path%.json"
+    }
+  ]
+}
