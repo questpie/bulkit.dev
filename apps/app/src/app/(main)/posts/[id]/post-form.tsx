@@ -39,12 +39,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import {
-  horizontalListSortingStrategy,
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { SortableContext, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { typeboxResolver } from '@hookform/resolvers/typebox'
 import { Type, type Static } from '@sinclair/typebox'
@@ -179,7 +174,7 @@ export function RegularPostFields() {
       </div>
       {!!mediaArray.fields.length && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={mediaArray.fields} strategy={horizontalListSortingStrategy}>
+          <SortableContext items={mediaArray.fields}>
             <div className='flex flex-row gap-4 flex-wrap w-full'>
               {mediaArray.fields.map((media, index) => {
                 return (
@@ -367,7 +362,7 @@ export function ThreadPostFields() {
   return (
     <div className='flex flex-col gap-6 w-full px-4'>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={itemsArray.fields} strategy={verticalListSortingStrategy}>
+        <SortableContext items={itemsArray.fields}>
           {itemsArray.fields.map((item, index) => {
             return (
               <ThreadItem
@@ -522,7 +517,7 @@ function ThreadItem(props: {
                 collisionDetection={closestCenter}
                 onDragEnd={handleMediaDragEnd}
               >
-                <SortableContext items={mediaArray.fields} strategy={horizontalListSortingStrategy}>
+                <SortableContext items={mediaArray.fields}>
                   <div className='flex flex-row gap-4 flex-wrap w-full'>
                     {mediaArray.fields.map((media, index) => {
                       return (
