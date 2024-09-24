@@ -16,9 +16,9 @@
     "dev:api": "cd apps/api && bun run dev",
     "dev:app": "cd apps/app && bun run dev",
     "dev:worker": "cd apps/api && bun run dev:worker",
-    "i18n": "cd packages/translations && bun i18n",
     "fix": "bun biome check --apply-unsafe ./packages ./apps",
     "format": "bun biome format --write ./packages ./apps",
+    "i18n": "cd packages/translations && bun i18n",
     "lint": "bun biome lint ./packages ./apps",
     "postinstall": "bun deps:check",
     "types:check": "tsc --noEmit"
