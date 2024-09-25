@@ -2,7 +2,7 @@ import { databasePlugin } from '@bulkit/api/db/db.client'
 import { scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { ioc } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
-import { getChannelManager } from '@bulkit/api/modules/channels/channels.route'
+import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { channelsServicePlugin } from '@bulkit/api/modules/channels/services/channels.service'
 import { postServicePlugin } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
@@ -57,6 +57,6 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     const channelManager = getChannelManager(channel.platform)
-    await channelManager.publish(channel, post)
+    await channelManager.publisher.publishPost(channel, post)
   },
 })

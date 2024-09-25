@@ -55,8 +55,10 @@ export const envApi = createEnv({
     FACEBOOK_ENABLED: StringBoolean({ default: false }),
 
     // Integrations
-    X_CLIENT_ID: Type.Optional(Type.String()),
-    X_CLIENT_SECRET: Type.Optional(Type.String()),
+    // X_CLIENT_ID: Type.Optional(Type.String()),
+    // X_CLIENT_SECRET: Type.Optional(Type.String()),
+    X_APP_KEY: Type.Optional(Type.String()),
+    X_APP_SECRET: Type.Optional(Type.String()),
     X_ENABLED: StringBoolean({ default: false }),
 
     INSTAGRAM_CLIENT_ID: Type.Optional(Type.String()),
@@ -124,8 +126,10 @@ export const envApi = createEnv({
     FACEBOOK_CLIENT_SECRET: process.env.FACEBOOK_CLIENT_SECRET,
     FACEBOOK_ENABLED: process.env.FACEBOOK_ENABLED,
 
-    X_CLIENT_ID: process.env.X_CLIENT_ID,
-    X_CLIENT_SECRET: process.env.X_CLIENT_SECRET,
+    // X_CLIENT_ID: process.env.X_CLIENT_ID,
+    // X_CLIENT_SECRET: process.env.X_CLIENT_SECRET,
+    X_APP_KEY: process.env.X_APP_KEY,
+    X_APP_SECRET: process.env.X_APP_SECRET,
     X_ENABLED: process.env.X_ENABLED,
 
     INSTAGRAM_CLIENT_ID: process.env.INSTAGRAM_CLIENT_ID,

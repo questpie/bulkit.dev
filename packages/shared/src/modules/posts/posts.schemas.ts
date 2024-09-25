@@ -23,8 +23,8 @@ export const RegularPostSchema = Type.Object({
   media: Type.Array(PostMediaSchema),
 })
 
-export const ShortPostSchema = Type.Object({
-  type: Type.Literal('short'),
+export const ReelPostSchema = Type.Object({
+  type: Type.Literal('reel'),
   description: Type.String(),
   resource: Type.Union([ResourceSchema, Type.Null()]),
 })
@@ -48,7 +48,7 @@ export const StoryPostSchema = Type.Object({
 
 export const PostSchema = Type.Union([
   Type.Composite([PostDetailsSchema, RegularPostSchema]),
-  Type.Composite([PostDetailsSchema, ShortPostSchema]),
+  Type.Composite([PostDetailsSchema, ReelPostSchema]),
   Type.Composite([PostDetailsSchema, ThreadPostSchema]),
   Type.Composite([PostDetailsSchema, StoryPostSchema]),
 ])
@@ -57,8 +57,8 @@ export function getPostSchemaFromType(type: string) {
   switch (type) {
     case 'post':
       return RegularPostSchema
-    case 'short':
-      return ShortPostSchema
+    case 'reel':
+      return ReelPostSchema
     case 'thread':
       return ThreadPostSchema
     case 'story':

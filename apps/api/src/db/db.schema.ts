@@ -1,7 +1,7 @@
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import cuid2 from '@paralleldrive/cuid2'
 import { Type } from '@sinclair/typebox'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   index,
@@ -280,9 +280,9 @@ export type InsertStoryPost = typeof storyPostsTable.$inferInsert
 export const insertStoryPostSchema = createInsertSchema(storyPostsTable)
 export const selectStoryPostSchema = createSelectSchema(storyPostsTable)
 
-// New table for short posts
-export const shortPostsTable = pgTable(
-  'short_posts',
+// New table for reel posts
+export const reelPostsTable = pgTable(
+  'reel_posts',
   {
     id: primaryKeyCol(),
     postId: text('post_id').notNull(),
@@ -300,10 +300,10 @@ export const shortPostsTable = pgTable(
   })
 )
 
-export type SelectShortPost = typeof shortPostsTable.$inferSelect
-export type InsertShortPost = typeof shortPostsTable.$inferInsert
-export const insertShortPostSchema = createInsertSchema(shortPostsTable)
-export const selectShortPostSchema = createSelectSchema(shortPostsTable)
+export type SelectReelPost = typeof reelPostsTable.$inferSelect
+export type InsertReelPost = typeof reelPostsTable.$inferInsert
+export const insertReelPostSchema = createInsertSchema(reelPostsTable)
+export const selectReelPostSchema = createSelectSchema(reelPostsTable)
 
 export const commentsTable = pgTable(
   'comments',
@@ -350,7 +350,7 @@ export const socialMediaIntegrationsTable = pgTable(
     refreshToken: text('refresh_token'),
     tokenExpiry: timestamp('token_expiry', { mode: 'string' }),
     scope: text('scope'),
-    // additionalData: jsonb('additional_data'), // For any platform-specific data
+    additionalData: jsonb('additional_data').default(sql`'{}'::jsonb`),
     createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'string' })
       .defaultNow()
@@ -594,7 +594,7 @@ export const postsRelations = relations(postsTable, ({ one, many }) => ({
   threadPosts: many(threadPostsTable),
   regularPosts: many(regularPostsTable),
   storyPosts: many(storyPostsTable),
-  shortPosts: many(shortPostsTable),
+  reelPosts: many(reelPostsTable),
   scheduledPosts: many(scheduledPostsTable),
   comments: many(commentsTable),
 }))
@@ -706,13 +706,13 @@ export const storyPostsRelations = relations(storyPostsTable, ({ one }) => ({
   }),
 }))
 
-export const shortPostsRelations = relations(shortPostsTable, ({ one }) => ({
+export const reelPostsRelations = relations(reelPostsTable, ({ one }) => ({
   post: one(postsTable, {
-    fields: [shortPostsTable.postId],
+    fields: [reelPostsTable.postId],
     references: [postsTable.id],
   }),
   resource: one(resourcesTable, {
-    fields: [shortPostsTable.resourceId],
+    fields: [reelPostsTable.resourceId],
     references: [resourcesTable.id],
   }),
 }))

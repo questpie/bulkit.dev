@@ -65,17 +65,23 @@ export const organizationMiddleware = new Elysia({
      * Checks if the user has one of the specified roles or is the owner.
      * @param {string[]} roles - Array of allowed roles.
      */
-    hasRole(roles: UserRole[] | true = true) {
+    hasRole(roles: UserRole[] | boolean = true) {
       onBeforeHandle(async ({ organization, error, headers }) => {
-        if (!headers[ORGANIZATION_HEADER]) {
+        if (!headers[ORGANIZATION_HEADER] && roles) {
           return error(403, { message: 'Organization header is required' })
         }
 
+        // if there is no organizaton, but roles is not false
+        if (!organization && roles !== false) {
+          return error(403, { message: 'Insufficient permissions for this organization' })
+        }
+
+        // if there is an organization but we don't have persmission to access it
         if (
-          !organization ||
-          (roles !== true &&
-            organization.role !== 'superAdmin' &&
-            !roles.includes(organization.role))
+          organization &&
+          organization.role !== 'superAdmin' &&
+          Array.isArray(roles) &&
+          !roles.includes(organization.role)
         ) {
           return error(403, { message: 'Insufficient permissions for this organization' })
         }

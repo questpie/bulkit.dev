@@ -27,7 +27,7 @@ export function InstagramPreview(props: PreviewPostProps) {
     switch (postData.type) {
       case 'post':
         return <RegularPostPreview postData={postData} previewUser={props.previewUser} />
-      case 'short':
+      case 'reel':
         return <ReelPreview postData={postData} previewUser={props.previewUser} />
       case 'story':
         return <StoryPreview postData={postData} previewUser={props.previewUser} />
@@ -113,7 +113,7 @@ function RegularPostPreview({
 function ReelPreview({
   postData,
   previewUser,
-}: { postData: Post & { type: 'short' }; previewUser: PreviewPostProps['previewUser'] }) {
+}: { postData: Post & { type: 'reel' }; previewUser: PreviewPostProps['previewUser'] }) {
   return (
     <div className='relative aspect-[9/16] bg-black'>
       {postData.resource && (

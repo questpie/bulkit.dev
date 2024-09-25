@@ -2,7 +2,7 @@ import { databasePlugin } from '@bulkit/api/db/db.client'
 import {
   regularPostMediaTable,
   resourcesTable,
-  shortPostsTable,
+  reelPostsTable,
   storyPostsTable,
   threadMediaTable,
 } from '@bulkit/api/db/db.schema'
@@ -28,7 +28,7 @@ export const resourceCleanupJob = jobFactory.createJob({
     const usedAq = db
       .select({ resourceId: storyPostsTable.resourceId })
       .from(storyPostsTable)
-      .unionAll(db.select({ resourceId: shortPostsTable.resourceId }).from(shortPostsTable))
+      .unionAll(db.select({ resourceId: reelPostsTable.resourceId }).from(reelPostsTable))
       .unionAll(db.select({ resourceId: threadMediaTable.resourceId }).from(threadMediaTable))
       .unionAll(
         db.select({ resourceId: regularPostMediaTable.resourceId }).from(regularPostMediaTable)

@@ -1,6 +1,6 @@
 import { appRoutes } from '@bulkit/api/modules/app/app.routes'
 import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
-import { channelRoutes } from '@bulkit/api/modules/channels/channels.route'
+import { channelRoutes } from '@bulkit/api/modules/channels/channels.routes'
 import { openGraphRoutes } from '@bulkit/api/modules/open-graph/open-graph.routes'
 import { organizationRoutes } from '@bulkit/api/modules/organizations/organizations.routes'
 import { postsRoutes } from '@bulkit/api/modules/posts/posts.routes'

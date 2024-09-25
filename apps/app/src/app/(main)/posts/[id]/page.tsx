@@ -3,9 +3,8 @@ import { PostDetailHeader } from '@bulkit/app/app/(main)/posts/[id]/_components/
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import {
   PostFormProvider,
+  ReelPostFields,
   RegularPostFields,
-  ShortPostFields,
-  StoryPostFields,
   ThreadPostFields,
 } from '@bulkit/app/app/(main)/posts/[id]/post-form'
 import { notFound } from 'next/navigation'
@@ -26,11 +25,11 @@ export default async function PostDetail(props: { params: { id: string } }) {
     case 'post':
       content = <RegularPostFields />
       break
-    case 'short':
-      content = <ShortPostFields />
+    case 'reel':
+      content = <ReelPostFields />
       break
     case 'story':
-      content = <StoryPostFields />
+      content = <ReelPostFields />
       break
     case 'thread':
       content = <ThreadPostFields />

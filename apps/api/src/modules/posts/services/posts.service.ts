@@ -1,10 +1,10 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   postsTable,
+  reelPostsTable,
   regularPostMediaTable,
   regularPostsTable,
   resourcesTable,
-  shortPostsTable,
   storyPostsTable,
   threadMediaTable,
   threadPostsTable,
@@ -46,28 +46,28 @@ export class PostsService {
     }
 
     switch (post.type) {
-      case 'short': {
-        const shortPost = await db
+      case 'reel': {
+        const reelPost = await db
           .select()
-          .from(shortPostsTable)
-          .leftJoin(resourcesTable, eq(shortPostsTable.resourceId, resourcesTable.id))
-          .where(and(eq(shortPostsTable.postId, post.id)))
+          .from(reelPostsTable)
+          .leftJoin(resourcesTable, eq(reelPostsTable.resourceId, resourcesTable.id))
+          .where(and(eq(reelPostsTable.postId, post.id)))
           .limit(1)
           .then((res) => res[0]!)
 
         return {
           ...post,
           type: post.type,
-          description: shortPost.short_posts.description,
-          resource: shortPost.resources && {
-            id: shortPost.resources.id,
-            location: shortPost.resources.location,
-            type: shortPost.resources.type,
-            createdAt: shortPost.resources.createdAt,
-            isExternal: shortPost.resources.isExternal,
-            url: await getResourcePublicUrl(shortPost.resources),
+          description: reelPost.reel_posts.description,
+          resource: reelPost.resources && {
+            id: reelPost.resources.id,
+            location: reelPost.resources.location,
+            type: reelPost.resources.type,
+            createdAt: reelPost.resources.createdAt,
+            isExternal: reelPost.resources.isExternal,
+            url: await getResourcePublicUrl(reelPost.resources),
           },
-        } satisfies Extract<Post, { type: 'short' }>
+        } satisfies Extract<Post, { type: 'reel' }>
       }
       case 'post': {
         const regularPosts = await db
@@ -216,9 +216,9 @@ export class PostsService {
       .then((res) => res[0] as SelectPost)
 
     switch (opts.type) {
-      case 'short': {
-        const shortPost = await db
-          .insert(shortPostsTable)
+      case 'reel': {
+        const reelPost = await db
+          .insert(reelPostsTable)
           .values({
             postId: post.id,
             description: '',
@@ -228,11 +228,11 @@ export class PostsService {
 
         return {
           ...post,
-          type: post.type as 'short',
+          type: post.type as 'reel',
 
-          description: shortPost.description,
+          description: reelPost.description,
           resource: null,
-        } satisfies Extract<Post, { type: 'short' }>
+        } satisfies Extract<Post, { type: 'reel' }>
       }
       case 'post': {
         const regularPost = await db
@@ -321,7 +321,7 @@ export class PostsService {
     opts.post.name = updatedPost.name
 
     switch (opts.post.type) {
-      case 'short':
+      case 'reel':
         return await this.updateShortPost(db, { ...opts } as any)
       case 'post':
         return await this.updateRegularPost(db, { ...opts } as any)
@@ -338,16 +338,16 @@ export class PostsService {
     db: TransactionLike,
     opts: {
       orgId: string
-      post: Extract<Post, { type: 'short' }>
+      post: Extract<Post, { type: 'reel' }>
     }
   ): Promise<Post> {
     const updatedShortPost = await db
-      .update(shortPostsTable)
+      .update(reelPostsTable)
       .set({
         description: opts.post.description,
         resourceId: opts.post.resource?.id ?? null,
       })
-      .where(and(eq(shortPostsTable.postId, opts.post.id)))
+      .where(and(eq(reelPostsTable.postId, opts.post.id)))
       .returning()
       .then((res) => res[0]!)
 

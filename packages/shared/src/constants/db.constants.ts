@@ -11,11 +11,11 @@ export type UserRole = (typeof USER_ROLE)[number]
 /**
  * Posts
  */
-export const POST_TYPE = ['short', 'story', 'post', 'thread'] as const
+export const POST_TYPE = ['reel', 'story', 'post', 'thread'] as const
 export type PostType = (typeof POST_TYPE)[number]
 
 export const POST_TYPE_NAME = {
-  short: 'Short',
+  reel: 'Reel',
   story: 'Story',
   post: 'Post',
   thread: 'Thread',

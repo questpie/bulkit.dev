@@ -6,28 +6,27 @@ import { PLATFORMS, PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/const
 import { Card, CardContent } from '@bulkit/ui/components/ui/card'
 import {
   ResponsiveDialog,
-  ResponsiveDialogTrigger,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
-import React from 'react'
 import { LuPlus } from 'react-icons/lu'
 
 export function ChannelsPageHeader() {
   const mutation = useMutation({
     mutationFn: (platform: Platform) =>
-      apiClient.channels[platform].auth.get({
+      apiClient.channels.auth({ platform }).index.get({
         query: {
           redirectTo: `${window.location.origin}/channels/{{cId}}`,
         },
       }),
     onSuccess: (res) => {
       if (res.error) {
-        return toast.error(res.error?.value.message)
+        return toast.error('Something went wrong')
       }
 
       window.location.href = res.data.authUrl

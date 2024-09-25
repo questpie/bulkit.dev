@@ -277,8 +277,8 @@ export function StoryPostFields() {
   )
 }
 
-export function ShortPostFields() {
-  const form = useFormContext<Extract<Post, { type: 'short' }>>()
+export function ReelPostFields() {
+  const form = useFormContext<Extract<Post, { type: 'reel' }>>()
 
   return (
     <div className='flex flex-col gap-4 w-full px-4'>
@@ -288,10 +288,10 @@ export function ShortPostFields() {
         render={({ field }) => {
           return (
             <FormItem>
-              <FormLabel>Short description</FormLabel>
+              <FormLabel>Reel description</FormLabel>
 
               <FormControl>
-                <Textarea rows={10} {...field} placeholder='Write your short description here' />
+                <Textarea rows={10} {...field} placeholder='Write your reel description here' />
               </FormControl>
 
               <FormMessage />

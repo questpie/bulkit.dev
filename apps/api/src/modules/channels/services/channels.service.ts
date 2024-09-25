@@ -4,8 +4,9 @@ import { ioc } from '@bulkit/api/ioc'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 import { Elysia, type Static } from 'elysia'
 
-export type ChannelWithIntegration = Required<
-  Awaited<ReturnType<typeof ChannelsService.prototype.getChannelWithIntegration>>
+export type ChannelWithIntegration = Exclude<
+  Awaited<ReturnType<typeof ChannelsService.prototype.getChannelWithIntegration>>,
+  undefined
 >
 
 class ChannelsService {

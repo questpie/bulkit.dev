@@ -21,8 +21,8 @@ export function XPreview(props: PreviewPostProps) {
     switch (postData.type) {
       case 'post':
         return <RegularPostPreview postData={postData} previewUser={props.previewUser} />
-      case 'short':
-        return <ShortPostPreview postData={postData} previewUser={props.previewUser} />
+      case 'reel':
+        return <ReelPostPreview postData={postData} previewUser={props.previewUser} />
       case 'thread':
         return <ThreadPostPreview postData={postData} previewUser={props.previewUser} />
       default:
@@ -131,7 +131,7 @@ function RegularPostPreview({ postData, previewUser }: XPreviewProps<'post'>) {
   )
 }
 
-function ShortPostPreview({ postData, previewUser }: XPreviewProps<'short'>) {
+function ReelPostPreview({ postData, previewUser }: XPreviewProps<'reel'>) {
   return (
     <PostLayout>
       <PostHeader postData={postData} previewUser={previewUser} />

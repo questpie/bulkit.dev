@@ -1,5 +1,7 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { postsTable } from '@bulkit/api/db/db.schema'
+import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
+import { channelsServicePlugin } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { postServicePlugin } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
@@ -11,6 +13,7 @@ import Elysia, { t } from 'elysia'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
   .use(postServicePlugin())
+  .use(channelsServicePlugin())
   .use(organizationMiddleware)
   .get(
     '/',
@@ -131,7 +134,38 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       },
     }
   )
-  .patch('/:id/publish', async (ctx) => {})
+  .patch('/:id/publish', async (ctx) => {
+    const post = await ctx.postService.getById(ctx.db, {
+      orgId: ctx.organization!.id,
+      postId: ctx.params.id,
+    })
+
+    const firstChannel = await ctx.db.query.channelsTable.findFirst({
+      where: (channels, { eq }) => eq(channels.organizationId, ctx.organization!.id),
+    })
+
+    if (!firstChannel) {
+      return ctx.error(400, { message: 'No channel found' })
+    }
+
+    // TODO: JUST TESTING
+
+    const channelWithIntegration = await ctx.channelsService.getChannelWithIntegration(ctx.db, {
+      channelId: firstChannel.id,
+      organizationId: ctx.organization!.id,
+    })
+
+    if (!channelWithIntegration) {
+      return ctx.error(400, { message: 'No channel with integration found' })
+    }
+
+    if (!post) {
+      return ctx.error(404, { message: 'Post not found' })
+    }
+
+    const channelManager = getChannelManager('x')
+    await channelManager.publisher.publishPost(channelWithIntegration, post)
+  })
   .post('/:id/duplicate', async (ctx) => {
     return await ctx.db.transaction(async (trx) => {
       const post = await ctx.postService.getById(trx, {
