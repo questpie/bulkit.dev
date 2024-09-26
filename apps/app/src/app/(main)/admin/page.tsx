@@ -1,3 +1,16 @@
+import { Header } from '@bulkit/app/app/(main)/_components/header'
+
+const ADMIN_TABS: { name: string; href: string }[] = [
+  {
+    name: 'Platform settings',
+    href: '/admin/platforms',
+  },
+]
+
 export default function AdminPage() {
-  return <p>admin stuff</p>
+  return (
+    <>
+      <Header title='Admin Settings' />
+    </>
+  )
 }

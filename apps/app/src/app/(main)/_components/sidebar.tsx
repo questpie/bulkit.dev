@@ -1,5 +1,6 @@
 'use client'
 
+import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { ThemeToggle } from '@bulkit/app/app/(main)/_components/theme-toggle'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { cn } from '@bulkit/ui/lib'
@@ -24,10 +25,19 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     icon: LuSend,
     href: '/posts',
   },
+  {
+    name: 'Aministration',
+    icon: LuSettings,
+    href: '/admin',
+    admin: true,
+  },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const isAdmin = !!useAuthData()?.user.isAdmin
+
+  const items = NAV_ITEMS.filter((item) => !item.admin || isAdmin)
 
   return (
     <>
@@ -43,7 +53,7 @@ export function Sidebar() {
           </div>
           <nav>
             <ul className='flex flex-col gap-2'>
-              {NAV_ITEMS.map((item) => (
+              {items.map((item) => (
                 <li className='w-full' key={item.href}>
                   <Link
                     className={cn(
