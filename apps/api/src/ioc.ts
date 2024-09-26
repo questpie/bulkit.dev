@@ -6,7 +6,7 @@ export const ioc = new Elysia({
 
 export function iocRegister<const TKey extends string, const TFactoryReturn>(
   key: TKey,
-  factory: () => TFactoryReturn
+  factory: (ioc: Elysia) => TFactoryReturn
 ) {
   const plugin = (app: Elysia) =>
     app.use(
@@ -25,7 +25,7 @@ export function iocRegister<const TKey extends string, const TFactoryReturn>(
           }
 
           return {
-            [key]: factory(),
+            [key]: factory(ioc),
           } as {
             [key in TKey]: TFactoryReturn
           }

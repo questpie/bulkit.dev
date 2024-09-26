@@ -1,3 +1,4 @@
+import { injectApiKeyManager, type ApiKeyManager } from '@bulkit/api/common/api-key.manager'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
@@ -5,6 +6,7 @@ import {
   type InsertChannel,
   type InsertSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { OAuth2Provider } from '@bulkit/api/modules/channels/abstract/oauth2/oauth2.provider'
 import type { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
@@ -19,8 +21,12 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
   static NO_REFRESH_TOKEN_SUPPORT_ERROR_CODE = 'NO_REFRESH_TOKEN_SUPPORT'
   static FAILED_TO_REFRESH_TOKEN_ERROR_CODE = 'FAILED_TO_REFRESH_TOKEN'
 
+  private readonly apiKeyService: ApiKeyManager
+
   constructor(private readonly oAuth2Provider: OAuth2Provider) {
     super()
+    const container = iocResolve(ioc.use(injectApiKeyManager))
+    this.apiKeyService = container.apiKeyManager
   }
 
   handleAuthRequest(ctx: InferContext<typeof channelAuthRotes>): Promise<string> {
@@ -194,8 +200,8 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
           socialMediaIntegrationsTable.organizationId,
         ],
         set: {
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
+          accessToken: this.apiKeyService.encrypt(data.accessToken),
+          refreshToken: data.refreshToken && this.apiKeyService.encrypt(data.refreshToken),
           tokenExpiry: data.tokenExpiry,
         },
       })

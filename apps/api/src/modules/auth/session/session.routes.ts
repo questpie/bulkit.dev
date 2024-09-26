@@ -1,6 +1,6 @@
 import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { lucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
@@ -88,9 +88,17 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
   .guard((app) => {
     return app
       .use(protectedMiddleware)
+      .use(injectDatabase)
       .get(
         '/',
-        async ({ auth }) => {
+        async ({ auth, db }) => {
+          const superAdmin = await db
+            .select()
+            .from(superAdminsTable)
+            .where(eq(superAdminsTable.userId, auth.user.id))
+            .limit(1)
+            .then((r) => r[0])
+
           return {
             session: {
               id: auth.session.id,
@@ -99,6 +107,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
               id: auth.user.id,
               email: auth.user.email,
               name: auth.user.name,
+              isAdmin: !!superAdmin,
             },
           }
         },
@@ -115,6 +124,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
                 id: t.String(),
                 email: t.String(),
                 name: t.String(),
+                isAdmin: t.Boolean(),
               }),
             }),
           },

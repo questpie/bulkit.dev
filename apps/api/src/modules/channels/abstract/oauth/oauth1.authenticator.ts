@@ -1,3 +1,4 @@
+import { injectApiKeyManager, type ApiKeyManager } from '@bulkit/api/common/api-key.manager'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
@@ -6,6 +7,7 @@ import {
   type InsertChannel,
   type InsertSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { OAuth1Provider } from '@bulkit/api/modules/channels/abstract/oauth/oauth1.provider'
 import type { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
@@ -18,8 +20,12 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
   static FAILED_TO_GET_REQUEST_TOKEN_ERROR_CODE = 'FAILED_TO_GET_REQUEST_TOKEN'
   static FAILED_TO_GET_ACCESS_TOKEN_ERROR_CODE = 'FAILED_TO_GET_ACCESS_TOKEN'
 
+  private readonly apiKeyService: ApiKeyManager
+
   constructor(private readonly oAuth1Provider: OAuth1Provider) {
     super()
+    const container = iocResolve(ioc.use(injectApiKeyManager))
+    this.apiKeyService = container.apiKeyManager
   }
 
   async handleAuthRequest(ctx: InferContext<typeof channelAuthRotes>): Promise<string> {
@@ -175,8 +181,8 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
           socialMediaIntegrationsTable.organizationId,
         ],
         set: {
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
+          accessToken: this.apiKeyService.encrypt(data.accessToken),
+          refreshToken: data.refreshToken && this.apiKeyService.encrypt(data.refreshToken),
           tokenExpiry: data.tokenExpiry,
         },
       })

@@ -3,7 +3,7 @@ import { iocRegister } from '@bulkit/api/ioc'
 import Elysia from 'elysia'
 import crypto from 'node:crypto'
 
-class ApiKeyManager {
+export class ApiKeyManager {
   // If error handling is ever needed
   static INVALID_KEY_ERROR_CODE = 'INVALID_KEY'
   static ENCRYPTION_ERROR_CODE = 'ENCRYPTION_FAILED'

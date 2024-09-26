@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
 import { LuAtSign, LuLogOut, LuPieChart, LuSend, LuSettings } from 'react-icons/lu'
 
-const NAV_ITEMS: { name: string; icon: IconType; href: string }[] = [
+const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
   {
     name: 'Dashboard',
     icon: LuPieChart,
