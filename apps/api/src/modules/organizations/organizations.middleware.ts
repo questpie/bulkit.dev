@@ -1,7 +1,7 @@
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import { authServicePlugin } from '@bulkit/api/modules/auth/serivces/auth.service'
-import { organizationsServicePlugin } from '@bulkit/api/modules/organizations/services/organizations.service'
+import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
+import { injectOrganizationService } from '@bulkit/api/modules/organizations/services/organizations.service'
 import type { UserRole } from '@bulkit/shared/constants/db.constants'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
 import Elysia from 'elysia'
@@ -15,9 +15,9 @@ export const organizationMiddleware = new Elysia({
   name: 'organization.middleware',
 })
   .use(protectedMiddleware)
-  .use(databasePlugin())
-  .use(authServicePlugin())
-  .use(organizationsServicePlugin())
+  .use(injectDatabase)
+  .use(injectAuthService)
+  .use(injectOrganizationService)
   .resolve(async ({ headers, authService, organizationsService, db, auth }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
 

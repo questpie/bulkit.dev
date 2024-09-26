@@ -1,4 +1,4 @@
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
@@ -6,7 +6,7 @@ import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import Elysia, { t } from 'elysia'
 
 export const channelAuthRotes = new Elysia({ prefix: '/auth/:platform' })
-  .use(databasePlugin())
+  .use(injectDatabase)
   .guard({
     params: t.Object({
       platform: StringLiteralEnum(PLATFORMS),

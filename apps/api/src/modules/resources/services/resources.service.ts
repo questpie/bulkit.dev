@@ -2,7 +2,7 @@ import type { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocRegister } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { extractPathExt } from '@bulkit/shared/utils/string'
@@ -152,10 +152,4 @@ class ResourcesService {
   }
 }
 
-export const resourcesServicePlugin = () =>
-  ioc.use(
-    new Elysia({ name: 'ioc.ResourcesService' }).decorate(
-      'resourcesService',
-      new ResourcesService()
-    )
-  )
+export const injectResourcesService = iocRegister('resourcesService', () => new ResourcesService())

@@ -1,5 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
@@ -10,7 +10,7 @@ import Elysia, { t } from 'elysia'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(channelAuthRotes)
-  .use(databasePlugin())
+  .use(injectDatabase)
   .use(organizationMiddleware)
   .get(
     '/',

@@ -1,5 +1,5 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
 import { mailClient } from '@bulkit/api/mail/mail.client'
@@ -10,7 +10,7 @@ import { Elysia, t } from 'elysia'
 import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
 
 export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
-  .use(databasePlugin())
+  .use(injectDatabase)
   .use(applyRateLimit({ limit: 10, window: 60 }))
   .post(
     '/',

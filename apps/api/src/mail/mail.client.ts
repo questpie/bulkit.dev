@@ -1,4 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
+import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { ResendAdapter } from '@bulkit/mail/adapter/resend.adapter'
 import { SmtpAdapter } from '@bulkit/mail/adapter/smtp.adapter'
 import { MailClient, type MailAdapter } from '@bulkit/mail/base-mail'
@@ -33,5 +34,5 @@ const adapterPromise = async (): Promise<MailAdapter> => {
 export const mailClient = new MailClient({
   adapter: adapterPromise(),
   from: envApi.MAIL_FROM,
-  // jobFactory,
+  jobFactory,
 })

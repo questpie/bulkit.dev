@@ -1,5 +1,6 @@
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { sessionsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
@@ -7,7 +8,7 @@ import { Google } from 'arctic'
 import { Lucia } from 'lucia'
 
 const adapter = new DrizzlePostgreSQLAdapter(
-  databasePlugin().decorator.db,
+  iocResolve(ioc.use(injectDatabase)).db,
   sessionsTable,
   usersTable
 )

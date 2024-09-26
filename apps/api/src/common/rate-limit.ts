@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 import { ip } from 'elysia-ip'
-import { redisPlugin } from '@bulkit/api/redis/redis-clients'
+import { injectRedis } from '@bulkit/api/redis/redis-clients'
 
 interface RateLimitOptions {
   /**
@@ -24,7 +24,7 @@ interface RateLimitOptions {
 export const rateLimit = () => {
   return new Elysia({ name: 'rate-limit' })
     .use(ip())
-    .use(redisPlugin())
+    .use(injectRedis)
     .macro(({ onBeforeHandle }) => ({
       applyRateLimit(options?: RateLimitOptions) {
         if (!options) return

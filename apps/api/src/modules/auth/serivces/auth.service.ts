@@ -1,6 +1,6 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { superAdminsTable } from '@bulkit/api/db/db.schema'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocRegister } from '@bulkit/api/ioc'
 import { eq } from 'drizzle-orm'
 import { Elysia } from 'elysia'
 
@@ -21,5 +21,4 @@ class AuthService {
   // async deleteSuperAdmin(db: TransactionLike, userId: string) {...}
 }
 
-export const authServicePlugin = () =>
-  ioc.use(new Elysia({ name: 'ioc.AuthService' }).decorate('authService', new AuthService()))
+export const injectAuthService = iocRegister('authService', () => new AuthService())

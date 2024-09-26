@@ -1,5 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import {
   insertOrganizationInviteSchema,
   insertOrganizationSchema,
@@ -22,7 +22,7 @@ export const organizationRoutes = new Elysia({
   },
 })
   .use(protectedMiddleware)
-  .use(databasePlugin())
+  .use(injectDatabase)
   .post(
     '/',
     async ({ body, db, auth }) => {

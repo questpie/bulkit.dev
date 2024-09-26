@@ -5,10 +5,10 @@ import { google, lucia } from '../lucia'
 import { oauthAccountsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { generalEnv } from '@bulkit/shared/env/general.env'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 
 export const googleRoutes = new Elysia()
-  .use(databasePlugin())
+  .use(injectDatabase)
   .get(
     '/google',
     async ({ redirect, cookie, query }) => {

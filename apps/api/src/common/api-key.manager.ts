@@ -1,4 +1,6 @@
 import { envApi } from '@bulkit/api/envApi'
+import { iocRegister } from '@bulkit/api/ioc'
+import Elysia from 'elysia'
 import crypto from 'node:crypto'
 
 class ApiKeyManager {
@@ -63,7 +65,4 @@ class ApiKeyManager {
   }
 }
 
-/**
- * Use this instance to encrypt and decrypt API keys for AI services.
- */
-export const apiKeyManager = new ApiKeyManager()
+export const injectApiKeyManager = iocRegister('apiKeyManager', () => new ApiKeyManager())

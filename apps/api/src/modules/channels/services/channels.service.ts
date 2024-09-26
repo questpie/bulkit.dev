@@ -1,6 +1,6 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { channelsTable, socialMediaIntegrationsTable } from '@bulkit/api/db/db.schema'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocRegister } from '@bulkit/api/ioc'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 import { Elysia, type Static } from 'elysia'
 
@@ -42,7 +42,4 @@ class ChannelsService {
   // async deleteById(db: TransactionLike, opts: {...}) {...}
 }
 
-export const channelsServicePlugin = () =>
-  ioc.use(
-    new Elysia({ name: 'ioc.ChannelsService' }).decorate('channelsService', new ChannelsService())
-  )
+export const injectChannelService = iocRegister('channelsService', () => new ChannelsService())

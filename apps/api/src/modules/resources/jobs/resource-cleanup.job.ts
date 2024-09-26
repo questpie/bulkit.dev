@@ -1,13 +1,13 @@
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import {
+  reelPostsTable,
   regularPostMediaTable,
   resourcesTable,
-  reelPostsTable,
   storyPostsTable,
   threadMediaTable,
 } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, eq, isNull, lt } from 'drizzle-orm'
@@ -20,7 +20,7 @@ export const resourceCleanupJob = jobFactory.createJob({
     every: 10000,
   },
   handler: async (job) => {
-    const { db } = ioc.use(databasePlugin()).decorator
+    const { db } = iocResolve(ioc.use(injectDatabase))
 
     appLogger.info('Fetching unused resources')
     job.log('Fetching unused resources')

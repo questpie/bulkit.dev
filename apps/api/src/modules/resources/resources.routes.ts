@@ -1,15 +1,15 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { resourcesServicePlugin } from '@bulkit/api/modules/resources/services/resources.service'
+import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
 })
-  .use(databasePlugin())
-  .use(resourcesServicePlugin())
+  .use(injectDatabase)
+  .use(injectResourcesService)
   .use(organizationMiddleware)
   .get(
     '/',

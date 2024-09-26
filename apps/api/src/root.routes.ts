@@ -1,4 +1,5 @@
 import { appRoutes } from '@bulkit/api/modules/app/app.routes'
+import { adminRoutes } from '@bulkit/api/modules/auth/admin/admin.routes'
 import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
 import { channelRoutes } from '@bulkit/api/modules/channels/channels.routes'
 import { openGraphRoutes } from '@bulkit/api/modules/open-graph/open-graph.routes'
@@ -11,6 +12,7 @@ import { Elysia } from 'elysia'
  * Aggregate all routes here
  */
 export const rootRoutes = new Elysia()
+  .use(adminRoutes)
   .use(appRoutes)
   .use(authRoutes)
   .use(channelRoutes)

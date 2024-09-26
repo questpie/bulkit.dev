@@ -1,6 +1,6 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { organizationsTable, userOrganizationsTable } from '@bulkit/api/db/db.schema'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocRegister } from '@bulkit/api/ioc'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 import { Elysia, type Static } from 'elysia'
 
@@ -52,10 +52,7 @@ class OrganizationsService {
   // async deleteById(db: TransactionLike, opts: {...}) {...}
 }
 
-export const organizationsServicePlugin = () =>
-  ioc.use(
-    new Elysia({ name: 'ioc.OrganizationsService' }).decorate(
-      'organizationsService',
-      new OrganizationsService()
-    )
-  )
+export const injectOrganizationService = iocRegister(
+  'organizationsService',
+  () => new OrganizationsService()
+)

@@ -1,7 +1,8 @@
-import { ioc } from '@bulkit/api/ioc'
-import { redisPlugin } from '@bulkit/api/redis/redis-clients'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { injectRedis } from '@bulkit/api/redis/redis-clients'
 import { JobFactory } from '@bulkit/jobs/job-factory'
 
-export const jobFactory = new JobFactory(redisPlugin().decorator.redis.get('queue'), {
+const redis = iocResolve(ioc.use(injectRedis)).redis
+export const jobFactory = new JobFactory(redis.get('queue'), {
   verbose: true,
 })

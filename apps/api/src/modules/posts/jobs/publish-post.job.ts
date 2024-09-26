@@ -1,10 +1,10 @@
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { scheduledPostsTable } from '@bulkit/api/db/db.schema'
-import { ioc } from '@bulkit/api/ioc'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
-import { channelsServicePlugin } from '@bulkit/api/modules/channels/services/channels.service'
-import { postServicePlugin } from '@bulkit/api/modules/posts/services/posts.service'
+import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
+import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
 import { Type } from '@sinclair/typebox'
 import { and, eq, getTableColumns } from 'drizzle-orm'
@@ -16,10 +16,9 @@ export const publishPostJob = jobFactory.createJob({
   }),
 
   handler: async (job) => {
-    const { postService, db, channelsService } = ioc
-      .use(databasePlugin())
-      .use(postServicePlugin())
-      .use(channelsServicePlugin()).decorator
+    const { postService, db, channelsService } = iocResolve(
+      ioc.use(injectDatabase).use(injectPostService).use(injectChannelService)
+    )
 
     const scheduledPost = await db
       .select({

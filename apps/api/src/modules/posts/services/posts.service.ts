@@ -11,14 +11,14 @@ import {
   type InsertThreadMedia,
   type SelectPost,
 } from '@bulkit/api/db/db.schema'
-import { ioc } from '@bulkit/api/ioc'
+import { iocRegister } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
 import type { PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, asc, eq, getTableColumns } from 'drizzle-orm'
-import { Elysia, type Static } from 'elysia'
+import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
 
@@ -535,9 +535,4 @@ export class PostsService {
   }
 }
 
-export const postServicePlugin = () =>
-  ioc.use(
-    new Elysia({
-      name: 'ioc.PostsService',
-    }).decorate('postService', new PostsService())
-  )
+export const injectPostService = iocRegister('postService', () => new PostsService())

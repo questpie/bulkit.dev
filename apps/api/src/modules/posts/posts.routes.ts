@@ -1,9 +1,9 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { postsTable } from '@bulkit/api/db/db.schema'
 import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
-import { channelsServicePlugin } from '@bulkit/api/modules/channels/services/channels.service'
+import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { postServicePlugin } from '@bulkit/api/modules/posts/services/posts.service'
+import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { PostDetailsSchema, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
@@ -12,8 +12,8 @@ import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
-  .use(postServicePlugin())
-  .use(channelsServicePlugin())
+  .use(injectPostService)
+  .use(injectChannelService)
   .use(organizationMiddleware)
   .get(
     '/',

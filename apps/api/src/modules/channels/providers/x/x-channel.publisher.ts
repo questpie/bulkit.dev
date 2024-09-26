@@ -53,6 +53,7 @@ class XChannelPublisher extends ChannelPublisher {
           reply: lastTweetId ? { in_reply_to_tweet_id: lastTweetId } : undefined,
           media: mediaIds.length ? { media_ids: mediaIds as [string] } : undefined,
         })
+
         lastTweetId = data.id
       }
     } catch (error) {

@@ -1,5 +1,5 @@
 import { rateLimit } from '@bulkit/api/common/rate-limit'
-import { databasePlugin } from '@bulkit/api/db/db.client'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { lucia } from '@bulkit/api/modules/auth/lucia'
@@ -9,7 +9,7 @@ import Elysia, { t } from 'elysia'
 import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
-  .use(databasePlugin())
+  .use(injectDatabase)
   .use(rateLimit())
   .post(
     '/',
