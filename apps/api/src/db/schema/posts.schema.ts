@@ -1,17 +1,17 @@
+import { relations } from 'drizzle-orm'
+import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
+import {
+  POST_STATUS,
+  POST_TYPE,
+  SCHEDULED_POST_STATUS,
+} from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol } from './_base.schema'
 import { channelsTable } from './channels.schema'
 import { commentsTable } from './comments.schema'
 import { organizationsTable } from './organizations.schema'
 import { resourcesTable } from './resources.schema'
 import { workflowsTable } from './workflows.schema'
-import {
-  POST_STATUS,
-  POST_TYPE,
-  SCHEDULED_POST_STATUS,
-} from '../../../../../packages/shared/src/constants/db.constants'
-import { relations } from 'drizzle-orm'
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
-import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 
 // Modified Posts table
 export const postsTable = pgTable(

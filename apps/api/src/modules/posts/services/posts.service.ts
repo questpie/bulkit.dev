@@ -1,10 +1,12 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
+  channelsTable,
   postsTable,
   reelPostsTable,
   regularPostMediaTable,
   regularPostsTable,
   resourcesTable,
+  scheduledPostsTable,
   storyPostsTable,
   threadMediaTable,
   threadPostsTable,
@@ -33,7 +35,7 @@ export class PostsService {
     db: TransactionLike,
     opts: { orgId: string; postId: string }
   ): Promise<Post | null> {
-    const post = await db
+    const tmpPost = await db
       .select({
         id: postsTable.id,
         type: postsTable.type,
@@ -45,11 +47,24 @@ export class PostsService {
       .where(and(eq(postsTable.id, opts.postId), eq(postsTable.organizationId, opts.orgId)))
       .then((res) => res[0])
 
-    appLogger.debug({ post })
+    appLogger.debug({ post: tmpPost })
 
-    if (!post) {
+    if (!tmpPost) {
       return null
     }
+
+    const channels = await db
+      .select({
+        id: channelsTable.id,
+        platform: channelsTable.platform,
+        name: channelsTable.name,
+        imageUrl: channelsTable.imageUrl,
+      })
+      .from(channelsTable)
+      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .where(eq(scheduledPostsTable.postId, tmpPost.id))
+
+    const post = { ...tmpPost, channels }
 
     switch (post.type) {
       case 'reel': {
@@ -235,6 +250,7 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'reel',
+          channels: [],
 
           description: reelPost.description,
           resource: null,
@@ -253,6 +269,7 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'post',
+          channels: [],
 
           text: regularPost.text,
           description: '',
@@ -274,6 +291,7 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'thread',
+          channels: [],
 
           items: [{ order: 1, text: '', media: [], id: threadPost.id }],
         } as Extract<Post, { type: 'thread' }>
@@ -290,6 +308,7 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'story',
+          channels: [],
 
           resource: null,
         } as Extract<Post, { type: 'story' }>
@@ -323,8 +342,24 @@ export class PostsService {
       .returning()
       .then((res) => res[0]!)
 
+    const existingChannels = await db
+      .select({
+        id: channelsTable.id,
+        platform: channelsTable.platform,
+        name: channelsTable.name,
+        imageUrl: channelsTable.imageUrl,
+      })
+      .from(channelsTable)
+      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .where(eq(scheduledPostsTable.postId, existingPost.id))
+
+    // TODO: finish
+    // const channelsToAdd =
+    // const channelsToRemove =
+
     opts.post.status = updatedPost.status
     opts.post.name = updatedPost.name
+    opts.post.channels = existingChannels
 
     switch (opts.post.type) {
       case 'reel':

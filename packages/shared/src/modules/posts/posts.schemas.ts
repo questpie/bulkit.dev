@@ -9,12 +9,20 @@ export const PostMediaSchema = Type.Object({
   resource: ResourceSchema,
 })
 
+export const PlatformChannel = Type.Object({
+  id: Type.String(),
+  platform: Type.String(),
+  name: Type.String(),
+  imageUrl: Type.Union([Type.String(), Type.Null()]),
+})
+
 export const PostDetailsSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
   status: StringLiteralEnum(POST_STATUS),
   type: StringLiteralEnum(POST_TYPE),
   createdAt: Type.String(),
+  channels: Type.Array(PlatformChannel),
 })
 
 export const RegularPostSchema = Type.Object({

@@ -1,9 +1,3 @@
-// import {
-//   organizationsTable,
-//   scheduledPostsTable,
-//   postsTable,
-//   channelsTable,
-// } from '@bulkit/api/db/db.schema'
 import { primaryKeyCol } from './_base.schema'
 import { channelsTable } from './channels.schema'
 import { organizationsTable } from './organizations.schema'
