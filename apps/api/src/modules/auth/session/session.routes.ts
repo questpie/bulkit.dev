@@ -46,7 +46,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
         const existingSuperAdmin = await trx
           .select()
           .from(superAdminsTable)
-          .where(eq(usersTable.id, superAdminsTable.userId))
+          .where(eq(superAdminsTable.userId, user.id))
           .limit(1)
           .then((r) => r[0])
 
