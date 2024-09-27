@@ -606,11 +606,15 @@ export class PostsService {
 
       case 'thread': {
         const threadItems = post.items ?? []
+        const threadSettings = settings.threadSettings
+        if (!threadSettings) {
+          throw new Error('Thread settings not found')
+        }
 
-        if (threadItems.length > settings.threadLimit) {
+        if (threadItems.length > threadSettings.limit) {
           errors.push({
             path: 'items',
-            message: `Thread exceeds ${settings.threadLimit} items limit`,
+            message: `Thread exceeds ${threadSettings.limit} items limit`,
           })
         }
 
@@ -638,8 +642,8 @@ export class PostsService {
           }
         }
 
-        switch (settings.threadHandlingStrategy) {
-          case 'multiple-posts':
+        switch (threadSettings.handlingStrategy) {
+          case 'separate':
             for (let i = 0; i < threadItems.length; i++) {
               const item = threadItems[i]!
               if (item.text.length > settings.maxPostLength) {
@@ -656,21 +660,7 @@ export class PostsService {
               }
             }
             break
-          case 'first-post-only':
-            if (threadItems[0] && threadItems[0].text.length > settings.maxPostLength) {
-              errors.push({
-                path: 'items[0].text',
-                message: `First thread item text exceeds ${settings.maxPostLength} characters limit`,
-              })
-            }
-            if (threadItems[0] && threadItems[0].media.length > settings.maxMediaPerPost) {
-              errors.push({
-                path: 'items[0].media',
-                message: `First thread item exceeds ${settings.maxMediaPerPost} media items limit`,
-              })
-            }
-            break
-          case 'concat-all':
+          case 'concat':
             if (totalTextLength > settings.maxPostLength) {
               errors.push({
                 path: 'items',
