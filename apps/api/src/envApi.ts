@@ -10,6 +10,10 @@ export const envApi = createEnv({
       Type.String({ default: generalEnv.PUBLIC_NODE_ENV === 'development' ? 'debug' : 'info' })
     ),
 
+    RUNTIME_MODE: Type.Union([Type.Literal('worker'), Type.Literal('api'), Type.Literal('all')], {
+      default: 'all',
+    }),
+
     API_KEY_ENCRYPTION_SECRET: Type.String({
       minLength: 64,
       maxLength: 64,
@@ -97,11 +101,13 @@ export const envApi = createEnv({
     PORT: process.env.PORT,
     LOG_LEVEL: process.env.LOG_LEVEL,
 
+    API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
+
+    RUNTIME_MODE: process.env.RUNTIME_MODE,
+
     DATABASE_URL: process.env.DATABASE_URL,
 
     SERVER_URL: process.env.SERVER_URL,
-
-    API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
 
     DEFAULT_DRIVER: process.env.DEFAULT_DRIVER,
     S3_ENDPOINT: process.env.S3_ENDPOINT,

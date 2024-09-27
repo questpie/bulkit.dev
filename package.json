@@ -15,7 +15,6 @@
     "deps:update": "bun npm-check-updates -ui -ws",
     "dev:api": "cd apps/api && bun run dev",
     "dev:app": "cd apps/app && bun run dev",
-    "dev:worker": "cd apps/api && bun run dev:worker",
     "fix": "bun biome check --apply-unsafe ./packages ./apps",
     "format": "bun biome format --write ./packages ./apps",
     "i18n": "cd packages/translations && bun i18n",

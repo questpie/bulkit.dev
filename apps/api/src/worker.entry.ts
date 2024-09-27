@@ -10,9 +10,11 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import '@bulkit/api/common/logger'
 import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
 
-ioc.use(iocRegister('db', () => null))
+export function bootWorker() {
+  ioc.use(iocRegister('db', () => null))
 
-mailClient.registerWorker()
-resourceCleanupJob.registerWorker()
+  mailClient.registerWorker()
+  resourceCleanupJob.registerWorker()
 
-appLogger.info('Workers instances running')
+  appLogger.info('Workers instances running')
+}

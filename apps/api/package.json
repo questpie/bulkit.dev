@@ -3,8 +3,9 @@
   "version": "1.0.50",
   "type": "module",
   "scripts": {
-    "dev": "bun run --bun --watch src/server.entry.ts",
-    "dev:worker": "bun run --bun --watch src/worker.entry.ts",
+    "dev": "RUNTIME_MODE=all bun run --bun --watch src/main.entry.ts",
+    "dev:worker": "RUNTIME_MODE=worker bun run --bun --watch src/main.entry.ts",
+    "dev:api": "RUNTIME_MODE=api bun run --bun --watch src/main.entry.ts",
     "prod": "bun run src/server.entry.ts",
     "prod:worker": "bun run src/worker.entry.ts",
     "test": "bun test",
