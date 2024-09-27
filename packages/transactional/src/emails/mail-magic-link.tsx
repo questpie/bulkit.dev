@@ -28,7 +28,7 @@ function MailMagicLink(props: MailMagicLinkProps) {
           Hello{magicLink.email ? ` ${magicLink.email.split('@')[0]}` : ''},
         </Text>
         <Text className='text-start mb-4'>
-          Click the link below to log in to your MealProAI account. If you <b>did not</b> request
+          Click the link below to log in to your bulkit.dev account. If you <b>did not</b> request
           this, please ignore this email.
         </Text>
       </Section>

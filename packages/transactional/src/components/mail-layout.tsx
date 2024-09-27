@@ -29,7 +29,7 @@ export function MailLayout({ ...props }: MailLayoutProps) {
                 foreground: '#000000',
                 border: '#eaeaea',
                 brand: {
-                  DEFAULT: '#010101',
+                  DEFAULT: 'hsl(262.1 83.3% 57.8%)',
                   foreground: '#ffffff',
                 },
               },
@@ -42,10 +42,10 @@ export function MailLayout({ ...props }: MailLayoutProps) {
             <Section className='mb-4'>
               <Img
                 // add url to the image
-                src='https://www.questpie.com/favicon_dark/android-chrome-192x192.png'
+                src='https://bulkit.dev/bulkit-logo.png'
                 width='40'
                 height='40'
-                alt='QuestPie'
+                alt='Bulkit'
                 className='my-0 mx-auto'
               />
             </Section>

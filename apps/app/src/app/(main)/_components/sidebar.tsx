@@ -36,6 +36,7 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
 export function Sidebar() {
   const pathname = usePathname()
   const isAdmin = !!useAuthData()?.user.isAdmin
+  console.log(isAdmin)
 
   const items = NAV_ITEMS.filter((item) => !item.admin || isAdmin)
 

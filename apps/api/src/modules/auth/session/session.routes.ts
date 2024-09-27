@@ -16,45 +16,55 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
     async ({ body, error, db, request }) => {
       const { authToken } = body
 
-      const [storedToken] = await db
-        .select()
-        .from(emailVerificationsTable)
-        .where(
-          and(
-            eq(emailVerificationsTable.id, authToken),
-            eq(emailVerificationsTable.type, 'auth-code')
+      return db.transaction(async (trx) => {
+        const [storedToken] = await trx
+          .select()
+          .from(emailVerificationsTable)
+          .where(
+            and(
+              eq(emailVerificationsTable.id, authToken),
+              eq(emailVerificationsTable.type, 'auth-code')
+            )
           )
-        )
-        .limit(1)
+          .limit(1)
 
-      if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
-        return error(400, { message: 'Invalid token' })
-      }
+        if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
+          return error(400, { message: 'Invalid token' })
+        }
 
-      const user = await db
-        .select()
-        .from(usersTable)
-        .where(eq(usersTable.email, storedToken.email))
-        .limit(1)
-        .then((r) => r[0])
+        const user = await trx
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, storedToken.email))
+          .limit(1)
+          .then((r) => r[0])
 
-      if (!user) {
-        return error(400, { message: 'Invalid user' })
-      }
+        if (!user) {
+          return error(400, { message: 'Invalid user' })
+        }
 
-      const session = await lucia.createSession(user.id, getDeviceInfo(request))
-      await db.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
+        const existingSuperAdmin = await trx
+          .select()
+          .from(superAdminsTable)
+          .where(eq(usersTable.id, superAdminsTable.userId))
+          .limit(1)
+          .then((r) => r[0])
 
-      return {
-        session: {
-          id: session.id,
-        },
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
-      }
+        const session = await lucia.createSession(user.id, getDeviceInfo(request))
+        await trx.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
+
+        return {
+          session: {
+            id: session.id,
+          },
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isAdmin: !!existingSuperAdmin,
+          },
+        }
+      })
     },
     {
       applyRateLimit: {
@@ -73,6 +83,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
             id: t.String(),
             email: t.String(),
             name: t.String(),
+            isAdmin: t.Boolean(),
           }),
         }),
       },
