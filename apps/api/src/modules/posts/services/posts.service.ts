@@ -13,7 +13,8 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { iocRegister } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
-import type { PostType } from '@bulkit/shared/constants/db.constants'
+import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
+import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
 import type { PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -21,6 +22,11 @@ import { and, asc, eq, getTableColumns } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
+
+export type PostValidationError = {
+  path: string
+  message: string
+}
 
 export class PostsService {
   async getById(
@@ -532,6 +538,171 @@ export class PostsService {
       ...post,
       resource: post.resource,
     }
+  }
+
+  // async validate(post: Post) {
+  //   // const platformsToValidate = post.platforms.length ? post.platforms : PLATFORMS
+  //   const platformsToValidate = PLATFORMS
+
+  //   const validationResults: Record<Platform, { errors: string[] }>
+  // }
+
+  private async validatePost(
+    post: Post,
+    platform: Platform
+  ): Promise<{ post: Post; errors: PostValidationError[] }> {
+    const settings = DEFAULT_PLATFORM_SETTINGS[platform]
+    const errors: PostValidationError[] = []
+
+    // Common validations
+    if (post.name.length > 100) {
+      errors.push({ path: 'name', message: 'Post name exceeds 100 characters limit' })
+    }
+
+    switch (post.type) {
+      case 'post':
+        if (post.text.length > settings.maxPostLength) {
+          errors.push({
+            path: 'text',
+            message: `Post text exceeds ${settings.maxPostLength} characters limit`,
+          })
+        }
+        if (post.media.length > settings.maxMediaPerPost) {
+          errors.push({
+            path: 'media',
+            message: `Post exceeds ${settings.maxMediaPerPost} media items limit`,
+          })
+        }
+        for (let i = 0; i < post.media.length; i++) {
+          const media = post.media[i]!
+          if (!settings.mediaAllowedMimeTypes.includes(media.resource.type)) {
+            errors.push({
+              path: `media.${i}.resource.type`,
+              message: `Unsupported media type: ${media.resource.type}`,
+            })
+          }
+          // Assuming resource size is available, add this check:
+          // if (media.resource.size > settings.mediaMaxSizeInBytes) {
+          //   errors.push({ path: `media.${i}.resource.size`, message: `Media item exceeds ${settings.mediaMaxSizeInBytes} bytes limit` });
+          // }
+        }
+        break
+
+      case 'reel':
+        if (post.description.length > settings.maxPostLength) {
+          errors.push({
+            path: 'description',
+            message: `Reel description exceeds ${settings.maxPostLength} characters limit`,
+          })
+        }
+        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+          errors.push({
+            path: 'resource.type',
+            message: `Unsupported media type for reel: ${post.resource.type}`,
+          })
+        }
+        // Add size check for reel resource if size is available
+        break
+
+      case 'thread': {
+        const threadItems = post.items ?? []
+
+        if (threadItems.length > settings.threadLimit) {
+          errors.push({
+            path: 'items',
+            message: `Thread exceeds ${settings.threadLimit} items limit`,
+          })
+        }
+
+        if (!threadItems.length) {
+          errors.push({ path: 'items', message: 'Thread must have at least one item' })
+        }
+
+        let totalTextLength = 0
+        let totalMediaCount = 0
+
+        for (let i = 0; i < threadItems.length; i++) {
+          const item = threadItems[i]!
+          totalTextLength += item.text.length
+          totalMediaCount += item.media.length
+
+          for (let j = 0; j < item.media.length; j++) {
+            const media = item.media[j]!
+            if (!settings.mediaAllowedMimeTypes.includes(media.resource.type)) {
+              errors.push({
+                path: `items.${i}.media.${j}.resource.type`,
+                message: `Unsupported media type in thread: ${media.resource.type}`,
+              })
+            }
+            // Add size check for thread media if size is available
+          }
+        }
+
+        switch (settings.threadHandlingStrategy) {
+          case 'multiple-posts':
+            for (let i = 0; i < threadItems.length; i++) {
+              const item = threadItems[i]!
+              if (item.text.length > settings.maxPostLength) {
+                errors.push({
+                  path: `items.${i}.text`,
+                  message: `Thread item text exceeds ${settings.maxPostLength} characters limit`,
+                })
+              }
+              if (item.media.length > settings.maxMediaPerPost) {
+                errors.push({
+                  path: `items.${i}.media`,
+                  message: `Thread item exceeds ${settings.maxMediaPerPost} media items limit`,
+                })
+              }
+            }
+            break
+          case 'first-post-only':
+            if (threadItems[0] && threadItems[0].text.length > settings.maxPostLength) {
+              errors.push({
+                path: 'items[0].text',
+                message: `First thread item text exceeds ${settings.maxPostLength} characters limit`,
+              })
+            }
+            if (threadItems[0] && threadItems[0].media.length > settings.maxMediaPerPost) {
+              errors.push({
+                path: 'items[0].media',
+                message: `First thread item exceeds ${settings.maxMediaPerPost} media items limit`,
+              })
+            }
+            break
+          case 'concat-all':
+            if (totalTextLength > settings.maxPostLength) {
+              errors.push({
+                path: 'items',
+                message: `Total thread text exceeds ${settings.maxPostLength} characters limit`,
+              })
+            }
+            if (totalMediaCount > settings.maxMediaPerPost) {
+              errors.push({
+                path: 'items',
+                message: `Total thread media exceeds ${settings.maxMediaPerPost} items limit`,
+              })
+            }
+            break
+        }
+        break
+      }
+
+      case 'story':
+        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+          errors.push({
+            path: 'resource.type',
+            message: `Unsupported media type for story: ${post.resource.type}`,
+          })
+        }
+        // Add size check for story resource if size is available
+        break
+
+      default:
+        errors.push({ path: 'type', message: `Unsupported post type: ${(post as any).type}` })
+    }
+
+    return { post, errors }
   }
 }
 

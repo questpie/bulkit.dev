@@ -1,4 +1,5 @@
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
+import type { WorkflowStepConfig } from '@bulkit/shared/modules/workflows/workflows.constants'
 import cuid2 from '@paralleldrive/cuid2'
 import { Type } from '@sinclair/typebox'
 import { relations, sql } from 'drizzle-orm'
@@ -22,7 +23,6 @@ import {
   USER_ROLE,
   WORKFLOW_STEP_TYPES,
 } from '../../../../packages/shared/src/constants/db.constants'
-import type { WorkflowStepConfig } from '@bulkit/shared/modules/workflows/workflows.constants'
 
 /**
  * Primary key generates a unique id using cuid2 thats 16
@@ -35,6 +35,36 @@ const primaryKeyCol = (name = 'id') =>
 const longCuid = cuid2.init({ length: 64 })
 
 const tokenCol = (name = 'token') => text(name).$default(() => longCuid())
+
+// admin settings for platforms
+export const platformSettingsTable = pgTable(
+  'app_platform_settings',
+  {
+    id: primaryKeyCol(),
+    platform: text('platform', {
+      enum: PLATFORMS,
+    }).notNull(),
+
+    enabled: boolean('enabled').notNull().default(true),
+    settings: jsonb('settings').notNull(),
+
+    postLimit: integer('post_limit').notNull(),
+    postLimitWindowSeconds: integer('post_limit_window_seconds').notNull(),
+
+    maxPostLength: integer('max_post_length').notNull(),
+    maxMediaPerPost: integer('max_media_per_post').notNull(),
+    maxMediaSize: integer('max_media_size').notNull(),
+
+    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string' })
+      .defaultNow()
+      .$onUpdate(() => new Date().toISOString())
+      .notNull(),
+  },
+  (table) => ({
+    platformIndex: uniqueIndex('platform_settings_platform_index').on(table.platform),
+  })
+)
 
 // Workflows
 export const workflowsTable = pgTable('workflows', {
