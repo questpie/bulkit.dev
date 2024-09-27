@@ -5,7 +5,7 @@ import { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.rout
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, ilike } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
@@ -15,7 +15,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
   .get(
     '/',
     async (ctx) => {
-      const { limit = 10, cursor, platform } = ctx.query
+      const { limit = 10, cursor, platform, q } = ctx.query
 
       const channels = await ctx.db
         .select()
@@ -24,7 +24,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           and(
             eq(channelsTable.organizationId, ctx.organization!.id),
             platform ? eq(channelsTable.platform, platform) : undefined,
-            platform ? eq(channelsTable.platform, platform) : undefined
+            q ? ilike(channelsTable.name, `${q}%`) : undefined
           )
         )
         .orderBy(desc(channelsTable.id))
@@ -49,6 +49,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         PaginationSchema,
         t.Object({
           platform: t.Optional(StringLiteralEnum(PLATFORMS)),
+          q: t.Optional(t.String()),
         }),
       ]),
       response: {

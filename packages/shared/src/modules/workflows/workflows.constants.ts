@@ -3,8 +3,7 @@ export const WORKFLOW_STEP_TYPES = ['publish', 'wait', 'repost', 'condition'] as
 export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]
 
 export type PublishStepConfig = {
-  postId: string
-  channelIds: string[]
+  scheduledPostId: string
 }
 
 export type WaitStepConfig =
