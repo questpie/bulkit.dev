@@ -12,14 +12,14 @@ export type OAuthProviderName =
   | 'tiktok'
   | 'linkedin'
 
-export type OAuth2Provider = {
-  getUserInfo: (accessToken: string) => Promise<UserInfo>
-  isPKCE?: boolean
-  createAuthorizationURL(state: string, codeVerifier?: string): Promise<URL>
-  validateAuthorizationCode(code: string, codeVerifier?: string): Promise<Tokens>
-  refreshAccessToken?(refreshToken: string): Promise<Tokens>
-  scopes?: string[]
-}
+// export type OAuth2Provider = {
+//   getUserInfo: (accessToken: string) => Promise<UserInfo>
+//   isPKCE?: boolean
+//   createAuthorizationURL(state: string, codeVerifier?: string): Promise<URL>
+//   validateAuthorizationCode(code: string, codeVerifier?: string): Promise<Tokens>
+//   refreshAccessToken?(refreshToken: string): Promise<Tokens>
+//   scopes?: string[]
+// }
 
 export type UserInfo = {
   id: string
@@ -29,71 +29,99 @@ export type UserInfo = {
   url: string
 }
 
-export function createOAuth2Provider(opts: {
-  clientId: string
-  clientSecret: string
-  redirectUri: string
-  authorizationEndpoint: string
-  tokenEndpoint: string
-  scopes?: string[]
-  isPKCE?: boolean
-  userInfoEndpoint: string
-  authenticateWith?: 'http_basic_auth' | 'request_body'
-  parseUserInfo: (data: any) => UserInfo
-}): OAuth2Provider {
-  const client = new OAuth2Client(opts.clientId, opts.authorizationEndpoint, opts.tokenEndpoint, {
-    redirectURI: opts.redirectUri,
-  })
+export class OAuth2Provider {
+  private client: OAuth2Client
+  private opts: {
+    clientId: string
+    clientSecret: string
+    redirectUri: string
+    authorizationEndpoint: string
+    tokenEndpoint: string
+    scopes?: string[]
+    isPKCE?: boolean
+    userInfoEndpoint: string
+    authenticateWith?: 'http_basic_auth' | 'request_body'
+    additionalAuthParams?: Record<string, string>
+    parseUserInfo: (data: any) => UserInfo
+  }
 
-  return {
-    scopes: opts.scopes,
-    isPKCE: opts.isPKCE,
-    createAuthorizationURL(state: string, codeVerifier?: string) {
-      return client.createAuthorizationURL({
-        state,
-        codeVerifier,
-        scopes: opts.scopes,
-      })
-    },
-    async validateAuthorizationCode(code: string, codeVerifier?: string) {
-      const res = await client.validateAuthorizationCode(code, {
-        credentials: opts.clientSecret,
-        codeVerifier,
-        authenticateWith: opts.authenticateWith,
-      })
+  constructor(opts: {
+    clientId: string
+    clientSecret: string
+    redirectUri: string
+    authorizationEndpoint: string
+    tokenEndpoint: string
+    scopes?: string[]
+    isPKCE?: boolean
+    userInfoEndpoint: string
+    authenticateWith?: 'http_basic_auth' | 'request_body'
+    additionalAuthParams?: Record<string, string>
+    parseUserInfo: (data: any) => UserInfo
+  }) {
+    this.opts = opts
+    this.client = new OAuth2Client(opts.clientId, opts.authorizationEndpoint, opts.tokenEndpoint, {
+      redirectURI: opts.redirectUri,
+    })
+  }
 
-      return {
-        accessToken: res.access_token,
-        refreshToken: res.refresh_token,
-        accessTokenExpiresAt: res.expires_in
-          ? new Date(Date.now() + res.expires_in * 1000)
-          : undefined,
+  get scopes() {
+    return this.opts.scopes
+  }
+
+  get isPKCE() {
+    return this.opts.isPKCE
+  }
+  async createAuthorizationURL(state: string, codeVerifier?: string): Promise<URL> {
+    const url = await this.client.createAuthorizationURL({
+      state,
+      codeVerifier,
+      scopes: this.opts.scopes,
+    })
+    if (this.opts.additionalAuthParams) {
+      for (const [key, value] of Object.entries(this.opts.additionalAuthParams)) {
+        url.searchParams.append(key, value)
       }
-    },
-    async refreshAccessToken(refreshToken: string) {
-      const res = await client.refreshAccessToken(refreshToken, {
-        credentials: opts.clientSecret,
-        authenticateWith: 'request_body',
-      })
+    }
 
-      return {
-        accessToken: res.access_token,
-        refreshToken: res.refresh_token,
-        accessTokenExpiresAt: res.expires_in
-          ? new Date(Date.now() + res.expires_in * 1000)
-          : undefined,
-      }
-    },
-    async getUserInfo(accessToken: string): Promise<UserInfo> {
-      const response = await fetch(opts.userInfoEndpoint, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-      const data = await response.json()
-      return opts.parseUserInfo(data)
-    },
+    return url
+  }
+  async validateAuthorizationCode(code: string, codeVerifier?: string): Promise<Tokens> {
+    const res = await this.client.validateAuthorizationCode(code, {
+      credentials: this.opts.clientSecret,
+      codeVerifier,
+      authenticateWith: this.opts.authenticateWith,
+    })
+    return {
+      accessToken: res.access_token,
+      refreshToken: res.refresh_token,
+      accessTokenExpiresAt: res.expires_in
+        ? new Date(Date.now() + res.expires_in * 1000)
+        : undefined,
+    }
+  }
+  async refreshAccessToken(refreshToken: string): Promise<Tokens> {
+    const res = await this.client.refreshAccessToken(refreshToken, {
+      credentials: this.opts.clientSecret,
+      authenticateWith: 'request_body',
+    })
+    return {
+      accessToken: res.access_token,
+      refreshToken: res.refresh_token,
+      accessTokenExpiresAt: res.expires_in
+        ? new Date(Date.now() + res.expires_in * 1000)
+        : undefined,
+    }
+  }
+  async getUserInfo(accessToken: string): Promise<UserInfo> {
+    const response = await fetch(this.opts.userInfoEndpoint, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+    const data = await response.json()
+    return this.opts.parseUserInfo(data)
   }
 }
-
 export function buildChannelRedirectUri(platform: Platform) {
   return `${envApi.SERVER_URL}/channels/auth/${platform}/callback`
 }

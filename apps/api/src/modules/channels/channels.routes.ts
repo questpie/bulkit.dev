@@ -1,15 +1,17 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
-import { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
+import { iocRegister } from '@bulkit/api/ioc'
+import { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { treaty } from '@elysiajs/eden'
 import { and, desc, eq, ilike } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
-  .use(channelAuthRotes)
+  .use(channelAuthRoutes)
   .use(injectDatabase)
   .use(organizationMiddleware)
   .get(

@@ -1,5 +1,5 @@
 'use client'
-import type { Resource } from '@bulkit/api/modules/resources/resources.dal'
+import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { toast } from '@bulkit/ui/components/ui/sonner'
@@ -20,7 +20,7 @@ function useResourceUploader({
   onUploaded,
   allowedTypes = ['image/*', 'video/*', 'audio/*'],
   maxFiles = 10,
-  maxSize = 50 * 1024 * 1024, // 50MB
+  maxSize = 1024 * 1024 * 1024, // 1024MB
 }: ResourceUploaderProps) {
   const mutation = useMutation({
     mutationFn: (...args: Parameters<typeof apiClient.resources.index.post>) =>

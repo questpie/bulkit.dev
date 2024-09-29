@@ -2,6 +2,8 @@ import { injectApiKeyManager, type ApiKeyManager } from '@bulkit/api/common/api-
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { channelsTable, socialMediaIntegrationsTable } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import type { ChannelManager } from '@bulkit/api/modules/channels/abstract/channel.manager'
+import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { and, eq, getTableColumns } from 'drizzle-orm'
 
 export type ChannelWithIntegration = Exclude<
@@ -11,6 +13,7 @@ export type ChannelWithIntegration = Exclude<
 
 class ChannelsService {
   private readonly apiKeyManager: ApiKeyManager
+
   constructor() {
     const container = iocResolve(ioc.use(injectApiKeyManager))
     this.apiKeyManager = container.apiKeyManager

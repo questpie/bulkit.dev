@@ -24,8 +24,10 @@ export const platformSettingsTable = pgTable(
     maxMediaPerPost: integer('max_media_per_post').notNull(),
     maxMediaSize: integer('max_media_size').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
@@ -44,8 +46,8 @@ export const superAdminsTable = pgTable('super_admins', {
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .primaryKey(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updadedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updadedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .$defaultFn(() => new Date().toISOString())
     .notNull(),
 })

@@ -6,7 +6,7 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import type { TwitterApi } from 'twitter-api-v2'
 
-class XChannelPublisher extends ChannelPublisher {
+export class XChannelPublisher extends ChannelPublisher {
   protected async postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
@@ -110,5 +110,3 @@ class XChannelPublisher extends ChannelPublisher {
     return mediaIds
   }
 }
-
-export const xChannelPublisher = new XChannelPublisher()

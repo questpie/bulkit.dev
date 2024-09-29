@@ -2,7 +2,7 @@ import { injectDatabase } from '@bulkit/api/db/db.client'
 import { scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
-import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
+import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
@@ -42,7 +42,7 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     // Check if the post is ready to be published
-    if (post.status !== 'ready') {
+    if (post.status !== 'new') {
       throw new UnrecoverableError(`Post is not ready to be published: ${post.id}`)
     }
 
@@ -55,7 +55,7 @@ export const publishPostJob = jobFactory.createJob({
       throw new UnrecoverableError(`Channel not found: ${scheduledPost.channelId}`)
     }
 
-    const channelManager = getChannelManager(channel.platform)
+    const channelManager = resolveChannelManager(channel.platform)
     await channelManager.publisher.publishPost(channel, post)
   },
 })

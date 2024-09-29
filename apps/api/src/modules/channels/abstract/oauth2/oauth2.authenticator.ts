@@ -9,7 +9,7 @@ import {
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { OAuth2Provider } from '@bulkit/api/modules/channels/abstract/oauth2/oauth2.provider'
-import type { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
+import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -29,7 +29,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
     this.apiKeyService = container.apiKeyManager
   }
 
-  handleAuthRequest(ctx: InferContext<typeof channelAuthRotes>): Promise<string> {
+  handleAuthRequest(ctx: InferContext<typeof channelAuthRoutes>): Promise<string> {
     return ctx.db.transaction(async (trx) => {
       const state = this.buildState(ctx.organization!.id, ctx.query.redirectTo)
       let codeVerifier: string | undefined
@@ -50,7 +50,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
   /**
    * There is no organizationId in ctx, it is in state here
    */
-  async handleAuthCallback(ctx: InferContext<typeof channelAuthRotes>): Promise<any> {
+  async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
     const { organizationId, redirectTo } = JSON.parse(
       Buffer.from(ctx.query.state!, 'base64').toString()
     )
@@ -129,6 +129,16 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
       throw new Error(OAuth2Authenticator.NO_REFRESH_TOKEN_SUPPORT_ERROR_CODE)
     }
 
+    // Check if the token is actually close to expiring
+    const tokenExpiryDate = integration.tokenExpiry ? new Date(integration.tokenExpiry) : null
+    const now = new Date()
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000)
+
+    if (tokenExpiryDate && tokenExpiryDate > fiveMinutesFromNow) {
+      // Token is still valid for more than 5 minutes, no need to refresh
+      return channel
+    }
+
     try {
       const { accessToken, refreshToken, accessTokenExpiresAt } =
         await this.oAuth2Provider.refreshAccessToken(integration.refreshToken)
@@ -146,7 +156,15 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
 
       return { ...channel, socialMediaIntegration: updatedIntegration }
     } catch (error) {
-      console.error('Failed to refresh access token:', error)
+      if ((error as any).message.includes('invalid_grant')) {
+        // Token might be expired or revoked, mark channel as inactive and require re-authorization
+        await db
+          .update(channelsTable)
+          .set({ status: 'inactive' })
+          .where(eq(channelsTable.id, channel.id))
+        throw new Error('REAUTHORIZATION_REQUIRED')
+      }
+      appLogger.error('Failed to refresh access token:', error)
       throw new Error(OAuth2Authenticator.FAILED_TO_REFRESH_TOKEN_ERROR_CODE)
     }
   }
@@ -192,6 +210,8 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
       .insert(socialMediaIntegrationsTable)
       .values({
         ...data,
+        accessToken: this.apiKeyService.encrypt(data.accessToken),
+        refreshToken: data.refreshToken && this.apiKeyService.encrypt(data.refreshToken),
       })
       .onConflictDoUpdate({
         target: [

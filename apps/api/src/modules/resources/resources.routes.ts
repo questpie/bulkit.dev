@@ -67,7 +67,7 @@ export const resourceRoutes = new Elysia({
       },
       body: t.Object({
         files: t.Files({
-          maxSize: 1024 * 1024 * 50, // 50MB
+          maxSize: 1024 * 1024 * 1024, // 1GB
           maxItems: 10, // 10 files
           types: ['image/*', 'video/*', 'audio/*'],
         }),

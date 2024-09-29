@@ -12,8 +12,10 @@ export const usersTable = pgTable(
     id: primaryKeyCol(),
     email: text('email').notNull(),
     name: text('name').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString()),
   },
@@ -41,8 +43,8 @@ export const sessionsTable = pgTable('sessions', {
   }).notNull(),
   deviceFingerprint: text('device_fingerprint').notNull(),
   deviceInfo: jsonb('device_info').$type<DeviceInfo>().notNull(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString()),
 })
@@ -69,8 +71,8 @@ export const emailVerificationsTable = pgTable('email_verifications', {
   type: text('type').$type<EmailVerificationType>().notNull(),
   /** If you want your verification to be realtime store channelName here */
   // channelName: text('channel_name'),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString()),
 })
@@ -85,8 +87,8 @@ export const oauthAccountsTable = pgTable('oauth_accounts', {
     .references(() => usersTable.id),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
 })
 
 export const oauthAccountsRelations = relations(oauthAccountsTable, ({ one }) => ({

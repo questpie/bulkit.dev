@@ -1,7 +1,6 @@
 /**
  * Register all workers here
  */
-
 import { mailClient } from '@bulkit/api/mail/mail.client'
 import { appLogger } from '@bulkit/shared/utils/logger'
 

@@ -46,6 +46,7 @@ export function ChannelsPageHeader() {
           </ResponsiveDialogHeader>
 
           <div className='flex gap-4 flex-wrap justify-center py-8'>
+            {/* TODO: filter only enabled platforms */}
             {PLATFORMS.map((platform) => {
               const Icon = CHANNEL_ICON[platform]
               return (

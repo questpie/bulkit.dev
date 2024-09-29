@@ -21,11 +21,13 @@ export const socialMediaIntegrationsTable = pgTable(
     }).notNull(),
     accessToken: text('access_token').notNull(),
     refreshToken: text('refresh_token'),
-    tokenExpiry: timestamp('token_expiry', { mode: 'string' }),
+    tokenExpiry: timestamp('token_expiry', { mode: 'string', withTimezone: true }),
     scope: text('scope'),
     additionalData: jsonb('additional_data').default(sql`'{}'::jsonb`),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
@@ -62,8 +64,10 @@ export const channelsTable = pgTable(
     socialMediaIntegrationId: text('social_media_integration_id').references(
       () => socialMediaIntegrationsTable.id
     ),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),

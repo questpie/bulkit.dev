@@ -9,8 +9,8 @@ export const resourcesTable = pgTable('resources', {
   location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
   type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
   isPrivate: boolean('is_private').notNull().default(false),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
@@ -19,7 +19,7 @@ export const resourcesTable = pgTable('resources', {
   /**
    *  if set, the resource will be deleted at this time
    */
-  cleanupAt: timestamp('cleanup_at', { mode: 'string' }),
+  cleanupAt: timestamp('cleanup_at', { mode: 'string', withTimezone: true }),
 })
 
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({

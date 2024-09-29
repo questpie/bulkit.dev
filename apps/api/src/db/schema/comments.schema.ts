@@ -21,8 +21,10 @@ export const commentsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id),
     content: text('content').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),

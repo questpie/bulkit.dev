@@ -14,8 +14,8 @@ export const workflowsTable = pgTable('workflows', {
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationsTable.id),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
@@ -29,8 +29,8 @@ export const workflowStepsTable = pgTable('workflow_steps', {
     .references(() => workflowsTable.id),
   parentStepId: text('parent_step_id'),
   type: text('type', { enum: WORKFLOW_STEP_TYPES }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
@@ -51,7 +51,7 @@ export const waitStepsTable = pgTable('wait_steps', {
     .primaryKey()
     .references(() => workflowStepsTable.id),
   durationInSeconds: integer('duration_in_seconds'),
-  until: timestamp('until', { mode: 'string' }),
+  until: timestamp('until', { mode: 'string', withTimezone: true }),
 })
 
 export const repostStepsTable = pgTable('repost_steps', {
@@ -141,10 +141,10 @@ export const workflowExecutionsTable = pgTable('workflow_executions', {
     .references(() => workflowsTable.id),
   status: text('status', { enum: ['pending', 'in_progress', 'completed', 'failed'] }).notNull(),
   currentStepId: text('current_step_id').references(() => workflowStepsTable.id),
-  startedAt: timestamp('started_at', { mode: 'string' }),
-  completedAt: timestamp('completed_at', { mode: 'string' }),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  startedAt: timestamp('started_at', { mode: 'string', withTimezone: true }),
+  completedAt: timestamp('completed_at', { mode: 'string', withTimezone: true }),
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
@@ -165,7 +165,7 @@ export const repostsTable = pgTable('reposts', {
   channelId: text('channel_id')
     .notNull()
     .references(() => channelsTable.id),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
 })
 
 export const workflowStepsRelations = relations(workflowStepsTable, ({ one }) => ({

@@ -1,11 +1,11 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
+import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import Elysia, { t } from 'elysia'
 
-export const channelAuthRotes = new Elysia({ prefix: '/auth/:platform' })
+export const channelAuthRoutes = new Elysia({ prefix: '/auth/:platform' })
   .use(injectDatabase)
   .guard({
     params: t.Object({
@@ -16,19 +16,8 @@ export const channelAuthRotes = new Elysia({ prefix: '/auth/:platform' })
     '/callback',
     async (ctx) => {
       const { platform } = ctx.params
-      const channelManager = getChannelManager(platform)
+      const channelManager = resolveChannelManager(platform)
       return channelManager.authenticator.handleAuthCallback(ctx as any)
-      // const { code, state } = query
-
-      // const { organizationId, redirectTo } = JSON.parse(Buffer.from(state, 'base64').toString())
-      // const { channel } = await channelManager.handleCallback(db, code, organizationId, cookie)
-
-      // if (redirectTo) {
-      //   // {{cId}} can also be encoded in the URL so we need to decode it
-      //   return ctx.redirect(decodeURI(redirectTo).replace('{{cId}}', channel.id), 302)
-      // }
-
-      // return { success: true }
     },
     {
       hasRole: false,
@@ -42,7 +31,7 @@ export const channelAuthRotes = new Elysia({ prefix: '/auth/:platform' })
   .get(
     '/',
     async (ctx) => {
-      const channelManager = getChannelManager(ctx.params.platform)
+      const channelManager = resolveChannelManager(ctx.params.platform)
       const authUrl = await channelManager.authenticator.handleAuthRequest(ctx as any)
       return { authUrl }
     },

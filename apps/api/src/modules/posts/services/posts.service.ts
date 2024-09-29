@@ -821,6 +821,5 @@ export class PostsService {
 
 export const injectPostService = iocRegister('postService', () => {
   const container = iocResolve(ioc.use(injectResourcesService))
-
   return new PostsService(container.resourcesService)
 })

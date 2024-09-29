@@ -10,7 +10,7 @@ import {
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { OAuth1Provider } from '@bulkit/api/modules/channels/abstract/oauth/oauth1.provider'
-import type { channelAuthRotes } from '@bulkit/api/modules/channels/channel-auth.routes'
+import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -28,7 +28,7 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
     this.apiKeyService = container.apiKeyManager
   }
 
-  async handleAuthRequest(ctx: InferContext<typeof channelAuthRotes>): Promise<string> {
+  async handleAuthRequest(ctx: InferContext<typeof channelAuthRoutes>): Promise<string> {
     return ctx.db.transaction(async (trx) => {
       try {
         const { oauthToken, oauthTokenSecret } = await this.oAuth1Provider.getRequestToken()
@@ -52,7 +52,7 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
     })
   }
 
-  async handleAuthCallback(ctx: InferContext<typeof channelAuthRotes>): Promise<any> {
+  async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
     const platform = ctx.params.platform as Platform
 
     const cookieData = this.getOAuthCookie(ctx, platform)
@@ -127,7 +127,7 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
   }
 
   private setOAuthCookie(
-    ctx: InferContext<typeof channelAuthRotes>,
+    ctx: InferContext<typeof channelAuthRoutes>,
     platform: Platform,
     data: { oauthTokenSecret: string; redirectTo?: string; organizationId: string }
   ) {
@@ -138,12 +138,12 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
     })
   }
 
-  private getOAuthCookie(ctx: InferContext<typeof channelAuthRotes>, platform: Platform) {
+  private getOAuthCookie(ctx: InferContext<typeof channelAuthRoutes>, platform: Platform) {
     const cookieValue = ctx.cookie[this.getOAuthCookieName(platform)]!.value
     return cookieValue ? JSON.parse(cookieValue) : null
   }
 
-  private clearOAuthCookie(ctx: InferContext<typeof channelAuthRotes>, platform: Platform) {
+  private clearOAuthCookie(ctx: InferContext<typeof channelAuthRoutes>, platform: Platform) {
     ctx.cookie[this.getOAuthCookieName(platform)]!.remove()
   }
 
@@ -173,6 +173,8 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
       .insert(socialMediaIntegrationsTable)
       .values({
         ...data,
+        accessToken: this.apiKeyService.encrypt(data.accessToken),
+        refreshToken: data.refreshToken && this.apiKeyService.encrypt(data.refreshToken),
       })
       .onConflictDoUpdate({
         target: [

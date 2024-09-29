@@ -1,11 +1,12 @@
+import { iocRegister } from '@bulkit/api/ioc'
 import { ChannelManager } from '@bulkit/api/modules/channels/abstract/channel.manager'
-import { xChannelAuthenticator } from '@bulkit/api/modules/channels/providers/x/x-channel.authenticator'
-import { xChannelPublisher } from '@bulkit/api/modules/channels/providers/x/x-channel.publisher'
+import { XChannelAuthenticator } from '@bulkit/api/modules/channels/providers/x/x-channel.authenticator'
+import { XChannelPublisher } from '@bulkit/api/modules/channels/providers/x/x-channel.publisher'
 
 class XChannelManager extends ChannelManager {
   constructor() {
-    super('x', xChannelAuthenticator, xChannelPublisher)
+    super('x', XChannelAuthenticator, XChannelPublisher)
   }
 }
 
-export const xChannelManager = new XChannelManager()
+export const injectXChannelManager = iocRegister('xChannelManager', () => new XChannelManager())

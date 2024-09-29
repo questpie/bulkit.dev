@@ -23,8 +23,10 @@ export const postsTable = pgTable(
     organizationId: text('organization_id').notNull(),
     type: text('type', { enum: POST_TYPE }).notNull(),
     workflowId: text('workflow_id').references(() => workflowsTable.id),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
@@ -50,8 +52,10 @@ export const threadPostsTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
   },
@@ -81,8 +85,10 @@ export const threadMediaTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
 
-    createAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
   },
@@ -105,8 +111,10 @@ export const regularPostsTable = pgTable(
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
   },
@@ -133,8 +141,10 @@ export const regularPostMediaTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
   },
@@ -157,8 +167,10 @@ export const storyPostsTable = pgTable(
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
 
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' }).$onUpdate(() =>
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).$onUpdate(() =>
       new Date().toISOString()
     ),
   },
@@ -181,8 +193,10 @@ export const reelPostsTable = pgTable(
     resourceId: text('resource_id'),
     description: text('description').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' }).$onUpdate(() =>
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).$onUpdate(() =>
       new Date().toISOString()
     ),
   },
@@ -206,9 +220,9 @@ export const scheduledPostsTable = pgTable(
     channelId: text('channel_id')
       .references(() => channelsTable.id)
       .notNull(),
-    scheduledAt: timestamp('scheduled_at', { mode: 'string' }),
+    scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
     status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'),
-    publishedAt: timestamp('published_at', { mode: 'string' }),
+    publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true }),
     failureReason: text('failure_reason'),
     organizationId: text('organization_id')
       .references(() => organizationsTable.id)
@@ -250,7 +264,7 @@ export const postMetricsHistoryTable = pgTable(
     /** The number of times users have clicked on any links within the post */
     clicks: integer('clicks').notNull(),
 
-    createdAt: timestamp('timestamp', { mode: 'string' }).notNull(),
+    createdAt: timestamp('timestamp', { mode: 'string', withTimezone: true }).notNull(),
   },
   (table) => ({
     scheduledPostIdIdx: index().on(table.scheduledPostId),

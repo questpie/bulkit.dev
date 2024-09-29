@@ -1,6 +1,6 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { postsTable } from '@bulkit/api/db/db.schema'
-import { getChannelManager } from '@bulkit/api/modules/channels/channel-utils'
+import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
@@ -61,7 +61,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         }),
       ]),
       response: t.Object({
-        data: t.Array(PostDetailsSchema),
+        data: t.Array(t.Omit(PostDetailsSchema, ['channels'])),
         nextCursor: t.Nullable(t.Number()),
       }),
     }
@@ -141,7 +141,8 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     })
 
     const firstChannel = await ctx.db.query.channelsTable.findFirst({
-      where: (channels, { eq }) => eq(channels.organizationId, ctx.organization!.id),
+      where: (channels, { eq }) =>
+        and(eq(channels.organizationId, ctx.organization!.id), eq(channels.platform, 'youtube')),
     })
 
     if (!firstChannel) {
@@ -163,7 +164,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       return ctx.error(404, { message: 'Post not found' })
     }
 
-    const channelManager = getChannelManager('x')
+    const channelManager = resolveChannelManager('youtube')
     await channelManager.publisher.publishPost(channelWithIntegration, post)
   })
   .post('/:id/duplicate', async (ctx) => {

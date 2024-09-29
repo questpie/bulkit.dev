@@ -18,8 +18,10 @@ export const userOrganizationsTable = pgTable(
     userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
     role: text('role', { enum: USER_ROLE }).notNull(),
-    createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string' })
+    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date().toISOString())
       .notNull(),
@@ -40,8 +42,8 @@ export const selectUserOrganizationSchema = createSelectSchema(userOrganizations
 export const organizationsTable = pgTable('organizations', {
   id: primaryKeyCol(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
@@ -62,9 +64,9 @@ export const organizationInvitesTable = pgTable('organization_invites', {
   organizationId: text('organization_id').notNull(),
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
-  expiresAt: timestamp('expires_at', { mode: 'string' }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'string' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string' })
+  expiresAt: timestamp('expires_at', { mode: 'string', withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
