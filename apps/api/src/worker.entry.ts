@@ -9,7 +9,7 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import '@bulkit/api/common/logger'
 import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
 
-export function bootWorker() {
+export async function bootWorker() {
   // THIS is how you can use dependency injection to overwrite stuff work other processes
   // ioc.use(iocRegister('db', () => null))
 

@@ -3,7 +3,7 @@ import { api } from '@bulkit/api/index'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { Elysia } from 'elysia'
 
-export function bootApi() {
+export async function bootApi() {
   /**
    * TODO: if you want to listen to the api from next.js,
    * you can import the server from index.ts and use it in next.js and delete this file after
