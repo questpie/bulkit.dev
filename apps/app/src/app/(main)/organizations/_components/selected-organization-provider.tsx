@@ -1,5 +1,5 @@
 'use client'
-import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/organizations.dal'
+import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
 import { AtomsHydrator } from '@bulkit/app/app/_atoms/atoms-provider'
 import { getRootStore } from '@bulkit/app/app/_atoms/root-store'
 import { setOrganization } from '@bulkit/app/app/onboarding/organization/organization.actions'
