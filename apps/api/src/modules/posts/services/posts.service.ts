@@ -13,8 +13,12 @@ import {
   type InsertThreadMedia,
   type SelectPost,
 } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
+import {
+  injectResourcesService,
+  type ResourcesService,
+} from '@bulkit/api/modules/resources/services/resources.service'
 import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
@@ -31,6 +35,8 @@ export type PostValidationError = {
 }
 
 export class PostsService {
+  constructor(private readonly resourcesService: ResourcesService) {}
+
   async getById(
     db: TransactionLike,
     opts: { orgId: string; postId: string }
@@ -382,6 +388,21 @@ export class PostsService {
       post: Extract<Post, { type: 'reel' }>
     }
   ): Promise<Post> {
+    const currentResourceId = await db
+      .select({
+        resourceId: reelPostsTable.resourceId,
+      })
+      .from(reelPostsTable)
+      .where(eq(reelPostsTable.postId, opts.post.id))
+      .then((res) => res[0]?.resourceId)
+
+    if (currentResourceId) {
+      await this.resourcesService.scheduleCleanup(db, {
+        organizationId: opts.orgId,
+        ids: [currentResourceId],
+      })
+    }
+
     const updatedShortPost = await db
       .update(reelPostsTable)
       .set({
@@ -391,6 +412,13 @@ export class PostsService {
       .where(and(eq(reelPostsTable.postId, opts.post.id)))
       .returning()
       .then((res) => res[0]!)
+
+    if (updatedShortPost.resourceId) {
+      this.resourcesService.approveResources(db, {
+        organizationId: opts.orgId,
+        ids: [updatedShortPost.resourceId],
+      })
+    }
 
     return {
       ...opts.post,
@@ -424,9 +452,17 @@ export class PostsService {
     }
 
     // delete previous media
-    await db
+    const previousMedia = await db
       .delete(regularPostMediaTable)
       .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
+      .returning({ resourceId: regularPostMediaTable.resourceId })
+
+    await this.resourcesService.scheduleCleanup(db, {
+      organizationId: opts.orgId,
+      ids: previousMedia.map((m) => m.resourceId),
+    })
+
+    // schedule all previous resources for cleanup
 
     // Insert new media
     if (sortedMedia.length) {
@@ -448,6 +484,12 @@ export class PostsService {
       .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
       .orderBy(asc(regularPostMediaTable.order))
       .innerJoin(resourcesTable, eq(resourcesTable.id, regularPostMediaTable.resourceId))
+
+    // remove all cleanup_at marks from inserted media
+    await this.resourcesService.approveResources(db, {
+      organizationId: opts.orgId,
+      ids: insertedMedia.map((m) => m.resources.id),
+    })
 
     return {
       ...post,
@@ -494,7 +536,22 @@ export class PostsService {
       }
     }
 
-    // delete all previous thread posts, media are automatically deleted by cascade
+    const previousResourceIds = await db
+      .select({
+        resourceId: threadMediaTable.resourceId,
+      })
+      .from(threadMediaTable)
+      .innerJoin(threadPostsTable, eq(threadPostsTable.id, threadMediaTable.threadPostId))
+      .where(eq(threadPostsTable.postId, post.id))
+      .then((data) => data.map((r) => r.resourceId))
+
+    // schedule all previous resources for cleanup
+    await this.resourcesService.scheduleCleanup(db, {
+      organizationId: opts.orgId,
+      ids: previousResourceIds,
+    })
+
+    // delete all previous thread posts, media are deleted with cascade
     await db.delete(threadPostsTable).where(eq(threadPostsTable.postId, post.id))
 
     // Insert new thread version
@@ -534,6 +591,13 @@ export class PostsService {
       ? await db.insert(threadMediaTable).values(mediaPayload).returning()
       : []
 
+    if (insertedMedia.length) {
+      await this.resourcesService.approveResources(db, {
+        organizationId: opts.orgId,
+        ids: insertedMedia.map((m) => m.resourceId),
+      })
+    }
+
     return {
       ...post,
       items: newThreadPosts.map((threadPost) => ({
@@ -560,14 +624,38 @@ export class PostsService {
   ): Promise<Extract<Post, { type: 'story' }>> {
     const { post } = opts
 
+    const previousResourceIds = await db
+      .select({
+        resourceId: storyPostsTable.resourceId,
+      })
+      .from(storyPostsTable)
+      .where(eq(storyPostsTable.postId, post.id))
+      .then((data) => data.map((r) => r.resourceId))
+
+    // schedules previous resource for cleanup
+    await this.resourcesService.scheduleCleanup(db, {
+      organizationId: opts.orgId,
+      ids: previousResourceIds.filter(Boolean) as string[],
+    })
+
     await db
       .update(storyPostsTable)
       .set({
         resourceId: post.resource?.id ?? null,
       })
       .where(eq(storyPostsTable.postId, post.id))
-      .returning()
+      .returning({
+        resourceId: storyPostsTable.resourceId,
+      })
       .then((res) => res[0]!)
+
+    // Update resource cleanupAt
+    if (post.resource) {
+      await this.resourcesService.approveResources(db, {
+        organizationId: opts.orgId,
+        ids: [post.resource.id],
+      })
+    }
 
     return {
       ...post,
@@ -731,4 +819,8 @@ export class PostsService {
   }
 }
 
-export const injectPostService = iocRegister('postService', () => new PostsService())
+export const injectPostService = iocRegister('postService', () => {
+  const container = iocResolve(ioc.use(injectResourcesService))
+
+  return new PostsService(container.resourcesService)
+})

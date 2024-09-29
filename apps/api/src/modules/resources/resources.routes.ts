@@ -74,3 +74,55 @@ export const resourceRoutes = new Elysia({
       }),
     }
   )
+  .patch(
+    '/approve',
+    async (ctx) => {
+      const { ids } = ctx.body
+      return ctx.db
+        .transaction(async (trx) => {
+          return ctx.resourcesService.approveResources(trx, {
+            organizationId: ctx.organization!.id,
+            ids,
+          })
+        })
+        .catch((err) => {
+          console.error(err)
+          return ctx.error(500, { message: 'Failed to approve resources' })
+        })
+    },
+    {
+      body: t.Object({
+        ids: t.Array(t.String()),
+      }),
+      response: {
+        500: t.Object({ message: t.String({ minLength: 1 }) }),
+        200: t.Array(t.String()),
+      },
+    }
+  )
+  .delete(
+    '/cleanup',
+    async (ctx) => {
+      const { ids } = ctx.body
+      return ctx.db
+        .transaction(async (trx) => {
+          return ctx.resourcesService.scheduleCleanup(trx, {
+            organizationId: ctx.organization!.id,
+            ids,
+          })
+        })
+        .catch((err) => {
+          console.error(err)
+          return ctx.error(500, { message: 'Failed to schedule cleanup for resources' })
+        })
+    },
+    {
+      body: t.Object({
+        ids: t.Array(t.String()),
+      }),
+      response: {
+        500: t.Object({ message: t.String({ minLength: 1 }) }),
+        200: t.Array(t.String()),
+      },
+    }
+  )

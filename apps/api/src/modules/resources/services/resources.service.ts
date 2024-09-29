@@ -1,19 +1,19 @@
+import cuid2 from '@paralleldrive/cuid2'
 import type { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
-import { ioc, iocRegister } from '@bulkit/api/ioc'
+import { iocRegister } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { extractPathExt } from '@bulkit/shared/utils/string'
-import cuid2 from '@paralleldrive/cuid2'
-import { and, desc, eq } from 'drizzle-orm'
-import { Elysia, type Static } from 'elysia'
+import { and, desc, eq, inArray } from 'drizzle-orm'
+import type { Static } from 'elysia'
 import { Readable } from 'node:stream'
 
 export type Resource = Static<typeof ResourceSchema>
 
-class ResourcesService {
+export class ResourcesService {
   async getAll(
     db: TransactionLike,
     opts: { organizationId: string; pagination: Static<typeof PaginationSchema> }
@@ -122,6 +122,7 @@ class ResourcesService {
             type: item.content.type,
             location: item.fileName,
             isExternal: false,
+            cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
           }))
         )
         .returning({
@@ -149,6 +150,52 @@ class ResourcesService {
         }))
       )
     })
+  }
+
+  async approveResources(
+    db: TransactionLike,
+    opts: { organizationId: string; ids: string[] }
+  ): Promise<string[]> {
+    if (opts.ids.length === 0) return []
+
+    return db
+      .update(resourcesTable)
+      .set({
+        cleanupAt: null,
+      })
+      .where(
+        and(
+          eq(resourcesTable.organizationId, opts.organizationId),
+          inArray(resourcesTable.id, opts.ids)
+        )
+      )
+      .returning({
+        id: resourcesTable.id,
+      })
+      .then((data) => data.map((r) => r.id))
+  }
+
+  async scheduleCleanup(
+    db: TransactionLike,
+    opts: { organizationId: string; ids: string[]; cleanupAt?: string }
+  ): Promise<string[]> {
+    if (opts.ids.length === 0) return []
+
+    return db
+      .update(resourcesTable)
+      .set({
+        cleanupAt: opts.cleanupAt || new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
+      })
+      .where(
+        and(
+          eq(resourcesTable.organizationId, opts.organizationId),
+          inArray(resourcesTable.id, opts.ids)
+        )
+      )
+      .returning({
+        id: resourcesTable.id,
+      })
+      .then((data) => data.map((r) => r.id))
   }
 }
 

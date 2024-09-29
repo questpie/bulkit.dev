@@ -3,8 +3,6 @@ import { organizationsTable } from './organizations.schema'
 import { relations } from 'drizzle-orm'
 import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
-// Resources table for media assets
-export type ResourceType = 'image' | 'video' | 'audio'
 export const resourcesTable = pgTable('resources', {
   id: primaryKeyCol('id'),
   isExternal: boolean('is_external').notNull().default(false),
@@ -17,6 +15,11 @@ export const resourcesTable = pgTable('resources', {
     .$onUpdate(() => new Date().toISOString())
     .notNull(),
   organizationId: text('organization_id').notNull(),
+
+  /**
+   *  if set, the resource will be deleted at this time
+   */
+  cleanupAt: timestamp('cleanup_at', { mode: 'string' }),
 })
 
 export const resourcesRelations = relations(resourcesTable, ({ one }) => ({
