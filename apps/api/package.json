@@ -19,12 +19,12 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.651.1",
     "@aws-sdk/s3-request-presigner": "^3.651.1",
-    "@bogeychan/elysia-logger": "^0.1.2",
     "@bulkit/jobs": "workspace:*",
     "@bulkit/mail": "workspace:*",
     "@bulkit/redis": "workspace:*",
     "@bulkit/shared": "workspace:*",
-    "@elysiajs/cors": "^1.1.1",
+    "@bogeychan/elysia-logger": "^0.1.2",
+    "@elysiajs/cors": "^1.1.0",
     "@elysiajs/swagger": "^1.1.1",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@paralleldrive/cuid2": "paralleldrive/cuid2",
@@ -34,7 +34,7 @@
     "arctic": "^1.9.2",
     "drizzle-orm": "^0.33.0",
     "drizzle-typebox": "^0.1.1",
-    "elysia": "^1.1.12",
+    "elysia": "^1.1.7",
     "elysia-ip": "^1.0.7",
     "flydrive": "^1.1.0",
     "geoip-lite": "^1.4.10",
@@ -53,7 +53,7 @@
     "ua-parser-js": "^1.0.39"
   },
   "devDependencies": {
-    "@elysiajs/eden": "^1.1.3",
+    "@elysiajs/eden": "^1.1.2",
     "@types/bun": "latest",
     "@types/nodemailer": "^6.4.15",
     "@types/geoip-lite": "^1.4.4",
