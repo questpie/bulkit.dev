@@ -2,7 +2,7 @@
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
 import { AtomsHydrator } from '@bulkit/app/app/_atoms/atoms-provider'
 import { getRootStore } from '@bulkit/app/app/_atoms/root-store'
-import { setOrganization } from '@bulkit/app/app/onboarding/organization/organization.actions'
+import { setOrganization } from '@bulkit/app/app/(main)/organizations/organization.actions'
 import { atom, useAtomValue } from 'jotai'
 import { useEffect, type PropsWithChildren } from 'react'
 

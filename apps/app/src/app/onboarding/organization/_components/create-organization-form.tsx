@@ -2,7 +2,7 @@
 
 import { apiClient } from '@bulkit/app/api/api.client'
 import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
-import { setOrganization } from '@bulkit/app/app/onboarding/organization/organization.actions'
+import { setOrganization } from '@bulkit/app/app/(main)/organizations/organization.actions'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '@bulkit/ui/components/ui/form'
 import { Input } from '@bulkit/ui/components/ui/input'
