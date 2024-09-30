@@ -8,8 +8,10 @@ import {
   RegularPostFields,
   ThreadPostFields,
 } from '@bulkit/app/app/(main)/posts/[id]/post-form'
+import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { PiEye } from 'react-icons/pi'
 
 export default async function PostDetail(props: { params: { id: string } }) {
   const postResp = await apiServer.posts({ id: props.params.id }).get()
@@ -66,7 +68,10 @@ export default async function PostDetail(props: { params: { id: string } }) {
         </div>
 
         <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border py-4 bottom-0 sticky'>
-          <h4 className='text-lg font-bold'>Preview</h4>
+          <div className='flex flex-row items-center gap-2'>
+            <h4 className='text-lg font-bold'>{POST_TYPE_NAME[postResp.data.type]} Preview</h4>
+            <PiEye />
+          </div>
           <PostPreview />
         </div>
       </div>
