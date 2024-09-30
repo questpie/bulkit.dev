@@ -142,7 +142,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
 
     const firstChannel = await ctx.db.query.channelsTable.findFirst({
       where: (channels, { eq }) =>
-        and(eq(channels.organizationId, ctx.organization!.id), eq(channels.platform, 'youtube')),
+        and(eq(channels.organizationId, ctx.organization!.id), eq(channels.platform, 'x')),
     })
 
     if (!firstChannel) {
@@ -164,7 +164,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       return ctx.error(404, { message: 'Post not found' })
     }
 
-    const channelManager = resolveChannelManager('youtube')
+    const channelManager = resolveChannelManager('x')
     await channelManager.publisher.publishPost(channelWithIntegration, post)
   })
   .post('/:id/duplicate', async (ctx) => {

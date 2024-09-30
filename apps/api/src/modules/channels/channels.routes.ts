@@ -17,7 +17,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
   .get(
     '/',
     async (ctx) => {
-      const { limit = 10, cursor, platform, q } = ctx.query
+      const { limit = 10, cursor, platform, q, isActive } = ctx.query
 
       const channels = await ctx.db
         .select()
@@ -26,10 +26,13 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           and(
             eq(channelsTable.organizationId, ctx.organization!.id),
             platform ? eq(channelsTable.platform, platform) : undefined,
+            isActive !== undefined
+              ? eq(channelsTable.status, isActive ? 'active' : 'inactive')
+              : undefined,
             q ? ilike(channelsTable.name, `${q}%`) : undefined
           )
         )
-        .orderBy(desc(channelsTable.id))
+        .orderBy(desc(channelsTable.name))
         .limit(limit + 1)
         .offset(cursor)
 
@@ -51,6 +54,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         PaginationSchema,
         t.Object({
           platform: t.Optional(StringLiteralEnum(PLATFORMS)),
+          isActive: t.Optional(t.BooleanString()),
           q: t.Optional(t.String()),
         }),
       ]),

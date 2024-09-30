@@ -1,7 +1,7 @@
-import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import { PLATFORMS, POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import { Type } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 
 export const PostMediaSchema = Type.Object({
   id: Type.String(),
@@ -9,12 +9,14 @@ export const PostMediaSchema = Type.Object({
   resource: ResourceSchema,
 })
 
-export const PlatformChannel = Type.Object({
+export const PostChannelSchema = Type.Object({
   id: Type.String(),
-  platform: Type.String(),
+  platform: StringLiteralEnum(PLATFORMS),
   name: Type.String(),
   imageUrl: Type.Union([Type.String(), Type.Null()]),
 })
+
+export type PostChannel = Static<typeof PostChannelSchema>
 
 export const PostDetailsSchema = Type.Object({
   id: Type.String(),
@@ -22,7 +24,7 @@ export const PostDetailsSchema = Type.Object({
   status: StringLiteralEnum(POST_STATUS),
   type: StringLiteralEnum(POST_TYPE),
   createdAt: Type.String(),
-  channels: Type.Array(PlatformChannel),
+  channels: Type.Array(PostChannelSchema),
 })
 
 export const RegularPostSchema = Type.Object({

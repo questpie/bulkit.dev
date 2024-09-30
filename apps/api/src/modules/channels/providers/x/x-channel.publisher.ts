@@ -3,6 +3,7 @@ import { ChannelPublisher } from '@bulkit/api/modules/channels/abstract/channel.
 import { buildXClient } from '@bulkit/api/modules/channels/providers/x/x-api-client'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
+import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import type { TwitterApi } from 'twitter-api-v2'
 
@@ -47,7 +48,10 @@ export class XChannelPublisher extends ChannelPublisher {
       let lastTweetId: string | undefined
 
       for (const tweet of sortedItems) {
-        const mediaIds = await this.postMedia(client, tweet.media)
+        const mediaIds = await this.postMedia(
+          client,
+          tweet.media.map((r) => r.resource)
+        )
 
         const { data } = await client.v2.tweet(tweet.text, {
           reply: lastTweetId ? { in_reply_to_tweet_id: lastTweetId } : undefined,
@@ -71,7 +75,10 @@ export class XChannelPublisher extends ChannelPublisher {
       channel.socialMediaIntegration.refreshToken!
     )
     try {
-      const mediaIds = await this.postMedia(client, post.media)
+      const mediaIds = await this.postMedia(
+        client,
+        post.media.map((r) => r.resource)
+      )
 
       await client.v2.tweet(post.text, {
         media: mediaIds.length ? { media_ids: mediaIds as [string] } : undefined,
@@ -83,30 +90,29 @@ export class XChannelPublisher extends ChannelPublisher {
     }
   }
 
-  private async postMedia(client: TwitterApi, mediaItems: any[]): Promise<string[]> {
-    const mediaIds: string[] = []
+  private async postMedia(client: TwitterApi, resources: Resource[]): Promise<string[]> {
+    const uploadedIds: string[] = []
     let i = 0
-    for (const mediaItem of mediaItems) {
+    for (const resource of resources) {
       if (i > 3) break
-      const buffer = Buffer.from(await drive.use().getBytes(mediaItem.resource.location))
+      const buffer = Buffer.from(await drive.use().getBytes(resource.location))
       // client.loginWithOAuth2().
 
       const mediaId = await client.v1.uploadMedia(buffer, {
         target: 'tweet',
-        mimeType: mediaItem.resource.type,
+        mimeType: resource.type,
         // mimeType: mediaItem.resource.type,
       })
-      mediaIds.push(mediaId)
+      uploadedIds.push(mediaId)
       i++
     }
 
-    if (mediaIds.length > 4) {
-      mediaIds.splice(4)
+    if (resources.length > 4) {
       appLogger.warn(
-        'Twitter only supports up to 4 media items per tweet. Some media items were removed.'
+        'X (Twitter) only supports up to 4 media items per tweet. Some media items were removed.'
       )
     }
 
-    return mediaIds
+    return uploadedIds
   }
 }
