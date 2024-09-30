@@ -104,31 +104,37 @@ export function PostFormProvider(props: PostFormProviderProps) {
   return (
     <Form {...form}>
       <form className={cn(props.className)} onSubmit={handleSubmit}>
-        <div className='px-4 pb-4'>
-          <FormField
-            control={form.control}
-            name='channels'
-            render={({ field }) => {
-              return (
-                <FormItem>
-                  <FormLabel>Channels to post to</FormLabel>
-
-                  <FormControl>
-                    <ChannelPicker value={field.value} onValueChange={field.onChange} />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )
-            }}
-          />
-        </div>
-
         {props.children}
 
         <button type='submit' className='hidden' ref={formTriggerRef} />
       </form>
     </Form>
+  )
+}
+
+export function PostCommonFields() {
+  const form = useFormContext<Post>()
+
+  return (
+    <div className='px-4 pb-4'>
+      <FormField
+        control={form.control}
+        name='channels'
+        render={({ field }) => {
+          return (
+            <FormItem>
+              <FormLabel>Channels to post to</FormLabel>
+
+              <FormControl>
+                <ChannelPicker value={field.value} onValueChange={field.onChange} />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )
+        }}
+      />
+    </div>
   )
 }
 

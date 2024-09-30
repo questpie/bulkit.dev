@@ -2,6 +2,7 @@ import { apiServer } from '@bulkit/app/api/api.server'
 import { PostDetailHeader } from '@bulkit/app/app/(main)/posts/[id]/_components/post-detail-header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import {
+  PostCommonFields,
   PostFormProvider,
   ReelPostFields,
   RegularPostFields,
@@ -59,7 +60,10 @@ export default async function PostDetail(props: { params: { id: string } }) {
       {/* <Separator /> */}
 
       <div className='flex flex-row w-full flex-1 h-full -mt-4 overflow-auto'>
-        <div className='py-4 flex flex-col flex-1'>{content}</div>
+        <div className='py-4 flex flex-col flex-1'>
+          <PostCommonFields />
+          {content}
+        </div>
 
         <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border py-4 bottom-0 sticky'>
           <h4 className='text-lg font-bold'>Preview</h4>
