@@ -54,8 +54,8 @@ export const envApi = createEnv({
     GITHUB_CLIENT_SECRET: Type.Optional(Type.String()),
     GITHUB_ENABLED: StringBoolean({ default: false }),
 
-    FACEBOOK_CLIENT_ID: Type.Optional(Type.String()),
-    FACEBOOK_CLIENT_SECRET: Type.Optional(Type.String()),
+    FACEBOOK_APP_ID: Type.Optional(Type.String()),
+    FACEBOOK_APP_SECRET: Type.Optional(Type.String()),
     FACEBOOK_ENABLED: StringBoolean({ default: false }),
 
     // Integrations
@@ -65,8 +65,8 @@ export const envApi = createEnv({
     X_APP_SECRET: Type.Optional(Type.String()),
     X_ENABLED: StringBoolean({ default: false }),
 
-    INSTAGRAM_CLIENT_ID: Type.Optional(Type.String()),
-    INSTAGRAM_CLIENT_SECRET: Type.Optional(Type.String()),
+    INSTAGRAM_APP_ID: Type.Optional(Type.String()),
+    INSTAGRAM_APP_SECRET: Type.Optional(Type.String()),
     INSTAGRAM_ENABLED: StringBoolean({ default: false }),
 
     YOUTUBE_CLIENT_ID: Type.Optional(Type.String()),
@@ -128,8 +128,8 @@ export const envApi = createEnv({
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     GITHUB_ENABLED: process.env.GITHUB_ENABLED,
 
-    FACEBOOK_CLIENT_ID: process.env.FACEBOOK_CLIENT_ID,
-    FACEBOOK_CLIENT_SECRET: process.env.FACEBOOK_CLIENT_SECRET,
+    FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
+    FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
     FACEBOOK_ENABLED: process.env.FACEBOOK_ENABLED,
 
     // X_CLIENT_ID: process.env.X_CLIENT_ID,
@@ -138,8 +138,8 @@ export const envApi = createEnv({
     X_APP_SECRET: process.env.X_APP_SECRET,
     X_ENABLED: process.env.X_ENABLED,
 
-    INSTAGRAM_CLIENT_ID: process.env.INSTAGRAM_CLIENT_ID,
-    INSTAGRAM_CLIENT_SECRET: process.env.INSTAGRAM_CLIENT_SECRET,
+    INSTAGRAM_APP_ID: process.env.INSTAGRAM_APP_ID,
+    INSTAGRAM_APP_SECRET: process.env.INSTAGRAM_APP_SECRET,
     INSTAGRAM_ENABLED: process.env.INSTAGRAM_ENABLED,
 
     YOUTUBE_CLIENT_ID: process.env.YOUTUBE_CLIENT_ID,

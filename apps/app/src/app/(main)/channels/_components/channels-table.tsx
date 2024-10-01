@@ -103,7 +103,7 @@ export function ChannelTableRow(props: ChannelTableRowProps) {
               </Link>
             </Button>
           ) : (
-            <Button variant='ghost' asChild disabled>
+            <Button variant='ghost' disabled>
               <LuLink2Off className='h-4 w-4' />
               Profile
             </Button>
