@@ -1,4 +1,4 @@
-import { primaryKeyCol } from './_base.table'
+import { primaryKeyCol, timestampCols } from './_base.table'
 import { usersTable } from './auth.table'
 import { PLATFORMS } from '../../../../../packages/shared/src/constants/db.constants'
 import { relations } from 'drizzle-orm'
@@ -24,13 +24,7 @@ export const platformSettingsTable = pgTable(
     maxMediaPerPost: integer('max_media_per_post').notNull(),
     maxMediaSize: integer('max_media_size').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     platformIndex: uniqueIndex('platform_settings_platform_index').on(table.platform),
@@ -46,10 +40,7 @@ export const superAdminsTable = pgTable('super_admins', {
     .notNull()
     .references(() => usersTable.id, { onDelete: 'cascade' })
     .primaryKey(),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updadedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-    .$defaultFn(() => new Date().toISOString())
-    .notNull(),
+  ...timestampCols(),
 })
 
 export type SelectSuperAdmin = typeof superAdminsTable.$inferSelect

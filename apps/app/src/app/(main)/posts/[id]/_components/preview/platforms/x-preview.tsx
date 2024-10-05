@@ -2,7 +2,7 @@
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
-import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
 import { getRelativeTimeString } from '@bulkit/shared/utils/date-utils'

@@ -49,6 +49,8 @@ export class PostsService {
         status: postsTable.status,
         name: postsTable.name,
         createdAt: postsTable.createdAt,
+
+        scheduledAt: postsTable.scheduledAt,
       })
       .from(postsTable)
       .where(and(eq(postsTable.id, opts.postId), eq(postsTable.organizationId, opts.orgId)))
@@ -60,18 +62,7 @@ export class PostsService {
       return null
     }
 
-    const channels = await db
-      .select({
-        id: channelsTable.id,
-        platform: channelsTable.platform,
-        name: channelsTable.name,
-        imageUrl: channelsTable.imageUrl,
-      })
-      .from(channelsTable)
-      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
-      .where(eq(scheduledPostsTable.postId, tmpPost.id))
-
-    const post = { ...tmpPost, channels }
+    const post = { ...tmpPost, channels: await this.getPostChannels(db, tmpPost.id) }
 
     switch (post.type) {
       case 'reel': {
@@ -345,6 +336,7 @@ export class PostsService {
         updatedAt: new Date().toISOString(),
         name: opts.post.name,
         status: opts.post.status,
+        scheduledAt: opts.post.scheduledAt,
       })
       .where(eq(postsTable.id, opts.post.id))
       .returning()
@@ -374,6 +366,28 @@ export class PostsService {
     }
   }
 
+  private async getPostChannels(db: TransactionLike, postId: string): Promise<PostChannel[]> {
+    return db
+      .select({
+        id: channelsTable.id,
+        platform: channelsTable.platform,
+        name: channelsTable.name,
+        imageUrl: channelsTable.imageUrl,
+
+        scheduledPost: {
+          id: scheduledPostsTable.id,
+          scheduledAt: scheduledPostsTable.scheduledAt,
+          publishedAt: scheduledPostsTable.publishedAt,
+          parentPostId: scheduledPostsTable.parentPostId,
+          parentPostSettings: scheduledPostsTable.parentPostSettings,
+          repostSettings: scheduledPostsTable.repostSettings,
+        },
+      })
+      .from(channelsTable)
+      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .where(eq(scheduledPostsTable.postId, postId))
+  }
+
   private async updatePostChannels(
     db: TransactionLike,
     opts: {
@@ -382,17 +396,22 @@ export class PostsService {
       existingChannels: PostChannel[]
       newChannels: PostChannel[]
     }
-  ): Promise<void> {
+  ): Promise<PostChannel[]> {
     appLogger.debug(opts)
 
     const existingChannelMap = new Map(opts.existingChannels.map((c) => [c.id, c]))
     const channelsToAdd: PostChannel[] = []
+    const channelsToUpdate: PostChannel[] = []
     const deduplicatedInputChannels = dedupe(opts.newChannels, (d) => d.id)
 
     for (const channel of deduplicatedInputChannels) {
       if (!existingChannelMap.has(channel.id)) {
         channelsToAdd.push(channel)
-      } else if (existingChannelMap.has(channel.id)) {
+        continue
+      }
+
+      if (existingChannelMap.has(channel.id)) {
+        channelsToUpdate.push(channel)
         existingChannelMap.delete(channel.id)
       }
     }
@@ -435,8 +454,32 @@ export class PostsService {
       )
     }
 
+    for (const channel of channelsToUpdate) {
+      if (!channel.scheduledPost) continue
+      promises.push(
+        db
+          .update(scheduledPostsTable)
+          .set({
+            publishedAt: channel.scheduledPost.publishedAt,
+            scheduledAt: channel.scheduledPost.scheduledAt,
+            parentPostId: channel.scheduledPost.parentPostId,
+            parentPostSettings: channel.scheduledPost.parentPostSettings,
+            repostSettings: channel.scheduledPost.repostSettings,
+          })
+          .where(
+            and(
+              eq(scheduledPostsTable.postId, opts.postId),
+              eq(scheduledPostsTable.channelId, channel.id)
+            )
+          )
+          .execute()
+      )
+    }
+
     // Remove channels post connections
     await Promise.all([promises])
+
+    return this.getPostChannels(db, opts.postId)
   }
 
   private async updateShortPost(

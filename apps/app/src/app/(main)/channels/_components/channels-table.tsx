@@ -1,7 +1,7 @@
 'use client'
 import type { SelectChannel } from '@bulkit/api/db/db.schema'
 import type { apiClient, RouteOutput } from '@bulkit/app/api/api.client'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Button } from '@bulkit/ui/components/ui/button'
@@ -53,7 +53,7 @@ type ChannelTableRowProps = {
   channel: SelectChannel
 }
 export function ChannelTableRow(props: ChannelTableRowProps) {
-  const Icon = CHANNEL_ICON[props.channel.platform]
+  const Icon = PLATFORM_ICON[props.channel.platform]
   const channelAvatarFallback = props.channel.name.charAt(0).toUpperCase()
 
   return (
@@ -115,7 +115,7 @@ export function ChannelTableRow(props: ChannelTableRowProps) {
 }
 
 function ChannelCard({ channel }: ChannelTableRowProps) {
-  const Icon = CHANNEL_ICON[channel.platform]
+  const Icon = PLATFORM_ICON[channel.platform]
   const channelAvatarFallback = channel.name.charAt(0).toUpperCase()
 
   return (

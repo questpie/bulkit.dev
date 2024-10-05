@@ -62,7 +62,7 @@ export function PostTableRow(props: PostTableRowProps) {
       </TableCell>
       <TableCell>
         <Badge
-          variant={props.post.status === 'ready' ? 'default' : 'warning'}
+          variant={props.post.status === 'published' ? 'default' : 'warning'}
           className='capitalize'
         >
           {props.post.status}
@@ -104,7 +104,7 @@ function PostCard({ post }: PostTableRowProps) {
             <div className='flex items-center gap-2'>
               <h3 className='text-sm font-bold'>{post.name}</h3>
               <Badge
-                variant={post.status === 'ready' ? 'default' : 'warning'}
+                variant={post.status === 'scheduled' ? 'default' : 'warning'}
                 className='capitalize'
                 size='sm'
               >

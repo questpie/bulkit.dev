@@ -1,5 +1,5 @@
 import { apiClient } from '@bulkit/app/api/api.client'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import type { PostChannelSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { capitalize } from '@bulkit/shared/utils/string'
@@ -18,6 +18,7 @@ import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
 import { cn } from '@bulkit/ui/lib'
 import type { Static } from '@sinclair/typebox'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { nanoid } from 'nanoid'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { PiPlus } from 'react-icons/pi'
@@ -64,7 +65,20 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange }) =
 
   // show all selected, if there are less than 5 selected, show first 5 - selected channels + add button
   const queryFlatData = useMemo(
-    () => channelsQuery.data?.pages.flatMap((p) => p.data?.data ?? []) ?? [],
+    () =>
+      (channelsQuery.data?.pages.flatMap((p) => p.data?.data ?? []) ?? []).map((p) => {
+        return {
+          ...p,
+          scheduledPost: {
+            id: '_new',
+            parentPostId: null,
+            parentPostSettings: null,
+            publishedAt: null,
+            repostSettings: null,
+            scheduledAt: null,
+          },
+        } satisfies Channel
+      }),
     [channelsQuery.data]
   )
 
@@ -95,7 +109,7 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange }) =
         {firstRow.map((channel) => {
           const isSelected = !!value.find((v) => v.id === channel.id)
 
-          const Icon = CHANNEL_ICON[channel.platform]
+          const Icon = PLATFORM_ICON[channel.platform]
 
           return (
             <button
@@ -176,7 +190,7 @@ export function ChannelDialogList(props: ChannelDialogListProps) {
       <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 px-4 gap-4'>
         {props.allChannelsList.map((channel) => {
           const isSelected = !!internalSelected.find((v) => v.id === channel.id)
-          const Icon = CHANNEL_ICON[channel.platform]
+          const Icon = PLATFORM_ICON[channel.platform]
           return (
             <Card
               key={channel.id}

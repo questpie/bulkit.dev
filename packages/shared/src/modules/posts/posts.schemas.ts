@@ -1,6 +1,6 @@
 import { PLATFORMS, POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { Nullable, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
 export const PostMediaSchema = Type.Object({
@@ -8,12 +8,40 @@ export const PostMediaSchema = Type.Object({
   order: Type.Number(),
   resource: ResourceSchema,
 })
+export const PostMetricsSchema = Type.Object({
+  likes: Type.Optional(Type.Number()),
+  comments: Type.Optional(Type.Number()),
+  shares: Type.Optional(Type.Number()),
+  impressions: Type.Optional(Type.Number()),
+  reach: Type.Optional(Type.Number()),
+  clicks: Type.Optional(Type.Number()),
+})
+export const ParentPostSettingsSchema = Type.Object({
+  delaySeconds: Type.Number(),
+  metrics: Type.Optional(PostMetricsSchema),
+})
+export const RepostSettingsSchema = Type.Object({
+  maxReposts: Type.Number(),
+  delaySeconds: Type.Number(),
+  metrics: Type.Optional(PostMetricsSchema),
+})
 
 export const PostChannelSchema = Type.Object({
   id: Type.String(),
   platform: StringLiteralEnum(PLATFORMS),
   name: Type.String(),
-  imageUrl: Type.Union([Type.String(), Type.Null()]),
+  imageUrl: Type.Union([Type.String({}), Type.Null()]),
+
+  scheduledPost: Nullable(
+    Type.Object({
+      id: Type.String({}),
+      scheduledAt: Nullable(Type.String({})),
+      publishedAt: Nullable(Type.String({})),
+      parentPostId: Nullable(Type.String({})),
+      parentPostSettings: Nullable(ParentPostSettingsSchema),
+      repostSettings: Nullable(RepostSettingsSchema),
+    })
+  ),
 })
 
 export type PostChannel = Static<typeof PostChannelSchema>
@@ -23,8 +51,11 @@ export const PostDetailsSchema = Type.Object({
   name: Type.String(),
   status: StringLiteralEnum(POST_STATUS),
   type: StringLiteralEnum(POST_TYPE),
-  createdAt: Type.String(),
   channels: Type.Array(PostChannelSchema),
+
+  scheduledAt: Nullable(Type.String({})),
+
+  createdAt: Type.String({}),
 })
 
 export const RegularPostSchema = Type.Object({

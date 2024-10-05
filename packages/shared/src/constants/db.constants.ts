@@ -21,7 +21,7 @@ export const POST_TYPE_NAME = {
   thread: 'Thread',
 } as const
 
-export const POST_STATUS = ['draft', 'new', 'published'] as const
+export const POST_STATUS = ['draft', 'scheduled', 'published'] as const
 export type PostStatus = (typeof POST_STATUS)[number]
 
 export const PLATFORMS = [
@@ -43,9 +43,6 @@ export const PLATFORM_TO_NAME = {
   linkedin: 'LinkedIn',
   // google: 'Google',
 }
-
-export const SCHEDULED_POST_STATUS = ['pending', 'published', 'failed'] as const
-export type ScheduledPostStatus = (typeof SCHEDULED_POST_STATUS)[number]
 
 /**
  * Channels

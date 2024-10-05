@@ -42,7 +42,7 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     // Check if the post is ready to be published
-    if (post.status !== 'new') {
+    if (post.status !== 'draft') {
       throw new UnrecoverableError(`Post is not ready to be published: ${post.id}`)
     }
 

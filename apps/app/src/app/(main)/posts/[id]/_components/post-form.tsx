@@ -3,11 +3,11 @@
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import ChannelPicker from '@bulkit/app/app/(main)/posts/[id]/_components/channel-picker'
-import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
 import {
   ResourceButtonUpload,
   ResourceDropzone,
-} from '@bulkit/app/app/(main)/posts/[id]/resource-uploader'
+} from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-uploader'
 import {
   getPostSchemaFromType,
   PostDetailsSchema,

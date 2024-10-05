@@ -3,7 +3,7 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
-import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import {

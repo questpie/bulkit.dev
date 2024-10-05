@@ -1,4 +1,4 @@
-import { primaryKeyCol } from './_base.table'
+import { primaryKeyCol, timestampCols } from './_base.table'
 import { usersTable } from './auth.table'
 import { organizationsTable } from './organizations.table'
 import { postsTable } from './posts.table'
@@ -21,13 +21,7 @@ export const commentsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id),
     content: text('content').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),

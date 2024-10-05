@@ -2,7 +2,7 @@
 
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { InstagramPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/instagram-preview'
 import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
@@ -87,7 +87,7 @@ export function PostPreview() {
 
           <SelectContent>
             {channels.map((channel) => {
-              const Icon = CHANNEL_ICON[channel.platform]
+              const Icon = PLATFORM_ICON[channel.platform]
 
               return (
                 <SelectItem key={channel.id} value={channel.id}>
