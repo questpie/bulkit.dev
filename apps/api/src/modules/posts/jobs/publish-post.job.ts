@@ -79,7 +79,7 @@ export const publishPostJob = jobFactory.createJob({
       job.log('Publishing post at provider')
       await channelManager.publisher.publishPost(channel, post)
     })
-    job.log('Job publish transaction committed')
+    job.log('Post publish transaction committed')
 
     // update details
 
