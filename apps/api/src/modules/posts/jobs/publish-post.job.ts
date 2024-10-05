@@ -76,7 +76,7 @@ export const publishPostJob = jobFactory.createJob({
         })
         .where(eq(scheduledPostsTable.id, scheduledPost.id))
 
-      job.log('Publishing job at provider')
+      job.log('Publishing post at provider')
       await channelManager.publisher.publishPost(channel, post)
     })
     job.log('Job publish transaction committed')
