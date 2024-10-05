@@ -9,11 +9,17 @@ import {
   ThreadPostFields,
 } from '@bulkit/app/app/(main)/posts/[id]/post-form'
 import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@bulkit/ui/components/ui/tabs'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { PiEye } from 'react-icons/pi'
 
-export default async function PostDetail(props: { params: { id: string } }) {
+const PostDetailTab = {}
+
+export default async function PostDetail(props: {
+  params: { id: string }
+  searchParams: Record<string, string>
+}) {
   const postResp = await apiServer.posts({ id: props.params.id }).get()
 
   if (!postResp.data) {
@@ -62,9 +68,21 @@ export default async function PostDetail(props: { params: { id: string } }) {
       {/* <Separator /> */}
 
       <div className='flex flex-row w-full flex-1 h-full -mt-4 overflow-auto'>
-        <div className='py-4 flex flex-col flex-1'>
+        <div className='py-4 flex flex-col gap-4 flex-1'>
           <PostCommonFields />
-          {content}
+          <Tabs defaultValue='content' className='gap-4'>
+            <div className='px-4'>
+              <TabsList className='w-full'>
+                <TabsTrigger value='content' className='flex-1'>
+                  Content
+                </TabsTrigger>
+                <TabsTrigger value='Platforms' className='flex-1'>
+                  Publish Settings
+                </TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value='content'>{content}</TabsContent>
+          </Tabs>
         </div>
 
         <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border py-4 bottom-0 sticky'>

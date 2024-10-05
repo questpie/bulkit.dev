@@ -1,6 +1,6 @@
-import { primaryKeyCol } from './_base.schema'
-import { organizationsTable } from './organizations.schema'
-import { scheduledPostsTable } from './posts.schema'
+import { primaryKeyCol } from './_base.table'
+import { organizationsTable } from './organizations.table'
+import { scheduledPostsTable } from './posts.table'
 import {
   PLATFORMS,
   CHANNEL_STATUS,

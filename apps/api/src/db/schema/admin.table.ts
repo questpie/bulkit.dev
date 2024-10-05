@@ -1,5 +1,5 @@
-import { primaryKeyCol } from './_base.schema'
-import { usersTable } from './auth.schema'
+import { primaryKeyCol } from './_base.table'
+import { usersTable } from './auth.table'
 import { PLATFORMS } from '../../../../../packages/shared/src/constants/db.constants'
 import { relations } from 'drizzle-orm'
 import { pgTable, jsonb, integer, boolean, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'

@@ -1,5 +1,5 @@
-import { primaryKeyCol } from './_base.schema'
-import { organizationsTable } from './organizations.schema'
+import { primaryKeyCol } from './_base.table'
+import { organizationsTable } from './organizations.table'
 import { relations } from 'drizzle-orm'
 import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 

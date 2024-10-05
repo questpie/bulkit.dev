@@ -1,17 +1,26 @@
+import type { LogicalGroup } from '@bulkit/shared/utils/logical-groups'
 import { relations } from 'drizzle-orm'
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import {
+  foreignKey,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 import {
   POST_STATUS,
   POST_TYPE,
   SCHEDULED_POST_STATUS,
 } from '../../../../../packages/shared/src/constants/db.constants'
-import { primaryKeyCol } from './_base.schema'
-import { channelsTable } from './channels.schema'
-import { commentsTable } from './comments.schema'
-import { organizationsTable } from './organizations.schema'
-import { resourcesTable } from './resources.schema'
-import { workflowsTable } from './workflows.schema'
+import { primaryKeyCol } from './_base.table'
+import { channelsTable } from './channels.table'
+import { commentsTable } from './comments.table'
+import { organizationsTable } from './organizations.table'
+import { resourcesTable } from './resources.table'
 
 // Modified Posts table
 export const postsTable = pgTable(
@@ -22,7 +31,7 @@ export const postsTable = pgTable(
     status: text('status', { enum: POST_STATUS }).notNull(),
     organizationId: text('organization_id').notNull(),
     type: text('type', { enum: POST_TYPE }).notNull(),
-    workflowId: text('workflow_id').references(() => workflowsTable.id),
+    // workflowId: text('workflow_id').references(() => workflowsTable.id),
     createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -211,6 +220,41 @@ export type InsertReelPost = typeof reelPostsTable.$inferInsert
 export const insertReelPostSchema = createInsertSchema(reelPostsTable)
 export const selectReelPostSchema = createSelectSchema(reelPostsTable)
 
+export type ParentPostSettings = {
+  delaySeconds: number
+  metrics?: LogicalGroup<{
+    /** The number of likes or reactions the post has received */
+    likes: number
+    /** The number of comments or replies made on the post */
+    comments: number
+    /** The number of times the post has been shared by users */
+    shares: number
+    /** The total number of times the post has been displayed, including multiple views by the same user */
+    impressions: number
+    /** The number of unique users who have seen the post, this may be hard to calculate */
+    reach: number
+    /** The number of times users have clicked on any links within the post */
+    clicks: number
+  }>
+}
+
+export type RepostSettings = {
+  maxReposts: number
+  delaySeconds: number
+  metrics?: LogicalGroup<{
+    /** The number of likes or reactions the post has received */
+    likes: number
+    /** The number of comments or replies made on the post */
+    comments: number
+    /** The number of times the post has been shared by users */
+    shares: number
+    /** The number of unique users who have seen the post, this may be hard to calculate */
+    reach: number
+    /** The number of times users have clicked on any links within the post */
+    clicks: number
+  }>
+}
+
 // Scheduled Posts table (to handle the relationship between posts and platforms)
 export const scheduledPostsTable = pgTable(
   'scheduled_posts',
@@ -227,6 +271,9 @@ export const scheduledPostsTable = pgTable(
     organizationId: text('organization_id')
       .references(() => organizationsTable.id)
       .notNull(),
+    parentPostId: text('parent_post_id'),
+    parentPostSettings: jsonb('parent_post_settings').$type<ParentPostSettings>(),
+    repostSettings: jsonb('repost_settings').$type<RepostSettings>(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -234,6 +281,7 @@ export const scheduledPostsTable = pgTable(
     statusIdx: index().on(table.status),
     orgIdIdx: index().on(table.organizationId),
     compountIdx: uniqueIndex().on(table.postId, table.channelId),
+    parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }),
   })
 )
 

@@ -65,10 +65,10 @@ export type Platform = (typeof PLATFORMS)[number]
 export const CHANNEL_STATUS = ['active', 'inactive', 'error'] as const
 export type ChannelStatus = (typeof CHANNEL_STATUS)[number]
 
-/**
- * Workflows
- */
+// /**
+//  * Workflows
+//  */
 
-export const WORKFLOW_STEP_TYPES = ['publish', 'wait', 'repost', 'condition'] as const
+// export const WORKFLOW_STEP_TYPES = ['publish', 'wait', 'repost', 'condition'] as const
 
-export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]
+// export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]

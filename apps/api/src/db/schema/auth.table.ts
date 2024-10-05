@@ -1,6 +1,6 @@
 // AUTH
 
-import { primaryKeyCol, tokenCol } from './_base.schema'
+import { primaryKeyCol, tokenCol } from './_base.table'
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { relations } from 'drizzle-orm'
 import { text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
