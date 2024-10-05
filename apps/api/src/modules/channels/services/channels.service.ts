@@ -21,7 +21,7 @@ class ChannelsService {
 
   async getChannelWithIntegration(
     db: TransactionLike,
-    opts: { channelId: string; organizationId: string }
+    opts: { channelId: string; organizationId?: string }
   ) {
     return db
       .select({
@@ -36,7 +36,7 @@ class ChannelsService {
       .where(
         and(
           eq(channelsTable.id, opts.channelId),
-          eq(channelsTable.organizationId, opts.organizationId)
+          opts.organizationId ? eq(channelsTable.organizationId, opts.organizationId) : undefined
         )
       )
       .limit(1)

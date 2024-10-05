@@ -40,7 +40,7 @@ export class PostsService {
 
   async getById(
     db: TransactionLike,
-    opts: { orgId: string; postId: string }
+    opts: { orgId?: string; postId: string }
   ): Promise<Post | null> {
     const tmpPost = await db
       .select({
@@ -53,7 +53,12 @@ export class PostsService {
         scheduledAt: postsTable.scheduledAt,
       })
       .from(postsTable)
-      .where(and(eq(postsTable.id, opts.postId), eq(postsTable.organizationId, opts.orgId)))
+      .where(
+        and(
+          eq(postsTable.id, opts.postId),
+          opts.orgId ? eq(postsTable.organizationId, opts.orgId) : undefined
+        )
+      )
       .then((res) => res[0])
 
     appLogger.debug({ post: tmpPost })

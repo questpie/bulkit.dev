@@ -1,5 +1,5 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { scheduledPostsTable } from '@bulkit/api/db/db.schema'
+import { postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
@@ -33,7 +33,6 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     const post = await postService.getById(db, {
-      orgId: scheduledPost.organizationId,
       postId: scheduledPost.postId,
     })
 
@@ -48,7 +47,6 @@ export const publishPostJob = jobFactory.createJob({
 
     const channel = await channelsService.getChannelWithIntegration(db, {
       channelId: scheduledPost.channelId,
-      organizationId: scheduledPost.organizationId,
     })
 
     if (!channel) {
@@ -57,5 +55,22 @@ export const publishPostJob = jobFactory.createJob({
 
     const channelManager = resolveChannelManager(channel.platform)
     await channelManager.publisher.publishPost(channel, post)
+
+    // update details
+    await db.transaction(async (db) => {
+      await db
+        .update(postsTable)
+        .set({
+          status: 'published',
+        })
+        .where(eq(postsTable.id, post.id))
+
+      await db
+        .update(scheduledPostsTable)
+        .set({
+          publishedAt: new Date().toISOString(),
+        })
+        .where(eq(scheduledPostsTable.id, scheduledPost.id))
+    })
   },
 })

@@ -18,7 +18,6 @@ import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
 import { cn } from '@bulkit/ui/lib'
 import type { Static } from '@sinclair/typebox'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { nanoid } from 'nanoid'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { PiPlus } from 'react-icons/pi'
@@ -138,7 +137,13 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange }) =
                   isSelected && 'bg-primary border-primary/50 '
                 )}
               >
-                <Icon className={cn('text-primary-foreground size-4 transition-opacity')} />
+                <Icon
+                  className={cn(
+                    'text-foreground size-4 transition-opacity',
+
+                    isSelected && 'text-primary-foreground'
+                  )}
+                />
               </div>
             </button>
           )
@@ -221,7 +226,12 @@ export function ChannelDialogList(props: ChannelDialogListProps) {
                   isSelected && 'bg-primary border-primary/50'
                 )}
               >
-                <Icon className={cn('text-primary-foreground size-5 transition-opacity')} />
+                <Icon
+                  className={cn(
+                    'text-foreground size-5 transition-opacity',
+                    isSelected && 'text-primary-foreground'
+                  )}
+                />
               </div>
             </Card>
           )

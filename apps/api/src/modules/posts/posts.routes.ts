@@ -1,8 +1,8 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { postsTable } from '@bulkit/api/db/db.schema'
-import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { PostDetailsSchema, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
@@ -140,32 +140,47 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       postId: ctx.params.id,
     })
 
-    const firstChannel = await ctx.db.query.channelsTable.findFirst({
-      where: (channels, { eq }) =>
-        and(eq(channels.organizationId, ctx.organization!.id), eq(channels.platform, 'x')),
-    })
-
-    if (!firstChannel) {
-      return ctx.error(400, { message: 'No channel found' })
-    }
-
-    // TODO: JUST TESTING
-
-    const channelWithIntegration = await ctx.channelsService.getChannelWithIntegration(ctx.db, {
-      channelId: firstChannel.id,
-      organizationId: ctx.organization!.id,
-    })
-
-    if (!channelWithIntegration) {
-      return ctx.error(400, { message: 'No channel with integration found' })
-    }
-
     if (!post) {
       return ctx.error(404, { message: 'Post not found' })
     }
 
-    const channelManager = resolveChannelManager('x')
-    await channelManager.publisher.publishPost(channelWithIntegration, post)
+    for (const channel of post.channels) {
+      if (!channel.scheduledPost) continue
+      const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+
+      let delay = 1000
+
+      if (scheduledAt) {
+        delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
+      }
+
+      await publishPostJob.invoke(
+        {
+          scheduledPostId: channel.scheduledPost.id,
+        },
+        {
+          jobId: channel.scheduledPost.id,
+          delay,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        }
+      )
+    }
+
+    await ctx.db
+      .update(postsTable)
+      .set({
+        status: 'scheduled',
+      })
+      .where(eq(postsTable.id, post.id))
+
+    return {
+      ...post,
+      status: 'scheduled',
+    }
   })
   .post('/:id/duplicate', async (ctx) => {
     return await ctx.db.transaction(async (trx) => {
