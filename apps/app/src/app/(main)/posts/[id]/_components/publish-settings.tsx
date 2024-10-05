@@ -19,7 +19,6 @@ import {
   FormItem,
   FormLabel,
 } from '@bulkit/ui/components/ui/form'
-import { addYears } from 'date-fns'
 import { useFormContext } from 'react-hook-form'
 import { PiCaretDown } from 'react-icons/pi'
 
@@ -35,7 +34,11 @@ export function PublishSettings() {
           control={form.control}
           name='scheduledAt'
           render={({ field }) => (
-            <FormItem className={cn('flex flex-row items-center gap-2 w-full justify-between')}>
+            <FormItem
+              className={cn(
+                'flex flex-col md:flex-row md:items-center gap-2 w-full justify-between'
+              )}
+            >
               <div className='space-y-0.5 flex-1'>
                 <FormLabel className='text-base'>
                   Global Publish Time{' '}
@@ -56,8 +59,7 @@ export function PublishSettings() {
                     }}
                     showTime
                     calendarProps={{
-                      toDate: addYears(new Date(), 5),
-                      fromDate: new Date(),
+                      disabled: { before: new Date() },
                     }}
                   />
                 </FormControl>
@@ -104,7 +106,9 @@ export function PublishSettings() {
                       name={`channels.${index}.scheduledPost.scheduledAt`}
                       render={({ field }) => (
                         <FormItem
-                          className={cn('flex flex-row items-center gap-2 w-full justify-between')}
+                          className={cn(
+                            'flex flex-col md:flex-row md:items-center gap-2 w-full justify-between'
+                          )}
                         >
                           <div className='space-y-0.5 flex-1'>
                             <FormLabel className='text-base'>
@@ -124,8 +128,7 @@ export function PublishSettings() {
                                 }
                                 showTime
                                 calendarProps={{
-                                  toDate: addYears(new Date(), 5),
-                                  fromDate: new Date(),
+                                  disabled: { from: new Date() },
                                 }}
                               />
                             </FormControl>

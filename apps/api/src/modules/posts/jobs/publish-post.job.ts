@@ -7,7 +7,7 @@ import { injectChannelService } from '@bulkit/api/modules/channels/services/chan
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
 import { Type } from '@sinclair/typebox'
-import { and, eq, getTableColumns } from 'drizzle-orm'
+import { and, count, eq, getTableColumns, isNotNull } from 'drizzle-orm'
 
 export const publishPostJob = jobFactory.createJob({
   name: 'publish-post',
@@ -19,6 +19,8 @@ export const publishPostJob = jobFactory.createJob({
     const { postService, db, channelsService } = iocResolve(
       ioc.use(injectDatabase).use(injectPostService).use(injectChannelService)
     )
+
+    job.log('Getting scheduled post')
 
     const scheduledPost = await db
       .select({
@@ -39,10 +41,16 @@ export const publishPostJob = jobFactory.createJob({
     if (!post) {
       throw new UnrecoverableError(`Post of scheduled post not found: ${scheduledPost.postId}`)
     }
+    // Check if the post is ready to be published
+    if (post.status !== 'scheduled') {
+      throw new UnrecoverableError(`Post must by in scheduled state to be published: ${post.id}`)
+    }
 
     // Check if the post is ready to be published
-    if (post.status !== 'draft') {
-      throw new UnrecoverableError(`Post is not ready to be published: ${post.id}`)
+    if (scheduledPostsTable.publishedAt) {
+      throw new UnrecoverableError(
+        `Post ${post.id} was already published to channel ${scheduledPost.channelId} at ${scheduledPost.publishedAt}`
+      )
     }
 
     const channel = await channelsService.getChannelWithIntegration(db, {
@@ -54,23 +62,47 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     const channelManager = resolveChannelManager(channel.platform)
-    await channelManager.publisher.publishPost(channel, post)
 
-    // update details
+    job.log(
+      `Publishing ${post.type} to channel ${channel.name} at ${channel.platform} (${channel.url})`
+    )
+
+    job.log('Starting publish transaction')
     await db.transaction(async (db) => {
-      await db
-        .update(postsTable)
-        .set({
-          status: 'published',
-        })
-        .where(eq(postsTable.id, post.id))
-
       await db
         .update(scheduledPostsTable)
         .set({
           publishedAt: new Date().toISOString(),
         })
         .where(eq(scheduledPostsTable.id, scheduledPost.id))
+
+      job.log('Publishing job at provider')
+      await channelManager.publisher.publishPost(channel, post)
+    })
+    job.log('Job publish transaction committed')
+
+    // update details
+
+    //  check if all posts are published if yes mark post
+    // TODO: we could use other job with limited queue concurrency
+    job.log('Checking whether all other scheduled posts are already published')
+    await db.transaction(async (db) => {
+      const publishedPosts = await db
+        .select({ count: count() })
+        .from(scheduledPostsTable)
+        .where(
+          and(eq(scheduledPostsTable.postId, post.id), isNotNull(scheduledPostsTable.publishedAt))
+        )
+        .then((r) => r[0])
+
+      if (publishedPosts && publishedPosts.count === post.channels.length) {
+        await db
+          .update(postsTable)
+          .set({
+            status: 'published',
+          })
+          .where(eq(postsTable.id, post.id))
+      }
     })
   },
 })

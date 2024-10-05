@@ -17,6 +17,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { setHours, setMinutes, startOfDay } from 'date-fns'
 import type React from 'react'
 import { useMemo, useState } from 'react'
+import { isMatch } from 'react-day-picker'
 import { LuCalendar, LuX } from 'react-icons/lu'
 
 const datepickerVariants = cva(
@@ -130,7 +131,6 @@ export function DatePicker(props: DatePickerProps) {
       <ResponsivePopoverContent className='w-auto p-0 bg-popover'>
         <Calendar
           captionLayout='dropdown-buttons'
-          disabled={{ after: new Date() }}
           fromYear={new Date().getFullYear()}
           toYear={new Date().getFullYear() + 10}
           mode='single'

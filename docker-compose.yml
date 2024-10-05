@@ -45,6 +45,22 @@ services:
     depends_on:
       - redis
 
+  bullboard:
+    image: venatum/bull-board
+    restart: always
+    ports:
+      - 8788:3000
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: webapp-dev
+      REDIS_USE_TLS: 'false'
+      USER_LOGIN: admin
+      USER_PASSWORD: admin
+      BULL_PREFIX: bull
+    depends_on:
+      - redis
+
 volumes:
   webapp-dev-db:
   redis-data:
