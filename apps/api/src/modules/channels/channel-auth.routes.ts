@@ -45,11 +45,17 @@ export const channelAuthRoutes = new Elysia({ prefix: '/auth/:platform' })
         }),
       },
       query: t.Object({
-        redirectTo: t.Optional(
+        redirectToOnSuccess: t.Optional(
           t.String({
             minLength: 1,
             description:
               'URL to redirect to after authorization. Use {{cId}} to replace with created channel ID.',
+          })
+        ),
+        redirectToOnDeny: t.Optional(
+          t.String({
+            minLength: 1,
+            description: 'URL to redirect to after authorization is denied.',
           })
         ),
       }),

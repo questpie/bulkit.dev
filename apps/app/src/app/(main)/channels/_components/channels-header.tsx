@@ -14,6 +14,7 @@ import {
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { LuPlus } from 'react-icons/lu'
 
 export function ChannelsPageHeader() {
@@ -21,7 +22,8 @@ export function ChannelsPageHeader() {
     mutationFn: (platform: Platform) =>
       apiClient.channels.auth({ platform }).index.get({
         query: {
-          redirectTo: `${window.location.origin}/channels/{{cId}}`,
+          redirectToOnSuccess: `${window.location.origin}/channels/{{cId}}`,
+          redirectToOnDeny: `${window.location.origin}/channels`,
         },
       }),
     onSuccess: (res) => {
@@ -32,6 +34,13 @@ export function ChannelsPageHeader() {
       window.location.href = res.data.authUrl
     },
   })
+
+  const router = useRouter()
+  const denied = useSearchParams().get('denied')
+  if (denied) {
+    toast.error('Authorization denied')
+    router.replace('/channels')
+  }
 
   return (
     <Header title='Channels'>
