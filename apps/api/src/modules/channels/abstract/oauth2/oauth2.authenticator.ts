@@ -115,22 +115,14 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
       throw new Error(OAuth2Authenticator.NO_REFRESH_TOKEN_SUPPORT_ERROR_CODE)
     }
 
-    const integration = await db
-      .select()
-      .from(socialMediaIntegrationsTable)
-      .where(eq(socialMediaIntegrationsTable.id, channel.socialMediaIntegration.id))
-      .then((r) => r[0])
-
-    if (!integration) {
+    if (!channel.socialMediaIntegration?.refreshToken) {
       throw new Error(OAuth2Authenticator.FAILED_TO_REFRESH_TOKEN_ERROR_CODE)
     }
 
-    if (!integration.refreshToken) {
-      throw new Error(OAuth2Authenticator.NO_REFRESH_TOKEN_SUPPORT_ERROR_CODE)
-    }
-
     // Check if the token is actually close to expiring
-    const tokenExpiryDate = integration.tokenExpiry ? new Date(integration.tokenExpiry) : null
+    const tokenExpiryDate = channel.socialMediaIntegration.tokenExpiry
+      ? new Date(channel.socialMediaIntegration.tokenExpiry)
+      : null
     const now = new Date()
     const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000)
 
@@ -139,22 +131,33 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
       return channel
     }
 
+    appLogger.info(channel.socialMediaIntegration)
+
     try {
       const { accessToken, refreshToken, accessTokenExpiresAt } =
-        await this.oAuth2Provider.refreshAccessToken(integration.refreshToken)
+        await this.oAuth2Provider.refreshAccessToken(channel.socialMediaIntegration.refreshToken)
 
       const updatedIntegration = await db
         .update(socialMediaIntegrationsTable)
         .set({
-          accessToken,
-          refreshToken: refreshToken ?? integration.refreshToken,
+          accessToken: this.apiKeyService.encrypt(accessToken),
+          refreshToken: refreshToken ? this.apiKeyService.encrypt(refreshToken) : undefined,
           tokenExpiry: accessTokenExpiresAt ? accessTokenExpiresAt.toISOString() : undefined,
         })
-        .where(eq(socialMediaIntegrationsTable.id, integration.id))
+        .where(eq(socialMediaIntegrationsTable.id, channel.socialMediaIntegration.id))
         .returning()
         .then((r) => r[0]!)
 
-      return { ...channel, socialMediaIntegration: updatedIntegration }
+      return {
+        ...channel,
+        socialMediaIntegration: {
+          ...updatedIntegration,
+          accessToken: this.apiKeyService.decrypt(updatedIntegration.accessToken),
+          refreshToken: updatedIntegration.refreshToken
+            ? this.apiKeyService.decrypt(updatedIntegration.refreshToken)
+            : null,
+        },
+      }
     } catch (error) {
       if ((error as any).message.includes('invalid_grant')) {
         // Token might be expired or revoked, mark channel as inactive and require re-authorization

@@ -9,7 +9,7 @@ import {
   PiYoutubeLogo,
 } from 'react-icons/pi'
 
-export const CHANNEL_ICON: Record<Platform, IconType> = {
+export const PLATFORM_ICON: Record<Platform, IconType> = {
   x: PiXLogo,
   facebook: PiFacebookLogo,
   instagram: PiInstagramLogo,

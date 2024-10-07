@@ -1,7 +1,7 @@
-import { primaryKeyCol } from './_base.schema'
-import { usersTable } from './auth.schema'
-import { organizationsTable } from './organizations.schema'
-import { postsTable } from './posts.schema'
+import { primaryKeyCol, timestampCols } from './_base.table'
+import { usersTable } from './auth.table'
+import { organizationsTable } from './organizations.table'
+import { postsTable } from './posts.table'
 import { relations } from 'drizzle-orm'
 import { text, timestamp, index } from 'drizzle-orm/pg-core'
 import { pgTable } from 'drizzle-orm/pg-core'
@@ -21,13 +21,7 @@ export const commentsTable = pgTable(
       .notNull()
       .references(() => organizationsTable.id),
     content: text('content').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),

@@ -8,3 +8,8 @@ export const POST_TYPE_ICON: Record<PostType, IconType> = {
   thread: PiNeedle,
   story: PiCamera,
 }
+
+export enum PostDetailTab {
+  Content = 'content',
+  Publish = 'publish',
+}

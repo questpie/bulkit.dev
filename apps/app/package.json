@@ -20,6 +20,7 @@
     "@tanstack/react-query-next-experimental": "^5.56.2",
     "@types/object-hash": "^3.0.6",
     "autoprefixer": "^10.4.20",
+    "date-fns": "^4.1.0",
     "jotai": "^2.9.3",
     "jotai-scope": "^0.7.2",
     "nanoid": "^5.0.7",

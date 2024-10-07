@@ -1,6 +1,6 @@
-import { primaryKeyCol } from './_base.schema'
-import { organizationsTable } from './organizations.schema'
-import { scheduledPostsTable } from './posts.schema'
+import { primaryKeyCol, timestampCols } from './_base.table'
+import { organizationsTable } from './organizations.table'
+import { scheduledPostsTable } from './posts.table'
 import {
   PLATFORMS,
   CHANNEL_STATUS,
@@ -24,14 +24,8 @@ export const socialMediaIntegrationsTable = pgTable(
     tokenExpiry: timestamp('token_expiry', { mode: 'string', withTimezone: true }),
     scope: text('scope'),
     additionalData: jsonb('additional_data').default(sql`'{}'::jsonb`),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
     organizationId: text('organization_id').notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     orgIdIdx: index().on(table.organizationId),
@@ -64,13 +58,7 @@ export const channelsTable = pgTable(
     socialMediaIntegrationId: text('social_media_integration_id').references(
       () => socialMediaIntegrationsTable.id
     ),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     platformIdx: index().on(table.platform),

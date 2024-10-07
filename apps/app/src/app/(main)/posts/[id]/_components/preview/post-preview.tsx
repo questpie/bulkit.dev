@@ -1,11 +1,13 @@
 'use client'
 
+import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
-import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { InstagramPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/instagram-preview'
 import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
-import { type Platform, PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
+import type { Platform } from '@bulkit/shared/constants/db.constants'
+import type { PostChannel } from '@bulkit/shared/modules/posts/posts.schemas'
+import { Alert, AlertDescription, AlertTitle } from '@bulkit/ui/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -14,7 +16,9 @@ import {
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
 import { useQuery } from '@tanstack/react-query'
-import { type ComponentType, useState } from 'react'
+import { type ComponentType, useEffect, useState } from 'react'
+import { useFormContext, useWatch } from 'react-hook-form'
+import { PiInfo } from 'react-icons/pi'
 
 const PLATFORM_PREVIEW: Record<Platform, ComponentType<PreviewPostProps>> = {
   x: XPreview,
@@ -30,58 +34,78 @@ export type PreviewPostProps = {
   previewUser: {
     name: string
     username: string
-    avatar: string
+    avatar?: string
   }
 }
 
 export function PostPreview() {
-  const [platform, setPlatform] = useState<Platform>('x')
+  const form = useFormContext<Post>()
 
-  const PreviewComponent = PLATFORM_PREVIEW[platform]
-
-  const authData = useAuthData()
-  const channelQuery = useQuery({
-    queryKey: ['channels', platform],
-    queryFn: async () => {
-      const res = await apiClient.channels.index.get({
-        query: {
-          limit: 1,
-          cursor: 0,
-          platform,
-        },
-      })
-
-      return res.data?.data[0]
-    },
+  const channels = useWatch({
+    control: form.control,
+    name: 'channels',
   })
+
+  const [selectedChannel, setSelectedChannel] = useState<PostChannel | null>(channels[0] ?? null)
+
+  useEffect(() => {
+    if (selectedChannel === null && channels.length > 0) {
+      setSelectedChannel(channels[0]!)
+    } else if (channels.length === 0 && selectedChannel) {
+      setSelectedChannel(null)
+    }
+  }, [channels, selectedChannel])
+
+  if (!selectedChannel)
+    return (
+      <Alert>
+        <PiInfo className='size-5' />
+        <AlertTitle>No Preview Available!</AlertTitle>
+        <AlertDescription>
+          You need to select at least one channel to preview the post.
+        </AlertDescription>
+      </Alert>
+    )
+
+  const PreviewComponent = PLATFORM_PREVIEW[selectedChannel?.platform]
 
   return (
     <div className='flex flex-col gap-6'>
-      <Select value={platform} onValueChange={setPlatform as any}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
+      {channels.length > 1 && (
+        <Select
+          onValueChange={(value) => {
+            const channel = channels.find((channel) => channel.id === value)
+            if (channel) {
+              setSelectedChannel(channel)
+            }
+          }}
+          value={selectedChannel?.id}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
 
-        <SelectContent>
-          {PLATFORMS.map((p) => {
-            const Icon = CHANNEL_ICON[p]
+          <SelectContent>
+            {channels.map((channel) => {
+              const Icon = PLATFORM_ICON[channel.platform]
 
-            return (
-              <SelectItem key={p} value={p}>
-                <div className='flex flex-row gap-2 items-center'>
-                  <Icon className='inline' /> {PLATFORM_TO_NAME[p]}
-                </div>
-              </SelectItem>
-            )
-          })}
-        </SelectContent>
-      </Select>
+              return (
+                <SelectItem key={channel.id} value={channel.id}>
+                  <div className='flex flex-row gap-2 items-center'>
+                    <Icon className='inline' /> {channel.name}
+                  </div>
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
+      )}
 
       <PreviewComponent
         previewUser={{
-          name: (channelQuery.data?.name || authData?.user.name) ?? '',
-          username: (channelQuery.data?.name || authData?.user.email) ?? '',
-          avatar: channelQuery.data?.imageUrl || '',
+          name: selectedChannel.name,
+          username: selectedChannel.name,
+          avatar: selectedChannel.imageUrl ?? undefined,
         }}
       />
     </div>

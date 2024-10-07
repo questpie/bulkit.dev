@@ -1,8 +1,8 @@
-import { primaryKeyCol, tokenCol } from './_base.schema'
-import { usersTable } from './auth.schema'
-import { socialMediaIntegrationsTable, channelsTable } from './channels.schema'
-import { postsTable, scheduledPostsTable } from './posts.schema'
-import { resourcesTable } from './resources.schema'
+import { primaryKeyCol, timestampCols, tokenCol } from './_base.table'
+import { usersTable } from './auth.table'
+import { socialMediaIntegrationsTable, channelsTable } from './channels.table'
+import { postsTable, scheduledPostsTable } from './posts.table'
+import { resourcesTable } from './resources.table'
 import { USER_ROLE } from '../../../../../packages/shared/src/constants/db.constants'
 import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
@@ -18,13 +18,7 @@ export const userOrganizationsTable = pgTable(
     userId: text('user_id').notNull(),
     organizationId: text('organization_id').notNull(),
     role: text('role', { enum: USER_ROLE }).notNull(),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     userIdIdx: index().on(table.userId),
@@ -42,11 +36,7 @@ export const selectUserOrganizationSchema = createSelectSchema(userOrganizations
 export const organizationsTable = pgTable('organizations', {
   id: primaryKeyCol(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date().toISOString())
-    .notNull(),
+  ...timestampCols(),
 })
 
 export type SelectOrganization = typeof organizationsTable.$inferSelect
@@ -65,11 +55,7 @@ export const organizationInvitesTable = pgTable('organization_invites', {
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
   expiresAt: timestamp('expires_at', { mode: 'string', withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date().toISOString())
-    .notNull(),
+  ...timestampCols(),
 })
 
 export type SelectOrganizationInvite = typeof organizationInvitesTable.$inferSelect

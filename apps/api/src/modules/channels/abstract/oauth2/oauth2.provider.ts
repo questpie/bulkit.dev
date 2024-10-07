@@ -170,8 +170,8 @@ export function buildChannelRedirectUri(platform: Platform) {
 
 // export const getFacebookProvider = () => {
 //   return createOAuth2Provider({
-//     clientId: envApi.FACEBOOK_CLIENT_ID!,
-//     clientSecret: envApi.FACEBOOK_CLIENT_SECRET!,
+//     clientId: envApi.FACEBOOK_APP_ID!,
+//     clientSecret: envApi.FACEBOOK_APP_SECRET!,
 //     redirectUri: buildRedirectUri('facebook'),
 //     authorizationEndpoint: 'https://www.facebook.com/v12.0/dialog/oauth',
 //     tokenEndpoint: 'https://graph.facebook.com/v12.0/oauth/access_token',
@@ -191,8 +191,8 @@ export function buildChannelRedirectUri(platform: Platform) {
 
 // export const getInstagramProvider = () => {
 //   return createOAuth2Provider({
-//     clientId: envApi.INSTAGRAM_CLIENT_ID!,
-//     clientSecret: envApi.INSTAGRAM_CLIENT_SECRET!,
+//     clientId: envApi.INSTAGRAM_APP_ID!,
+//     clientSecret: envApi.INSTAGRAM_APP_SECRET!,
 //     redirectUri: buildRedirectUri('instagram'),
 //     authorizationEndpoint: 'https://api.instagram.com/oauth/authorize',
 //     tokenEndpoint: 'https://api.instagram.com/oauth/access_token',

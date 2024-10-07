@@ -1,6 +1,6 @@
 // AUTH
 
-import { primaryKeyCol, tokenCol } from './_base.schema'
+import { primaryKeyCol, timestampCols, tokenCol } from './_base.table'
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { relations } from 'drizzle-orm'
 import { text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
@@ -12,12 +12,7 @@ export const usersTable = pgTable(
     id: primaryKeyCol(),
     email: text('email').notNull(),
     name: text('name').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString()),
+    ...timestampCols(),
   },
   (table) => ({
     emailIndex: uniqueIndex().on(table.email),
@@ -43,10 +38,7 @@ export const sessionsTable = pgTable('sessions', {
   }).notNull(),
   deviceFingerprint: text('device_fingerprint').notNull(),
   deviceInfo: jsonb('device_info').$type<DeviceInfo>().notNull(),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date().toISOString()),
+  ...timestampCols(),
 })
 
 export type SelectSession = typeof sessionsTable.$inferSelect
@@ -71,10 +63,7 @@ export const emailVerificationsTable = pgTable('email_verifications', {
   type: text('type').$type<EmailVerificationType>().notNull(),
   /** If you want your verification to be realtime store channelName here */
   // channelName: text('channel_name'),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date().toISOString()),
+  ...timestampCols(),
 })
 
 export type SelectEmailVerification = typeof emailVerificationsTable.$inferSelect
@@ -87,8 +76,7 @@ export const oauthAccountsTable = pgTable('oauth_accounts', {
     .references(() => usersTable.id),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
-  createdAt: timestamp('created_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).defaultNow().notNull(),
+  ...timestampCols(),
 })
 
 export const oauthAccountsRelations = relations(oauthAccountsTable, ({ one }) => ({

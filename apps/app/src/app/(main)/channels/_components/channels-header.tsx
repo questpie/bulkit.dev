@@ -1,7 +1,7 @@
 'use client'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
-import { CHANNEL_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PLATFORMS, PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
 import { Card, CardContent } from '@bulkit/ui/components/ui/card'
 import {
@@ -57,7 +57,7 @@ export function ChannelsPageHeader() {
           <div className='flex gap-4 flex-wrap justify-center py-8'>
             {/* TODO: filter only enabled platforms */}
             {PLATFORMS.map((platform) => {
-              const Icon = CHANNEL_ICON[platform]
+              const Icon = PLATFORM_ICON[platform]
               return (
                 <Card
                   role='button'

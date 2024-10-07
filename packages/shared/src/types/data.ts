@@ -18,11 +18,11 @@ export type LeafPaths<T> = T extends object
     }[keyof T]
   : never
 
-export function dedupe<T>(arr: T[], dedupeKey: (keyof T)[]) {
+export function dedupe<T>(arr: T[], fn: (item: T) => string): T[] {
   const map = new Map()
   const res: T[] = []
   for (const item of arr) {
-    const key = dedupeKey.map((k) => item[k]).join(':')
+    const key = fn(item)
     if (map.has(key)) {
       continue
     }

@@ -1,17 +1,25 @@
+import type {
+  ParentPostSettingsSchema,
+  RepostSettingsSchema,
+} from '@bulkit/shared/modules/posts/posts.schemas'
 import { relations } from 'drizzle-orm'
-import { index, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
-import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 import {
-  POST_STATUS,
-  POST_TYPE,
-  SCHEDULED_POST_STATUS,
-} from '../../../../../packages/shared/src/constants/db.constants'
-import { primaryKeyCol } from './_base.schema'
-import { channelsTable } from './channels.schema'
-import { commentsTable } from './comments.schema'
-import { organizationsTable } from './organizations.schema'
-import { resourcesTable } from './resources.schema'
-import { workflowsTable } from './workflows.schema'
+  foreignKey,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core'
+import type { Static } from 'elysia'
+import { POST_STATUS, POST_TYPE } from '../../../../../packages/shared/src/constants/db.constants'
+import { primaryKeyCol, timestampCols } from './_base.table'
+import { channelsTable } from './channels.table'
+import { commentsTable } from './comments.table'
+import { organizationsTable } from './organizations.table'
+import { resourcesTable } from './resources.table'
 
 // Modified Posts table
 export const postsTable = pgTable(
@@ -22,25 +30,19 @@ export const postsTable = pgTable(
     status: text('status', { enum: POST_STATUS }).notNull(),
     organizationId: text('organization_id').notNull(),
     type: text('type', { enum: POST_TYPE }).notNull(),
-    workflowId: text('workflow_id').references(() => workflowsTable.id),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+
+    scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
+
+    // workflowId: text('workflow_id').references(() => workflowsTable.id),
+    ...timestampCols(),
   },
   (table) => ({
     orgIdIdx: index().on(table.organizationId),
     typeIdx: index().on(table.type),
   })
 )
-export const insertPostSchema = createInsertSchema(postsTable)
-export const selectPostSchema = createSelectSchema(postsTable)
 
 export type SelectPost = typeof postsTable.$inferSelect
-export type InsertPost = typeof postsTable.$inferInsert
 
 // New table for thread posts
 export const threadPostsTable = pgTable(
@@ -52,23 +54,13 @@ export const threadPostsTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
     orderIdx: uniqueIndex().on(table.order, table.postId),
   })
 )
-
-export type SelectThreadPost = typeof threadPostsTable.$inferSelect
-export type InsertThreadPost = typeof threadPostsTable.$inferInsert
-export const insertThreadPostSchema = createInsertSchema(threadPostsTable)
-export const selectThreadPostSchema = createSelectSchema(threadPostsTable)
 
 // New table for thread media
 export const threadMediaTable = pgTable(
@@ -85,12 +77,7 @@ export const threadMediaTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
 
-    createAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     treadPostIdIdx: index().on(table.threadPostId),
@@ -98,10 +85,7 @@ export const threadMediaTable = pgTable(
   })
 )
 
-export type SelectThreadMedia = typeof threadMediaTable.$inferSelect
 export type InsertThreadMedia = typeof threadMediaTable.$inferInsert
-export const insertThreadMediaSchema = createInsertSchema(threadMediaTable)
-export const selectThreadMediaSchema = createSelectSchema(threadMediaTable)
 
 // New table for regular posts
 export const regularPostsTable = pgTable(
@@ -111,22 +95,12 @@ export const regularPostsTable = pgTable(
     postId: text('post_id').notNull(),
     text: text('text').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
   })
 )
-
-export type SelectRegularPost = typeof regularPostsTable.$inferSelect
-export type InsertRegularPost = typeof regularPostsTable.$inferInsert
-export const insertRegularPostSchema = createInsertSchema(regularPostsTable)
-export const selectRegularPostSchema = createSelectSchema(regularPostsTable)
 
 // New table for regular post media
 export const regularPostMediaTable = pgTable(
@@ -141,23 +115,13 @@ export const regularPostMediaTable = pgTable(
       .notNull(),
     order: integer('order').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true })
-      .$onUpdate(() => new Date().toISOString())
-      .notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     regularPostIdIdx: index().on(table.regularPostId),
     orderIdx: uniqueIndex().on(table.regularPostId, table.order),
   })
 )
-
-export type SelectRegularPostMedia = typeof regularPostMediaTable.$inferSelect
-export type InsertRegularPostMedia = typeof regularPostMediaTable.$inferInsert
-export const insertRegularPostMediaSchema = createInsertSchema(regularPostMediaTable)
-export const selectRegularPostMediaSchema = createSelectSchema(regularPostMediaTable)
 
 // New table for story posts
 export const storyPostsTable = pgTable(
@@ -167,22 +131,12 @@ export const storyPostsTable = pgTable(
     postId: text('post_id').notNull(),
     resourceId: text('resource_id'),
 
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).$onUpdate(() =>
-      new Date().toISOString()
-    ),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
   })
 )
-
-export type SelectStoryPost = typeof storyPostsTable.$inferSelect
-export type InsertStoryPost = typeof storyPostsTable.$inferInsert
-export const insertStoryPostSchema = createInsertSchema(storyPostsTable)
-export const selectStoryPostSchema = createSelectSchema(storyPostsTable)
 
 // New table for reel posts
 export const reelPostsTable = pgTable(
@@ -193,12 +147,7 @@ export const reelPostsTable = pgTable(
     resourceId: text('resource_id'),
     description: text('description').notNull(),
 
-    createdAt: timestamp('created_at', { mode: 'string', withTimezone: true })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp('updated_at', { mode: 'string', withTimezone: true }).$onUpdate(() =>
-      new Date().toISOString()
-    ),
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
@@ -206,11 +155,8 @@ export const reelPostsTable = pgTable(
   })
 )
 
-export type SelectReelPost = typeof reelPostsTable.$inferSelect
-export type InsertReelPost = typeof reelPostsTable.$inferInsert
-export const insertReelPostSchema = createInsertSchema(reelPostsTable)
-export const selectReelPostSchema = createSelectSchema(reelPostsTable)
-
+export type RepostSettings = Static<typeof RepostSettingsSchema>
+export type ParentPostSettings = Static<typeof ParentPostSettingsSchema>
 // Scheduled Posts table (to handle the relationship between posts and platforms)
 export const scheduledPostsTable = pgTable(
   'scheduled_posts',
@@ -221,19 +167,20 @@ export const scheduledPostsTable = pgTable(
       .references(() => channelsTable.id)
       .notNull(),
     scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
-    status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('pending'),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true }),
     failureReason: text('failure_reason'),
-    organizationId: text('organization_id')
-      .references(() => organizationsTable.id)
-      .notNull(),
+
+    parentPostId: text('parent_post_id'),
+    parentPostSettings: jsonb('parent_post_settings').$type<ParentPostSettings>(),
+    repostSettings: jsonb('repost_settings').$type<RepostSettings>(),
+
+    ...timestampCols(),
   },
   (table) => ({
     postIdIdx: index().on(table.postId),
     channelIdIdx: index().on(table.channelId),
-    statusIdx: index().on(table.status),
-    orgIdIdx: index().on(table.organizationId),
     compountIdx: uniqueIndex().on(table.postId, table.channelId),
+    parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }),
   })
 )
 
@@ -264,18 +211,13 @@ export const postMetricsHistoryTable = pgTable(
     /** The number of times users have clicked on any links within the post */
     clicks: integer('clicks').notNull(),
 
-    createdAt: timestamp('timestamp', { mode: 'string', withTimezone: true }).notNull(),
+    ...timestampCols(),
   },
   (table) => ({
     scheduledPostIdIdx: index().on(table.scheduledPostId),
     craetedAtIdx: index().on(table.createdAt),
   })
 )
-
-export type SelectPostMetricsHistory = typeof postMetricsHistoryTable.$inferSelect
-export type InsertPostMetricsHistory = typeof postMetricsHistoryTable.$inferInsert
-export const insertPostMetricsHistorySchema = createInsertSchema(postMetricsHistoryTable)
-export const selectPostMetricsHistorySchema = createSelectSchema(postMetricsHistoryTable)
 
 // Add relations for the new table
 export const postMetricsHistoryRelations = relations(postMetricsHistoryTable, ({ one }) => ({
@@ -284,11 +226,6 @@ export const postMetricsHistoryRelations = relations(postMetricsHistoryTable, ({
     references: [scheduledPostsTable.id],
   }),
 }))
-
-export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
-export type InsertScheduledPost = typeof scheduledPostsTable.$inferInsert
-export const insertScheduledPostSchema = createInsertSchema(scheduledPostsTable)
-export const selectScheduledPostSchema = createSelectSchema(scheduledPostsTable)
 
 export const postsRelations = relations(postsTable, ({ one, many }) => ({
   organization: one(organizationsTable, {
@@ -312,10 +249,6 @@ export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one, ma
     // Changed from platform to channel
     fields: [scheduledPostsTable.channelId],
     references: [channelsTable.id],
-  }),
-  organization: one(organizationsTable, {
-    fields: [scheduledPostsTable.organizationId],
-    references: [organizationsTable.id],
   }),
   metricsHistory: many(postMetricsHistoryTable), // Add this lines
 }))

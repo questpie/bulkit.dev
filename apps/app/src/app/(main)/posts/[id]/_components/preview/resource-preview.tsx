@@ -126,7 +126,7 @@ export function ResourcePreview({
       <DropdownMenuTrigger asChild>
         <Button
           type='button'
-          className='absolute group-hover:opacity-100 opacity-0 z-20 rounded-full h-6 w-6 top-0 right-0 p-1 text-sm'
+          className='absolute group-hover:opacity-100 opacity-0 z-10 rounded-full h-6 w-6 top-0 right-0 p-1 text-sm'
           size='icon'
           variant='outline'
         >

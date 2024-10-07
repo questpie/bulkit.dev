@@ -2,11 +2,12 @@
 
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
-import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/resource-preview'
+import ChannelPicker from '@bulkit/app/app/(main)/posts/[id]/_components/channel-picker'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
 import {
   ResourceButtonUpload,
   ResourceDropzone,
-} from '@bulkit/app/app/(main)/posts/[id]/resource-uploader'
+} from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-uploader'
 import {
   getPostSchemaFromType,
   PostDetailsSchema,
@@ -108,6 +109,32 @@ export function PostFormProvider(props: PostFormProviderProps) {
         <button type='submit' className='hidden' ref={formTriggerRef} />
       </form>
     </Form>
+  )
+}
+
+export function PostCommonFields() {
+  const form = useFormContext<Post>()
+
+  return (
+    <div className='px-4 pb-4'>
+      <FormField
+        control={form.control}
+        name='channels'
+        render={({ field }) => {
+          return (
+            <FormItem>
+              <FormLabel>Channels to post to</FormLabel>
+
+              <FormControl>
+                <ChannelPicker value={field.value} onValueChange={field.onChange} />
+              </FormControl>
+
+              <FormMessage />
+            </FormItem>
+          )
+        }}
+      />
+    </div>
   )
 }
 

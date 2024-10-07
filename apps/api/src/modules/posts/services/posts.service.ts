@@ -22,9 +22,10 @@ import {
 import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
-import type { PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
+import type { PostChannel, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
+import { dedupe } from '@bulkit/shared/types/data'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, asc, eq, getTableColumns } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
@@ -39,7 +40,7 @@ export class PostsService {
 
   async getById(
     db: TransactionLike,
-    opts: { orgId: string; postId: string }
+    opts: { orgId?: string; postId: string }
   ): Promise<Post | null> {
     const tmpPost = await db
       .select({
@@ -48,9 +49,16 @@ export class PostsService {
         status: postsTable.status,
         name: postsTable.name,
         createdAt: postsTable.createdAt,
+
+        scheduledAt: postsTable.scheduledAt,
       })
       .from(postsTable)
-      .where(and(eq(postsTable.id, opts.postId), eq(postsTable.organizationId, opts.orgId)))
+      .where(
+        and(
+          eq(postsTable.id, opts.postId),
+          opts.orgId ? eq(postsTable.organizationId, opts.orgId) : undefined
+        )
+      )
       .then((res) => res[0])
 
     appLogger.debug({ post: tmpPost })
@@ -59,18 +67,7 @@ export class PostsService {
       return null
     }
 
-    const channels = await db
-      .select({
-        id: channelsTable.id,
-        platform: channelsTable.platform,
-        name: channelsTable.name,
-        imageUrl: channelsTable.imageUrl,
-      })
-      .from(channelsTable)
-      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
-      .where(eq(scheduledPostsTable.postId, tmpPost.id))
-
-    const post = { ...tmpPost, channels }
+    const post = { ...tmpPost, channels: await this.getPostChannels(db, tmpPost.id) }
 
     switch (post.type) {
       case 'reel': {
@@ -330,6 +327,7 @@ export class PostsService {
       post: Post
     }
   ): Promise<Post | null> {
+    appLogger.debug('Updating post', { post: opts.post })
     const existingPost = await this.getById(db, { orgId: opts.orgId, postId: opts.post.id })
 
     if (!existingPost) {
@@ -343,29 +341,21 @@ export class PostsService {
         updatedAt: new Date().toISOString(),
         name: opts.post.name,
         status: opts.post.status,
+        scheduledAt: opts.post.scheduledAt,
       })
       .where(eq(postsTable.id, opts.post.id))
       .returning()
       .then((res) => res[0]!)
 
-    const existingChannels = await db
-      .select({
-        id: channelsTable.id,
-        platform: channelsTable.platform,
-        name: channelsTable.name,
-        imageUrl: channelsTable.imageUrl,
-      })
-      .from(channelsTable)
-      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
-      .where(eq(scheduledPostsTable.postId, existingPost.id))
-
-    // TODO: finish
-    // const channelsToAdd =
-    // const channelsToRemove =
-
+    // Update channels
+    await this.updatePostChannels(db, {
+      orgId: opts.orgId,
+      postId: opts.post.id,
+      existingChannels: existingPost.channels,
+      newChannels: opts.post.channels,
+    })
     opts.post.status = updatedPost.status
     opts.post.name = updatedPost.name
-    opts.post.channels = existingChannels
 
     switch (opts.post.type) {
       case 'reel':
@@ -379,6 +369,122 @@ export class PostsService {
       default:
         throw new Error(`Unsupported post type: ${(opts.post as any).type}`)
     }
+  }
+
+  private async getPostChannels(db: TransactionLike, postId: string): Promise<PostChannel[]> {
+    return db
+      .select({
+        id: channelsTable.id,
+        platform: channelsTable.platform,
+        name: channelsTable.name,
+        imageUrl: channelsTable.imageUrl,
+
+        scheduledPost: {
+          id: scheduledPostsTable.id,
+          scheduledAt: scheduledPostsTable.scheduledAt,
+          publishedAt: scheduledPostsTable.publishedAt,
+          parentPostId: scheduledPostsTable.parentPostId,
+          parentPostSettings: scheduledPostsTable.parentPostSettings,
+          repostSettings: scheduledPostsTable.repostSettings,
+        },
+      })
+      .from(channelsTable)
+      .innerJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .where(eq(scheduledPostsTable.postId, postId))
+  }
+
+  private async updatePostChannels(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+      existingChannels: PostChannel[]
+      newChannels: PostChannel[]
+    }
+  ): Promise<PostChannel[]> {
+    appLogger.debug(opts)
+
+    const existingChannelMap = new Map(opts.existingChannels.map((c) => [c.id, c]))
+    const channelsToAdd: PostChannel[] = []
+    const channelsToUpdate: PostChannel[] = []
+    const deduplicatedInputChannels = dedupe(opts.newChannels, (d) => d.id)
+
+    for (const channel of deduplicatedInputChannels) {
+      if (!existingChannelMap.has(channel.id)) {
+        channelsToAdd.push(channel)
+        continue
+      }
+
+      if (existingChannelMap.has(channel.id)) {
+        channelsToUpdate.push(channel)
+        existingChannelMap.delete(channel.id)
+      }
+    }
+
+    const channelsToRemove = Array.from(existingChannelMap.values())
+
+    appLogger.debug('channelsToAdd', channelsToAdd)
+    appLogger.debug('channelsToRemove', channelsToRemove)
+
+    const promises: Promise<any>[] = []
+    if (channelsToRemove.length > 0) {
+      promises.push(
+        db
+          .delete(scheduledPostsTable)
+          .where(
+            and(
+              eq(scheduledPostsTable.postId, opts.postId),
+              inArray(
+                scheduledPostsTable.channelId,
+                channelsToRemove.map((c) => c.id)
+              )
+            )
+          )
+          .execute()
+      )
+    }
+
+    if (channelsToAdd.length > 0) {
+      promises.push(
+        db
+          .insert(scheduledPostsTable)
+          .values(
+            channelsToAdd.map((c) => ({
+              postId: opts.postId,
+              channelId: c.id,
+              organizationId: opts.orgId,
+            }))
+          )
+          .execute()
+      )
+    }
+
+    for (const channel of channelsToUpdate) {
+      if (!channel.scheduledPost) continue
+      promises.push(
+        db
+          .update(scheduledPostsTable)
+          .set({
+            publishedAt: channel.scheduledPost.publishedAt,
+            scheduledAt: channel.scheduledPost.scheduledAt,
+            parentPostId: channel.scheduledPost.parentPostId,
+            parentPostSettings: channel.scheduledPost.parentPostSettings,
+            repostSettings: channel.scheduledPost.repostSettings,
+          })
+          .where(
+            and(
+              eq(scheduledPostsTable.postId, opts.postId),
+              eq(scheduledPostsTable.channelId, channel.id)
+            )
+          )
+          .execute()
+      )
+    }
+
+    // Remove channels post connections
+    await Promise.all([promises])
+
+    return this.getPostChannels(db, opts.postId)
   }
 
   private async updateShortPost(

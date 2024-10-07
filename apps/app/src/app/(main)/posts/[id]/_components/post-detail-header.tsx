@@ -4,7 +4,6 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { cn } from '@bulkit/transactional/style-utils'
 import { Button } from '@bulkit/ui/components/ui/button'
 import {
   ResponsiveDialog,
@@ -14,6 +13,7 @@ import {
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
 import { toast } from '@bulkit/ui/components/ui/sonner'
+import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
 import { useFormContext } from 'react-hook-form'
 import { LuSend } from 'react-icons/lu'
