@@ -19,7 +19,7 @@ export default function LoginCallbackPage(props: {
   }, [])
 
   return (
-    <div className='flex justify-center items-center min-h-screen bg-muted'>
+    <div className='flex justify-center items-center'>
       <div className='text-center'>
         <h2 className='text-2xl font-bold mb-4'>Logging you in...</h2>
         <p className='text-muted-foreground'>Please wait while we authenticate your session.</p>

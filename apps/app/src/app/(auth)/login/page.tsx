@@ -31,7 +31,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className='flex justify-center items-center min-h-screen '>
+    <div className='flex justify-center items-center min-h-screen'>
       <div className='w-full max-w-md p-8'>
         <div className='flex flex-col gap-8'>
           <div className='space-y-2 text-center'>
