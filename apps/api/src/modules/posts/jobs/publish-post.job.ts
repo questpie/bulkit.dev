@@ -47,7 +47,7 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     // Check if the post is ready to be published
-    if (scheduledPostsTable.publishedAt) {
+    if (scheduledPost.publishedAt) {
       throw new UnrecoverableError(
         `Post ${post.id} was already published to channel ${scheduledPost.channelId} at ${scheduledPost.publishedAt}`
       )
