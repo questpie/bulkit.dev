@@ -27,6 +27,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           status: postsTable.status,
           type: postsTable.type,
           createdAt: postsTable.createdAt,
+          scheduledAt: postsTable.scheduledAt,
         })
         .from(postsTable)
         .where(
