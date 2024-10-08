@@ -1,6 +1,6 @@
 'use client'
 
-import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
+import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { ThemeToggle } from '@bulkit/app/app/(main)/_components/theme-toggle'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { cn } from '@bulkit/ui/lib'
@@ -36,6 +36,7 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
 export function Sidebar() {
   const pathname = usePathname()
   const isAdmin = !!useAuthData()?.user.isAdmin
+  const { logout } = useAuthActions()
   console.log(isAdmin)
 
   const items = NAV_ITEMS.filter((item) => !item.admin || isAdmin)
@@ -80,7 +81,7 @@ export function Sidebar() {
           <LuUser />
         </Button> */}
           <ThemeToggle />
-          <Button size='icon' variant='outline'>
+          <Button size='icon' variant='outline' onClick={() => logout.mutateAsync()}>
             <LuLogOut />
           </Button>
         </div>
