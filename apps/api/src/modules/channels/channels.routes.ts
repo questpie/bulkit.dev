@@ -99,3 +99,38 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       },
     }
   )
+  .delete(
+    '/:id',
+    async (ctx) => {
+      const { id } = ctx.params
+
+      const result = await ctx.db
+        .delete(channelsTable)
+        .where(
+          and(eq(channelsTable.id, id), eq(channelsTable.organizationId, ctx.organization!.id))
+        )
+        .returning()
+
+      if (result.length === 0) {
+        return ctx.error(404, { message: 'Channel not found' })
+      }
+
+      return { message: 'Channel deleted successfully' }
+    },
+    {
+      detail: {
+        tags: ['Channels'],
+      },
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+        404: t.Object({
+          message: t.String(),
+        }),
+      },
+    }
+  )

@@ -14,14 +14,14 @@ import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/servic
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { eq } from 'drizzle-orm'
-import type { InferContext } from 'elysia'
+import type { Cookie, InferContext } from 'elysia'
 import { generateCodeVerifier, type OAuth2RequestError } from 'oslo/oauth2'
 
 export class OAuth2Authenticator extends ChannelAuthenticator {
   static NO_REFRESH_TOKEN_SUPPORT_ERROR_CODE = 'NO_REFRESH_TOKEN_SUPPORT'
   static FAILED_TO_REFRESH_TOKEN_ERROR_CODE = 'FAILED_TO_REFRESH_TOKEN'
 
-  private readonly apiKeyService: ApiKeyManager
+  protected readonly apiKeyService: ApiKeyManager
 
   constructor(private readonly oAuth2Provider: OAuth2Provider) {
     super()
@@ -43,7 +43,11 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
         })
       }
 
-      return (await this.oAuth2Provider.createAuthorizationURL(state, codeVerifier)).toString()
+      const url = (await this.oAuth2Provider.createAuthorizationURL(state, codeVerifier)).toString()
+
+      appLogger.debug(`Authorization URL: ${url}`)
+
+      return url
     })
   }
 
@@ -51,52 +55,26 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
    * There is no organizationId in ctx, it is in state here
    */
   async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
-    const { organizationId, redirectTo } = JSON.parse(
-      Buffer.from(ctx.query.state!, 'base64').toString()
-    )
+    const { organizationId, redirectTo } = this.parseState(ctx.query.state!)
     const platform = ctx.params.platform as Platform
 
-    let codeVerifier: string | undefined
-    if (this.oAuth2Provider.isPKCE) {
-      codeVerifier =
-        ctx.cookie[this.getCodeVerifierCookieName(platform as Platform, organizationId)]!.value
-    }
-
-    const { accessToken, refreshToken, accessTokenExpiresAt, idToken } = await this.oAuth2Provider
-      .validateAuthorizationCode(ctx.query.code!, codeVerifier)
-      .catch((e) => {
-        appLogger.error((e as OAuth2RequestError).description)
-        throw e
-      })
+    const { accessToken, refreshToken, accessTokenExpiresAt, idToken } = await this.getTokens(
+      ctx.query.code!,
+      ctx.cookie,
+      organizationId,
+      platform
+    )
 
     const userInfo = await this.oAuth2Provider.getUserInfo(accessToken)
 
-    const entities = await ctx.db.transaction(async (trx) => {
-      // Upsert the integration
-      const integration = await this.upsertIntegration(trx, {
-        platform,
-        platformAccountId: idToken ?? userInfo.id,
-        organizationId,
-        accessToken,
-        refreshToken,
-        tokenExpiry: accessTokenExpiresAt ? accessTokenExpiresAt.toISOString() : undefined,
-      })
-
-      // Upsert the channel
-      const channel = await this.upsertChannel(trx, {
-        name: userInfo.name,
-        platform,
-        organizationId,
-        socialMediaIntegrationId: integration.id,
-        imageUrl: userInfo.picture,
-        url: userInfo.url,
-        status: 'active',
-      })
-
-      return {
-        channel,
-        integration,
-      }
+    const entities = await this.upsertEntities(ctx.db, {
+      platform,
+      organizationId,
+      accessToken,
+      accessTokenExpiresAt,
+      refreshToken: refreshToken ?? undefined,
+      idToken,
+      userInfo,
     })
 
     if (redirectTo) {
@@ -172,22 +150,77 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
     }
   }
 
-  private getCodeVerifierCookieName(platform: Platform, organizationId: string) {
+  protected async getTokens(
+    code: string,
+    cookie: Record<string, Cookie<string | undefined>>,
+    organizationId: string,
+    platform: Platform
+  ) {
+    let codeVerifier: string | undefined
+    if (this.oAuth2Provider.isPKCE) {
+      codeVerifier = cookie[this.getCodeVerifierCookieName(platform, organizationId)]!.value
+    }
+
+    return this.oAuth2Provider.validateAuthorizationCode(code, codeVerifier).catch((e) => {
+      appLogger.error((e as OAuth2RequestError).description)
+      throw e
+    })
+  }
+
+  protected async upsertEntities(
+    db: TransactionLike,
+    data: {
+      platform: Platform
+      organizationId: string
+      accessToken: string
+      refreshToken?: string
+      accessTokenExpiresAt?: Date
+      idToken?: string
+      userInfo: any
+    }
+  ) {
+    return db.transaction(async (trx) => {
+      const integration = await this.upsertIntegration(trx, {
+        platform: data.platform,
+        platformAccountId: data.idToken ?? data.userInfo.id,
+        organizationId: data.organizationId,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        tokenExpiry: data.accessTokenExpiresAt
+          ? data.accessTokenExpiresAt.toISOString()
+          : undefined,
+      })
+
+      const channel = await this.upsertChannel(trx, {
+        name: data.userInfo.name,
+        platform: data.platform,
+        organizationId: data.organizationId,
+        socialMediaIntegrationId: integration.id,
+        imageUrl: data.userInfo.picture,
+        url: data.userInfo.url,
+        status: 'active',
+      })
+
+      return { channel, integration }
+    })
+  }
+
+  protected getCodeVerifierCookieName(platform: Platform, organizationId: string) {
     return `code_verifier_${platform}_${organizationId}`
   }
 
-  private buildState(organizationId: string, redirectTo?: string) {
+  protected buildState(organizationId: string, redirectTo?: string) {
     return Buffer.from(JSON.stringify({ organizationId, redirectTo })).toString('base64')
   }
 
-  private parseSate(state: string) {
+  protected parseState(state: string) {
     return JSON.parse(Buffer.from(state, 'base64').toString()) as {
       organizationId: string
       redirectTo?: string
     }
   }
 
-  private async upsertChannel(db: TransactionLike, data: InsertChannel) {
+  protected async upsertChannel(db: TransactionLike, data: InsertChannel) {
     const [channel] = await db
       .insert(channelsTable)
       .values({
@@ -208,7 +241,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
     return channel!
   }
 
-  private async upsertIntegration(db: TransactionLike, data: InsertSocialMediaIntegration) {
+  protected async upsertIntegration(db: TransactionLike, data: InsertSocialMediaIntegration) {
     const [integration] = await db
       .insert(socialMediaIntegrationsTable)
       .values({

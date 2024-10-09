@@ -28,7 +28,7 @@ export default async function ChannelDetails(props: { params: { id: string } }) 
       <div className=''>
         <div className='pb-4 px-4 w-full flex items-center justify-between'>
           <div className='flex items-center gap-4'>
-            <Avatar className='size-18'>
+            <Avatar className='size-16'>
               <AvatarImage src={channel.imageUrl ?? undefined} />
               <AvatarFallback>{channelAvatarFallback} </AvatarFallback>
             </Avatar>

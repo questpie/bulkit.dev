@@ -79,7 +79,7 @@ export class OAuth2Provider {
     })
     if (this.opts.additionalAuthParams) {
       for (const [key, value] of Object.entries(this.opts.additionalAuthParams)) {
-        url.searchParams.append(key, value)
+        url.searchParams.set(key, value)
       }
     }
 

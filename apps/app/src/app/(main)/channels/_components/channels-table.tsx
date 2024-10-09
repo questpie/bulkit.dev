@@ -1,11 +1,15 @@
 'use client'
 import type { SelectChannel } from '@bulkit/api/db/db.schema'
-import type { apiClient, RouteOutput } from '@bulkit/app/api/api.client'
+import { apiClient, type RouteOutput } from '@bulkit/app/api/api.client'
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
+import {
+  ResponsiveConfirmDialog,
+  ResponsiveDialogTrigger,
+} from '@bulkit/ui/components/ui/responsive-dialog'
 import {
   Table,
   TableBody,
@@ -14,8 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from '@bulkit/ui/components/ui/table'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { LuExternalLink, LuEye, LuLink2Off } from 'react-icons/lu'
+import { useRouter } from 'next/navigation'
+import { LuExternalLink, LuEye, LuLink2Off, LuTrash } from 'react-icons/lu'
 
 export type Channel = RouteOutput<typeof apiClient.channels.index.get>['data'][number]
 
@@ -55,6 +61,15 @@ type ChannelTableRowProps = {
 export function ChannelTableRow(props: ChannelTableRowProps) {
   const Icon = PLATFORM_ICON[props.channel.platform]
   const channelAvatarFallback = props.channel.name.charAt(0).toUpperCase()
+
+  const router = useRouter()
+
+  const deleteMutation = useMutation({
+    mutationFn: apiClient.channels({ id: props.channel.id }).delete,
+    onSuccess: () => {
+      router.refresh()
+    },
+  })
 
   return (
     <TableRow key={props.channel.id}>
@@ -108,6 +123,20 @@ export function ChannelTableRow(props: ChannelTableRowProps) {
               Profile
             </Button>
           )}
+          <ResponsiveConfirmDialog
+            title='Delete channel'
+            confirmLabel='Delete'
+            cancelLabel='Cancel'
+            content='Are you sure you want to delete this channel?'
+            onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
+          >
+            <ResponsiveDialogTrigger asChild>
+              <Button variant='destructive' isLoading={deleteMutation.isPending}>
+                <LuTrash className='h-4 w-4' />
+                Delete
+              </Button>
+            </ResponsiveDialogTrigger>
+          </ResponsiveConfirmDialog>
         </div>
       </TableCell>
     </TableRow>
