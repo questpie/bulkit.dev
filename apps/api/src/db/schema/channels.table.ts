@@ -50,6 +50,7 @@ export const channelsTable = pgTable(
   {
     id: primaryKeyCol(),
     name: text('name').notNull(),
+    handle: text('username'),
     platform: text('platform', { enum: PLATFORMS }).notNull(),
     imageUrl: text('image_url'),
     url: text('url'),
