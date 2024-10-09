@@ -35,12 +35,12 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
 
         const platform = ctx.params.platform as Platform
         const organizationId = ctx.organization!.id
-        const redirectTo = ctx.query.redirectTo
 
         this.setOAuthCookie(ctx, platform, {
           oauthTokenSecret,
-          redirectTo,
+          redirectToOnSuccess: ctx.query.redirectToOnSuccess,
           organizationId,
+          redirectToOnDeny: ctx.query.redirectToOnDeny,
         })
 
         const authorizationURL = this.oAuth1Provider.getAuthorizationURL(oauthToken)
@@ -58,6 +58,10 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
     const cookieData = this.getOAuthCookie(ctx, platform)
     if (!cookieData || !cookieData.oauthTokenSecret) {
       throw new Error('OAuth token secret not found')
+    }
+
+    if (ctx.query?.denied && cookieData.redirectToOnDeny) {
+      return ctx.redirect(`${decodeURI(cookieData.redirectToOnDeny)}/?denied=true`, 302)
     }
 
     try {
@@ -100,9 +104,9 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
       // Clear the OAuth cookie
       this.clearOAuthCookie(ctx, platform)
 
-      if (cookieData.redirectTo) {
+      if (cookieData.redirectToOnSuccess) {
         return ctx.redirect(
-          decodeURI(cookieData.redirectTo).replace('{{cId}}', entities.channel.id),
+          decodeURI(cookieData.redirectToOnSuccess).replace('{{cId}}', entities.channel.id),
           302
         )
       }
@@ -129,7 +133,12 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
   private setOAuthCookie(
     ctx: InferContext<typeof channelAuthRoutes>,
     platform: Platform,
-    data: { oauthTokenSecret: string; redirectTo?: string; organizationId: string }
+    data: {
+      oauthTokenSecret: string
+      redirectToOnSuccess?: string
+      organizationId: string
+      redirectToOnDeny?: string
+    }
   ) {
     ctx.cookie[this.getOAuthCookieName(platform)]!.set({
       value: JSON.stringify(data),
