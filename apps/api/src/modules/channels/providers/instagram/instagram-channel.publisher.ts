@@ -1,5 +1,3 @@
-// apps/api/src/modules/channels/providers/instagram/instagram-channel.publisher.ts
-
 import { drive } from '@bulkit/api/drive/drive'
 import { ChannelPublisher } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
@@ -9,8 +7,8 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import fetch from 'node-fetch'
 
 export class InstagramChannelPublisher extends ChannelPublisher {
-  private readonly apiVersion = 'v18.0'
-  private readonly baseUrl = `https://graph.instagram.com/${this.apiVersion}`
+  private readonly apiVersion = 'v21.0'
+  private readonly baseUrl = `https://graph.facebook.com/${this.apiVersion}`
 
   protected async postReel(
     channel: ChannelWithIntegration,
@@ -19,15 +17,26 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
+      await this.checkRateLimit(accessToken, channel.socialMediaIntegration.platformAccountId)
+
       if (!post.resource || post.resource.type.split('/')[0] !== 'video') {
         throw new Error('A video resource is required for an Instagram reel')
       }
 
-      // Upload the video
-      const mediaId = await this.uploadReelVideo(accessToken, post.resource)
+      const mediaId = await this.uploadMedia(
+        accessToken,
+        post.resource,
+        channel.socialMediaIntegration.platformAccountId,
+        false,
+        'REELS'
+      )
 
-      // Create and publish the reel
-      await this.createAndPublishReel(accessToken, mediaId, post.description)
+      await this.createAndPublishReel(
+        accessToken,
+        mediaId,
+        post.description,
+        channel.socialMediaIntegration.platformAccountId
+      )
 
       appLogger.info(`Successfully posted reel to Instagram: ${mediaId}`)
     } catch (error) {
@@ -36,6 +45,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     }
   }
 
+  // TODO: you have to have a business account to be able to post story
   protected async postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
@@ -43,15 +53,25 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
+      await this.checkRateLimit(accessToken, channel.socialMediaIntegration.platformAccountId)
+
       if (!post.resource) {
         throw new Error('A media resource is required for an Instagram story')
       }
 
-      // Upload the media
-      const mediaId = await this.uploadMedia(accessToken, post.resource)
+      const mediaId = await this.uploadMedia(
+        accessToken,
+        post.resource,
+        channel.socialMediaIntegration.platformAccountId,
+        false,
+        'STORIES'
+      )
 
-      // Create and publish the story
-      await this.createAndPublishStory(accessToken, mediaId)
+      await this.createAndPublishStory(
+        accessToken,
+        mediaId,
+        channel.socialMediaIntegration.platformAccountId
+      )
 
       appLogger.info(`Successfully posted story to Instagram: ${mediaId}`)
     } catch (error) {
@@ -67,28 +87,39 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
-      // Sort thread items by order
+      await this.checkRateLimit(accessToken, channel.socialMediaIntegration.platformAccountId)
+
       const sortedItems = post.items.sort((a, b) => a.order - b.order)
-
-      // Merge text contents
       const mergedText = sortedItems.map((item) => item.text).join('\n\n')
-
-      // Collect all media from thread items
       const allMedia = sortedItems.flatMap((item) => item.media)
+
       if (allMedia.length === 0) {
         throw new Error('At least one media item is required for an Instagram carousel')
       }
 
-      // Upload all media
       const mediaIds = await Promise.all(
-        allMedia.map((media) => this.uploadMedia(accessToken, media.resource, true))
+        allMedia.map((media) =>
+          this.uploadMedia(
+            accessToken,
+            media.resource,
+            channel.socialMediaIntegration.platformAccountId,
+            true
+          )
+        )
       )
 
-      // Create carousel container
-      const containerId = await this.createCarouselContainer(accessToken, mediaIds, mergedText)
+      const containerId = await this.createCarouselContainer(
+        accessToken,
+        mediaIds,
+        mergedText,
+        channel.socialMediaIntegration.platformAccountId
+      )
 
-      // Publish the carousel
-      await this.publishMedia(accessToken, containerId)
+      await this.publishMedia(
+        accessToken,
+        containerId,
+        channel.socialMediaIntegration.platformAccountId
+      )
 
       appLogger.info(`Successfully posted thread as carousel to Instagram: ${containerId}`)
     } catch (error) {
@@ -104,22 +135,52 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
+      await this.checkRateLimit(accessToken, channel.socialMediaIntegration.platformAccountId)
+
       if (!post.media || post.media.length === 0) {
         throw new Error('At least one media item is required for an Instagram post')
       }
 
       const mediaIds = await Promise.all(
-        post.media.map((media) => this.uploadMedia(accessToken, media.resource))
+        post.media.map((media) =>
+          this.uploadMedia(
+            accessToken,
+            media.resource,
+            channel.socialMediaIntegration.platformAccountId
+          )
+        )
       )
+
+      const additionalParams = {
+        // collaborators: post.collaborators,
+        // location_id: post.locationId,
+        // user_tags: post.userTags,
+      }
 
       let containerId: string
       if (mediaIds.length === 1) {
-        containerId = await this.createMediaContainer(accessToken, mediaIds[0]!, post.text)
+        containerId = await this.createMediaContainer(
+          accessToken,
+          mediaIds[0]!,
+          post.text,
+          channel.socialMediaIntegration.platformAccountId,
+          additionalParams
+        )
       } else {
-        containerId = await this.createCarouselContainer(accessToken, mediaIds, post.text)
+        containerId = await this.createCarouselContainer(
+          accessToken,
+          mediaIds,
+          post.text,
+          channel.socialMediaIntegration.platformAccountId,
+          additionalParams
+        )
       }
 
-      await this.publishMedia(accessToken, containerId)
+      await this.publishMedia(
+        accessToken,
+        containerId,
+        channel.socialMediaIntegration.platformAccountId
+      )
 
       appLogger.info(`Successfully posted to Instagram: ${containerId}`)
     } catch (error) {
@@ -131,21 +192,48 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   private async uploadMedia(
     accessToken: string,
     resource: Resource,
-    isCarouselItem = false
+    instagramId: string,
+    isCarouselItem = false,
+    mediaType?: 'REELS' | 'STORIES'
   ): Promise<string> {
-    const mediaUrl = await drive.use().getSignedUrl(resource.location)
-    const mediaType = this.getMediaType(resource.type)
+    const type = this.getMediaType(resource.type)
 
-    const response = await fetch(`${this.baseUrl}/me/media`, {
+    if (type === 'VIDEO') {
+      const { id, uri } = await this.initializeResumeableUpload(
+        accessToken,
+        mediaType || (isCarouselItem ? 'VIDEO' : 'REELS'),
+        instagramId
+      )
+      const videoUrl = await drive.use().getSignedUrl(resource.location)
+
+      const uploadResponse = await fetch(uri, {
+        method: 'POST',
+        headers: {
+          Authorization: `OAuth ${accessToken}`,
+          file_url: videoUrl,
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Failed to upload video: ${await uploadResponse.text()}`)
+      }
+
+      return id
+    }
+
+    const mediaUrl = !resource.isExternal
+      ? await drive.use().getSignedUrl(resource.location)
+      : resource.location
+
+    const params = new URLSearchParams({
+      image_url: mediaUrl,
+      media_type: type,
+      is_carousel_item: isCarouselItem.toString(),
+      access_token: accessToken,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        [mediaType === 'VIDEO' ? 'video_url' : 'image_url']: mediaUrl,
-        media_type: mediaType,
-        is_carousel_item: isCarouselItem,
-      }),
     })
 
     if (!response.ok) {
@@ -159,18 +247,24 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   private async createMediaContainer(
     accessToken: string,
     mediaId: string,
-    caption: string
+    caption: string,
+    instagramId: string,
+    additionalParams: {
+      collaborators?: string[]
+      location_id?: string
+      user_tags?: Array<{ username: string; x: number; y: number }>
+    } = {}
   ): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/me/media`, {
+    const params = new URLSearchParams({
+      media_type: 'MEDIA_CONTAINER',
+      children: mediaId,
+      caption: caption,
+      access_token: accessToken,
+      // ...additionalParams,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        media_type: 'MEDIA_CONTAINER',
-        children: [mediaId],
-        caption: caption,
-      }),
     })
 
     if (!response.ok) {
@@ -188,18 +282,24 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   private async createCarouselContainer(
     accessToken: string,
     mediaIds: string[],
-    caption: string
+    caption: string,
+    instagramId: string,
+    additionalParams: {
+      collaborators?: string[]
+      location_id?: string
+      user_tags?: Array<{ username: string; x: number; y: number }>
+    } = {}
   ): Promise<string> {
-    const response = await fetch(`${this.baseUrl}/me/media`, {
+    const params = new URLSearchParams({
+      media_type: 'CAROUSEL',
+      children: mediaIds.join(','),
+      caption: caption,
+      access_token: accessToken,
+      // ...additionalParams,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        media_type: 'CAROUSEL',
-        children: mediaIds,
-        caption: caption,
-      }),
     })
 
     if (!response.ok) {
@@ -210,15 +310,18 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     return data.id
   }
 
-  private async publishMedia(accessToken: string, containerId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/me/media_publish`, {
+  private async publishMedia(
+    accessToken: string,
+    containerId: string,
+    instagramId: string
+  ): Promise<void> {
+    const params = new URLSearchParams({
+      creation_id: containerId,
+      access_token: accessToken,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media_publish?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        creation_id: containerId,
-      }),
     })
 
     if (!response.ok) {
@@ -226,16 +329,19 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     }
   }
 
-  private async createAndPublishStory(accessToken: string, mediaId: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/me/stories`, {
+  private async createAndPublishStory(
+    accessToken: string,
+    mediaId: string,
+    instagramId: string
+  ): Promise<void> {
+    const params = new URLSearchParams({
+      // media_type: 'STORY',
+      creation_id: mediaId,
+      access_token: accessToken,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media_publish?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        media_type: 'STORY',
-        media_id: mediaId,
-      }),
     })
 
     if (!response.ok) {
@@ -243,47 +349,65 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     }
   }
 
-  private async uploadReelVideo(accessToken: string, resource: Resource): Promise<string> {
-    const videoUrl = await drive.use().getSignedUrl(resource.location)
-
-    const response = await fetch(`${this.baseUrl}/me/media`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        media_type: 'REELS',
-        video_url: videoUrl,
-        share_to_feed: 'true', // Optional: also share to feed
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload reel video: ${await response.text()}`)
-    }
-
-    const data = await response.json()
-    return data.id
-  }
-
   private async createAndPublishReel(
     accessToken: string,
     mediaId: string,
-    caption: string
+    caption: string,
+    instagramId: string
   ): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/me/media_publish`, {
+    const params = new URLSearchParams({
+      creation_id: mediaId,
+      caption: caption,
+      access_token: accessToken,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media_publish?${params}`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        creation_id: mediaId,
-        caption: caption,
-      }),
     })
 
     if (!response.ok) {
       throw new Error(`Failed to create and publish reel: ${await response.text()}`)
+    }
+  }
+
+  private async initializeResumeableUpload(
+    accessToken: string,
+    mediaType: string,
+    instagramId: string
+  ): Promise<{ id: string; uri: string }> {
+    const params = new URLSearchParams({
+      media_type: mediaType,
+      upload_type: 'resumable',
+      access_token: accessToken,
+    })
+
+    const response = await fetch(`${this.baseUrl}/${instagramId}/media?${params}`, {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to initialize resumeable upload: ${await response.text()}`)
+    }
+
+    return await response.json()
+  }
+
+  private async checkRateLimit(accessToken: string, instagramId: string): Promise<void> {
+    const params = new URLSearchParams({
+      access_token: accessToken,
+    })
+
+    const response = await fetch(
+      `${this.baseUrl}/${instagramId}/content_publishing_limit?${params}`
+    )
+
+    if (!response.ok) {
+      throw new Error(`Failed to check rate limit: ${await response.text()}`)
+    }
+
+    const data = await response.json()
+    if (data.data[0].quota_usage >= 50) {
+      throw new Error('Publishing rate limit reached')
     }
   }
 }

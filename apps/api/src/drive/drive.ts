@@ -27,12 +27,15 @@ export const drive = new DriveManager({
           secretAccessKey: envApi.S3_SECRET_KEY,
         },
 
-        endpoint: `${envApi.S3_ENDPOINT}:${envApi.S3_PORT}`,
-        forcePathStyle: true,
+        endpoint: envApi.S3_ENDPOINT,
+        forcePathStyle: envApi.S3_USE_PATH_STYLE,
 
         urlBuilder: {
           async generateURL(key, bucket, s3Client) {
-            return `${envApi.S3_ENDPOINT}:${envApi.S3_PORT}/${bucket}/${key}`
+            const url = [envApi.S3_ENDPOINT, envApi.S3_PORT].filter(Boolean).join(':')
+            const bucketUrl = [url, bucket].filter(Boolean).join('/')
+
+            return [bucketUrl, key].filter(Boolean).join('/')
           },
         },
 

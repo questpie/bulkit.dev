@@ -32,15 +32,14 @@ export const envApi = createEnv({
       default: 's3',
     }),
     S3_ENDPOINT: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
-    S3_PORT: process.env.DEFAULT_DRIVER === 's3' ? StringInt() : Type.Optional(StringInt()),
+    S3_PORT: Type.Optional(StringInt()),
     S3_BUCKET: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_ACCESS_KEY:
       process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_SECRET_KEY:
       process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_REGION: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
-    S3_USE_PATH_STYLE:
-      process.env.DEFAULT_DRIVER === 's3' ? StringBoolean() : Type.Optional(StringBoolean()),
+    S3_USE_PATH_STYLE: Type.Optional(StringBoolean({ default: false })),
 
     // redis
     REDIS_URL: Type.String(),

@@ -1,14 +1,13 @@
-import { primaryKeyCol, timestampCols, tokenCol } from './_base.table'
-import { usersTable } from './auth.table'
-import { socialMediaIntegrationsTable, channelsTable } from './channels.table'
-import { postsTable, scheduledPostsTable } from './posts.table'
-import { resourcesTable } from './resources.table'
-import { USER_ROLE } from '../../../../../packages/shared/src/constants/db.constants'
 import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
-import { text, timestamp, index } from 'drizzle-orm/pg-core'
-import { pgTable } from 'drizzle-orm/pg-core'
+import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
+import { USER_ROLE } from '../../../../../packages/shared/src/constants/db.constants'
+import { primaryKeyCol, timestampCols, tokenCol } from './_base.table'
+import { usersTable } from './auth.table'
+import { channelsTable, socialMediaIntegrationsTable } from './channels.table'
+import { postsTable } from './posts.table'
+import { resourcesTable } from './resources.table'
 
 // New UserOrganizations table for many-to-many relationship
 export const userOrganizationsTable = pgTable(
@@ -67,7 +66,7 @@ export const organizationsRelations = relations(organizationsTable, ({ many }) =
   userOrganizations: many(userOrganizationsTable),
   posts: many(postsTable),
   socialMediaIntegrations: many(socialMediaIntegrationsTable),
-  scheduledPosts: many(scheduledPostsTable),
+  // scheduledPosts: many(scheduledPostsTable),
   resources: many(resourcesTable),
   channels: many(channelsTable), // Add this line
   invites: many(organizationInvitesTable),

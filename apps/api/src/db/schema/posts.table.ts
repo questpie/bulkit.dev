@@ -251,6 +251,11 @@ export const scheduledPostsRelations = relations(scheduledPostsTable, ({ one, ma
     references: [channelsTable.id],
   }),
   metricsHistory: many(postMetricsHistoryTable), // Add this lines
+  // organization: one(organizationsTable, {
+  //   // Add this line
+  //   fields: [scheduledPostsTable.],
+  //   references: [organizationsTable.id],
+  // }),
 }))
 
 export const threadPostsRelations = relations(threadPostsTable, ({ one, many }) => ({
