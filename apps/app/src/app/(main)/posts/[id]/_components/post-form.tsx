@@ -115,6 +115,11 @@ export function PostFormProvider(props: PostFormProviderProps) {
 export function PostCommonFields() {
   const form = useFormContext<Post>()
 
+  const postType = useWatch({
+    control: form.control,
+    name: 'type',
+  })
+
   return (
     <div className='px-4 pb-4'>
       <FormField
@@ -126,7 +131,11 @@ export function PostCommonFields() {
               <FormLabel>Channels to post to</FormLabel>
 
               <FormControl>
-                <ChannelPicker value={field.value} onValueChange={field.onChange} />
+                <ChannelPicker
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  postType={postType}
+                />
               </FormControl>
 
               <FormMessage />
@@ -332,7 +341,7 @@ export function ReelPostFields() {
         render={({ field }) => {
           return (
             <FormItem className='w-full flex flex-col'>
-              <FormLabel>Story Media</FormLabel>
+              <FormLabel>Reel Media</FormLabel>
               <FormMessage />
               {!field.value && (
                 <ResourceDropzone

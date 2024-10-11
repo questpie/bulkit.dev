@@ -4,10 +4,12 @@ import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { iocRegister } from '@bulkit/api/ioc'
 import { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
+import { PLATFORMS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
+import { getAllowedPlatformsFromPostType } from '@bulkit/shared/modules/admin/utils/platform-settings.utils'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { treaty } from '@elysiajs/eden'
-import { and, desc, eq, ilike } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
@@ -19,6 +21,10 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { limit = 10, cursor, platform, q, isActive } = ctx.query
 
+      const platforms = ctx.query.postType
+        ? getAllowedPlatformsFromPostType(ctx.query.postType)
+        : undefined
+
       const channels = await ctx.db
         .select()
         .from(channelsTable)
@@ -29,7 +35,8 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
             isActive !== undefined
               ? eq(channelsTable.status, isActive ? 'active' : 'inactive')
               : undefined,
-            q ? ilike(channelsTable.name, `${q}%`) : undefined
+            q ? ilike(channelsTable.name, `${q}%`) : undefined,
+            platforms ? inArray(channelsTable.platform, platforms) : undefined
           )
         )
         .orderBy(desc(channelsTable.name))
@@ -56,6 +63,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           platform: t.Optional(StringLiteralEnum(PLATFORMS)),
           isActive: t.Optional(t.BooleanString()),
           q: t.Optional(t.String()),
+          postType: t.Optional(StringLiteralEnum(POST_TYPE)),
         }),
       ]),
       response: {

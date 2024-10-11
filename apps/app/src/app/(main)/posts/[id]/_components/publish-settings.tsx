@@ -123,12 +123,12 @@ export function PublishSettings() {
                             <FormControl>
                               <DatePicker
                                 value={field.value ?? undefined}
-                                onValueChange={(date) =>
+                                onValueChange={(date) => {
                                   field.onChange(date?.toISOString() ?? null)
-                                }
+                                }}
                                 showTime
                                 calendarProps={{
-                                  disabled: { from: new Date() },
+                                  disabled: { before: new Date() },
                                 }}
                               />
                             </FormControl>

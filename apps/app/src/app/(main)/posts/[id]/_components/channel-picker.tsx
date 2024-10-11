@@ -1,5 +1,6 @@
 import { apiClient } from '@bulkit/app/api/api.client'
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import type { PostType } from '@bulkit/shared/constants/db.constants'
 import type { PostChannelSchema } from '@bulkit/shared/modules/posts/posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { capitalize } from '@bulkit/shared/utils/string'
@@ -29,22 +30,24 @@ const FIRST_ROW_ITEMS_COUNT = 12
 type ChannelPickerProps = {
   value: Channel[]
   onValueChange: (value: Channel[]) => void
+  postType?: PostType
 }
 
-const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange }) => {
+const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange, postType }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState<string>('')
   const debouncedQuery = useDebouncedValue(searchQuery, 200)
 
   const channelsQuery = useInfiniteQuery({
-    queryKey: ['channels-infinite-query', debouncedQuery],
+    queryKey: ['channels-infinite-query', debouncedQuery, postType],
     queryFn: (opts) => {
       return apiClient.channels.index.get({
         query: {
           limit: 50,
           cursor: opts.pageParam,
           q: debouncedQuery,
+          postType,
         },
       })
     },
