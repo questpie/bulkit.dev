@@ -108,3 +108,13 @@ export function getPostSchemaFromType(type: string) {
       throw new Error(`Unknown post type: ${type}`)
   }
 }
+
+export const PostValidationErrorSchema = Type.Object({
+  path: Type.String(),
+  message: Type.String(),
+})
+
+export const PostValidationResultSchema = Type.Record(
+  StringLiteralEnum(PLATFORMS),
+  Type.Array(PostValidationErrorSchema)
+)

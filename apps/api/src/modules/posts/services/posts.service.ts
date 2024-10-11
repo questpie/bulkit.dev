@@ -19,21 +19,21 @@ import {
   injectResourcesService,
   type ResourcesService,
 } from '@bulkit/api/modules/resources/services/resources.service'
-import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
+import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
-import type { PostChannel, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
+import type {
+  PostChannel,
+  PostSchema,
+  PostValidationErrorSchema,
+  PostValidationResultSchema,
+} from '@bulkit/shared/modules/posts/posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, asc, eq, getTableColumns, inArray } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
-
-export type PostValidationError = {
-  path: string
-  message: string
-}
 
 export class PostsService {
   constructor(private readonly resourcesService: ResourcesService) {}
@@ -769,19 +769,32 @@ export class PostsService {
     }
   }
 
-  // async validate(post: Post) {
-  //   // const platformsToValidate = post.platforms.length ? post.platforms : PLATFORMS
-  //   const platformsToValidate = PLATFORMS
+  async validate(post: Post): Promise<Static<typeof PostValidationResultSchema> | null> {
+    // const platformsToValidate = post.platforms.length ? post.platforms : PLATFORMS
+    const platformsToValidate = dedupe(post.channels, (c) => c.platform).map((c) => c.platform)
 
-  //   const validationResults: Record<Platform, { errors: string[] }>
-  // }
+    const validationResults: Static<typeof PostValidationResultSchema> = Object.fromEntries(
+      PLATFORMS.map((platform) => [platform, []])
+    ) as unknown as Static<typeof PostValidationResultSchema>
+
+    let isInvalid = false
+    for (const platform of platformsToValidate) {
+      const errors = await this.validatePost(post, platform)
+      if (errors.length) {
+        isInvalid = true
+        validationResults[platform] = errors
+      }
+    }
+
+    return isInvalid ? validationResults : null
+  }
 
   private async validatePost(
     post: Post,
     platform: Platform
-  ): Promise<{ post: Post; errors: PostValidationError[] }> {
+  ): Promise<Static<typeof PostValidationErrorSchema>[]> {
     const settings = DEFAULT_PLATFORM_SETTINGS[platform]
-    const errors: PostValidationError[] = []
+    const errors: Static<typeof PostValidationErrorSchema>[] = []
 
     // Common validations
     if (post.name.length > 100) {
@@ -921,7 +934,7 @@ export class PostsService {
         errors.push({ path: 'type', message: `Unsupported post type: ${(post as any).type}` })
     }
 
-    return { post, errors }
+    return errors
   }
 }
 

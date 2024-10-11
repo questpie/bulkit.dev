@@ -8,11 +8,13 @@ import {
   ResourceButtonUpload,
   ResourceDropzone,
 } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-uploader'
+import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
 import {
   getPostSchemaFromType,
   PostDetailsSchema,
   type PostMediaSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
+import { Alert, AlertDescription, AlertTitle } from '@bulkit/ui/components/ui/alert'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import {
@@ -49,7 +51,14 @@ import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
 import objectHash from 'object-hash'
 import { useEffect, useRef } from 'react'
-import { useFieldArray, useForm, useFormContext, useWatch, type FieldPath } from 'react-hook-form'
+import {
+  get,
+  useFieldArray,
+  useForm,
+  useFormContext,
+  useWatch,
+  type FieldPath,
+} from 'react-hook-form'
 import { LuChevronDown, LuPlus, LuTrash2 } from 'react-icons/lu'
 import { PiDotsSixBold, PiDotsSixVerticalBold } from 'react-icons/pi'
 
@@ -84,11 +93,25 @@ export function PostFormProvider(props: PostFormProviderProps) {
     if (form.formState.isDirty) formTriggerRef.current.click()
   }, [calculateFormHash(debouncedValues)])
 
-  const router = useRouter()
   const updateMutation = useMutation({
     mutationFn: apiClient.posts.index.put,
     onSuccess: (res) => {
-      if (res.error) return
+      if (res.error) {
+        if (res.error.status === 400) {
+          toast.error('Failed to save post. Please check the form for errors.')
+          for (const platform in res.error.value) {
+            const platformErrors = res.error.value[platform as Platform]
+            for (const error of platformErrors) {
+              form.setError(error.path as FieldPath<Post>, {
+                type: 'manual',
+                message: `${PLATFORM_TO_NAME[platform as Platform]}: ${error.message}`,
+              })
+            }
+          }
+        }
+
+        return
+      }
       // form.reset(res.data)
       // router.refresh()
     },
@@ -379,6 +402,8 @@ export function ThreadPostFields() {
     name: 'items',
   })
 
+  const errors = form.formState.errors.items
+
   const sensors = useSensors(useSensor(PointerSensor))
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -396,7 +421,15 @@ export function ThreadPostFields() {
   const lastItemOrder = itemsArray.fields[itemsArray.fields.length - 1]?.order ?? 1
 
   return (
-    <div className='flex flex-col gap-6 w-full px-4'>
+    <div className={cn('flex flex-col gap-6 w-full px-4')}>
+      {!!errors && (
+        <Alert variant='destructive'>
+          <AlertTitle>Thread Items are Invalid</AlertTitle>
+          <AlertDescription>
+            {errors.message ?? 'Please fix the issues specified below'}
+          </AlertDescription>
+        </Alert>
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={itemsArray.fields}>
           {itemsArray.fields.map((item, index) => {
@@ -455,6 +488,8 @@ function ThreadItem(props: {
     name: `${props.name}.media` as 'items.0.media',
   })
 
+  const errors = get(form.formState.errors, props.name)
+
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: props.item.id,
     disabled: !props.canDrag,
@@ -483,7 +518,11 @@ function ThreadItem(props: {
 
   return (
     <Collapsible className='group/collapsible'>
-      <Card ref={setNodeRef} style={style} className='overflow-hidden touch-none'>
+      <Card
+        ref={setNodeRef}
+        style={style}
+        className={cn('overflow-hidden touch-none', errors && 'border-destructive ')}
+      >
         <div className='flex flex-row h-14'>
           <CollapsibleTrigger className='w-full flex-1'>
             <div
@@ -528,59 +567,75 @@ function ThreadItem(props: {
               }}
             />
 
-            <p className='text-sm font-medium'>Post Media</p>
-            <div className='flex w-full'>
-              {mediaArray.fields.length < 10 && (
-                <ResourceButtonUpload
-                  maxFiles={10 - mediaArray.fields.length}
-                  onUploaded={(resources) => {
-                    for (const resource of resources) {
-                      mediaArray.append({
-                        id: nanoid(),
-                        // id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
-                        order: lastMediaOrder + 1,
-                        resource,
-                      })
-                    }
-                  }}
-                />
-              )}
-            </div>
+            <FormField
+              control={form.control}
+              name={`${props.name}.media` as 'items.0.media'}
+              render={({ field }) => {
+                return (
+                  <FormItem>
+                    <FormLabel>Post Media</FormLabel>
 
-            {!!mediaArray.fields.length && (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleMediaDragEnd}
-              >
-                <SortableContext items={mediaArray.fields}>
-                  <div className='flex flex-row gap-4 flex-wrap w-full'>
-                    {mediaArray.fields.map((media, index) => {
-                      return (
-                        <MediaItem
-                          key={media.id}
-                          onRemove={() => {
-                            let i = 0
-                            for (const item of mediaArray.fields) {
-                              if (i === index) {
-                                continue
-                              }
-                              mediaArray.update(i, {
-                                ...item,
-                                order: i + 1,
-                              })
-                              i++
-                            }
-                            mediaArray.remove(index)
-                          }}
-                          media={media}
-                        />
-                      )
-                    })}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            )}
+                    <FormControl>
+                      <div className='flex flex-col gap-3'>
+                        <div className='flex w-full'>
+                          {mediaArray.fields.length < 10 && (
+                            <ResourceButtonUpload
+                              maxFiles={10 - mediaArray.fields.length}
+                              onUploaded={(resources) => {
+                                for (const resource of resources) {
+                                  mediaArray.append({
+                                    id: nanoid(),
+                                    // id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
+                                    order: lastMediaOrder + 1,
+                                    resource,
+                                  })
+                                }
+                              }}
+                            />
+                          )}
+                        </div>
+                        <FormMessage />
+
+                        {!!mediaArray.fields.length && (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleMediaDragEnd}
+                          >
+                            <SortableContext items={mediaArray.fields}>
+                              <div className='flex flex-row gap-4 flex-wrap w-full'>
+                                {mediaArray.fields.map((media, index) => {
+                                  return (
+                                    <MediaItem
+                                      key={media.id}
+                                      onRemove={() => {
+                                        let i = 0
+                                        for (const item of mediaArray.fields) {
+                                          if (i === index) {
+                                            continue
+                                          }
+                                          mediaArray.update(i, {
+                                            ...item,
+                                            order: i + 1,
+                                          })
+                                          i++
+                                        }
+                                        mediaArray.remove(index)
+                                      }}
+                                      media={media}
+                                    />
+                                  )
+                                })}
+                              </div>
+                            </SortableContext>
+                          </DndContext>
+                        )}
+                      </div>
+                    </FormControl>
+                  </FormItem>
+                )
+              }}
+            />
 
             <div className='flex justify-end pt-4'>
               {props.onRemove && (

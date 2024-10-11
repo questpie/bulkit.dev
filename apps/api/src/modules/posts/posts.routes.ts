@@ -5,7 +5,11 @@ import { organizationMiddleware } from '@bulkit/api/modules/organizations/organi
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
-import { PostDetailsSchema, PostSchema } from '@bulkit/shared/modules/posts/posts.schemas'
+import {
+  PostDetailsSchema,
+  PostSchema,
+  PostValidationResultSchema,
+} from '@bulkit/shared/modules/posts/posts.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, desc, eq } from 'drizzle-orm'
@@ -115,6 +119,12 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     '/',
     async (ctx) => {
       return ctx.db.transaction(async (trx) => {
+        const errors = await ctx.postService.validate(ctx.body)
+
+        if (errors) {
+          return ctx.error(400, errors)
+        }
+
         const post = await ctx.postService.update(trx, {
           orgId: ctx.organization!.id,
           post: ctx.body,
@@ -130,59 +140,76 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     {
       body: PostSchema,
       response: {
+        400: PostValidationResultSchema,
         404: t.Object({ message: t.String() }),
         200: PostSchema,
       },
     }
   )
-  .patch('/:id/publish', async (ctx) => {
-    const post = await ctx.postService.getById(ctx.db, {
-      orgId: ctx.organization!.id,
-      postId: ctx.params.id,
-    })
+  .patch(
+    '/:id/publish',
+    async (ctx) => {
+      const post = await ctx.postService.getById(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
 
-    if (!post) {
-      return ctx.error(404, { message: 'Post not found' })
-    }
-
-    for (const channel of post.channels) {
-      if (!channel.scheduledPost) continue
-      const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
-
-      let delay = 1000
-
-      if (scheduledAt) {
-        delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
+      if (!post) {
+        return ctx.error(404, { message: 'Post not found' })
       }
 
-      await publishPostJob.invoke(
-        {
-          scheduledPostId: channel.scheduledPost.id,
-        },
-        {
-          jobId: channel.scheduledPost.id,
-          delay,
-          attempts: 3,
-          backoff: {
-            type: 'exponential',
-            delay: 1000,
-          },
+      // validate
+      const errors = await ctx.postService.validate(post)
+      if (errors) {
+        return ctx.error(400, errors)
+      }
+
+      for (const channel of post.channels) {
+        if (!channel.scheduledPost) continue
+        const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+
+        let delay = 1000
+
+        if (scheduledAt) {
+          delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
         }
-      )
-    }
 
-    await ctx.db
-      .update(postsTable)
-      .set({
+        await publishPostJob.invoke(
+          {
+            scheduledPostId: channel.scheduledPost.id,
+          },
+          {
+            jobId: channel.scheduledPost.id,
+            delay,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 1000,
+            },
+          }
+        )
+      }
+
+      await ctx.db
+        .update(postsTable)
+        .set({
+          status: 'scheduled',
+        })
+        .where(eq(postsTable.id, post.id))
+
+      return {
+        ...post,
         status: 'scheduled',
-      })
-      .where(eq(postsTable.id, post.id))
-
-    return {
-      ...post,
-      status: 'scheduled',
+      }
+    },
+    {
+      response: {
+        400: PostValidationResultSchema,
+        404: t.Object({ message: t.String() }),
+        200: PostSchema,
+      },
     }
-  })
+  )
   .post('/:id/duplicate', async (ctx) => {
     return await ctx.db.transaction(async (trx) => {
       const post = await ctx.postService.getById(trx, {
