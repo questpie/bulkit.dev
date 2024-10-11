@@ -1,14 +1,14 @@
-import { Type } from '@sinclair/typebox'
-import { Value } from '@sinclair/typebox/value'
+import type { ReadonlyURLSearchParams } from 'next/navigation'
 
-export function getPagination(searchParamsProp: string | Record<string, any>) {
+export function getPagination(
+  searchParamsProp: string | Record<string, any> | ReadonlyURLSearchParams,
+  defaultLimit = 50
+) {
   const searchParams = new URLSearchParams(searchParamsProp)
 
-  const page = Value.Cast(Type.Number({ default: 1 }), searchParams.get('page') ?? undefined)
-  const limit = Math.max(
-    1,
-    Math.min(100, Value.Cast(Type.Number({ default: 10 }), searchParams.get('limit') ?? undefined))
-  )
+  const page = Number(searchParams.get('page')) || 1
+
+  const limit = Math.max(1, Math.min(100, Number(searchParams.get('limit')) || defaultLimit))
 
   return {
     page,

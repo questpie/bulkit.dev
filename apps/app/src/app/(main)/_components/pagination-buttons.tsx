@@ -12,7 +12,7 @@ export function Pagination(props: {
   className?: string
 }) {
   const searchParams = useSearchParams()
-  const pagination = getPagination(searchParams.toString())
+  const pagination = getPagination(searchParams)
   const router = useRouter()
   const pathname = usePathname()
 

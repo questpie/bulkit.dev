@@ -4,8 +4,8 @@ import { PostsHeader } from '@bulkit/app/app/(main)/posts/_components/posts-head
 import { PostsTable } from '@bulkit/app/app/(main)/posts/_components/posts-table'
 import { getPagination } from '@bulkit/app/app/_utils/pagination'
 
-export default async function PostsPage(props: { serachParams: Record<string, any> }) {
-  const pagination = getPagination(props.serachParams)
+export default async function PostsPage(props: { searchParams: Record<string, any> }) {
+  const pagination = getPagination(props.searchParams, 50)
   const posts = await apiServer.posts.index.get({
     query: {
       limit: pagination.limit,

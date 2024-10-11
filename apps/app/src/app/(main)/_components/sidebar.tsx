@@ -108,15 +108,15 @@ export function Sidebar() {
       </aside>
 
       <div className='sm:hidden z-10 fixed bottom-0 left-0 h-14 right-0 bg-background border-t border-border'>
-        <nav className='flex justify-around items-start h-full'>
+        <nav className='flex justify-around items-start h-full py-1'>
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex min-w-12 flex-col items-center justify-center h-full cursor-pointer',
+                'flex px-4 w-20 flex-col rounded-xl items-center justify-center h-full cursor-pointer',
                 {
-                  'text-primary': item.href === pathname,
+                  'text-primary bg-primary/20': item.href === pathname,
                 }
               )}
             >
@@ -128,7 +128,7 @@ export function Sidebar() {
           {/* settings */}
           <Link
             href='/settings'
-            className={cn('flex flex-col min-w-12 items-center h-full justify-center', {
+            className={cn('flex flex-col w-20 items-center h-full justify-center', {
               'text-primary': '/settings' === pathname,
             })}
           >

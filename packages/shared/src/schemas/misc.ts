@@ -1,5 +1,6 @@
 import { createEnum } from '@bulkit/shared/utils/misc'
 import { type StringOptions, type TEnum, type TSchema, Type } from '@sinclair/typebox'
+import { Value } from '@sinclair/typebox/value'
 
 export const StringInt = (opts: StringOptions = {}) =>
   Type.Transform(Type.String(opts))
