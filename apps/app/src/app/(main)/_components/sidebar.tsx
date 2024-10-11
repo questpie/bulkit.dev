@@ -6,7 +6,7 @@ import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { LuAtSign, LuLogOut, LuSend, LuSettings } from 'react-icons/lu'
+import { LuAtSign, LuCalendar, LuLogOut, LuSend, LuSettings } from 'react-icons/lu'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
   // {
@@ -14,6 +14,11 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
   //   icon: LuPieChart,
   //   href: '/',
   // },
+  {
+    name: 'Calendar',
+    icon: LuCalendar,
+    href: '/calendar',
+  },
   {
     name: 'Channels',
     icon: LuAtSign,

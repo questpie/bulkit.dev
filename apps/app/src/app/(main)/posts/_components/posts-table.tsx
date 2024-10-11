@@ -1,6 +1,10 @@
 'use client'
 import type { apiClient, RouteOutput } from '@bulkit/app/api/api.client'
-import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
+import {
+  POST_STATUS_TO_BADGE_VARIANT,
+  POST_STATUS_TO_COLOR,
+  POST_TYPE_ICON,
+} from '@bulkit/app/app/(main)/posts/post.constants'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Badge } from '@bulkit/ui/components/ui/badge'
@@ -64,10 +68,7 @@ export function PostTableRow(props: PostTableRowProps) {
         <div className='flex items-center gap-2'>{props.post.name}</div>
       </TableCell>
       <TableCell>
-        <Badge
-          variant={props.post.status === 'published' ? 'default' : 'warning'}
-          className='capitalize'
-        >
+        <Badge variant={POST_STATUS_TO_BADGE_VARIANT[props.post.status]} className='capitalize'>
           {props.post.status}
         </Badge>
       </TableCell>
@@ -139,18 +140,7 @@ function PostCard({ post }: PostTableRowProps) {
             <div className='flex items-center gap-2 text-xs text-muted-foreground'>
               <span className='capitalize'>{post.type.toLowerCase()}</span>
               <span>•</span>
-              <span
-                className={cn(
-                  'capitalize font-bold',
-                  post.status === 'published'
-                    ? 'text-primary'
-                    : post.status === 'partially-published'
-                      ? 'text-blue-500'
-                      : post.status === 'scheduled'
-                        ? 'text-blue-500'
-                        : 'text-yellow-500'
-                )}
-              >
+              <span className={cn('capitalize font-bold', POST_STATUS_TO_COLOR[post.status])}>
                 {post.status}
               </span>
               {/* <Badge

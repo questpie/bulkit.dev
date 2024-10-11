@@ -243,7 +243,7 @@ export function RegularPostFields() {
             }}
             maxFiles={10 - mediaArray.fields.length}
             onUploaded={(resources) => {
-              if (!isPostLocked) return
+              if (isPostLocked) return
               for (const resource of resources) {
                 mediaArray.append({
                   id: nanoid(),
