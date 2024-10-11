@@ -900,6 +900,12 @@ export class PostsService {
             message: `Post text exceeds ${settings.maxPostLength} characters limit`,
           })
         }
+        if (post.media.length < settings.minMediaPerPost) {
+          errors.push({
+            path: 'media',
+            message: `Post requires at least ${settings.minMediaPerPost} media item(s)`,
+          })
+        }
         if (post.media.length > settings.maxMediaPerPost) {
           errors.push({
             path: 'media',
@@ -991,6 +997,13 @@ export class PostsService {
                   message: `Thread item exceeds ${settings.maxMediaPerPost} media items limit`,
                 })
               }
+
+              if (item.media.length < settings.minMediaPerPost) {
+                errors.push({
+                  path: `items.${i}.media`,
+                  message: `Thread item requires at least ${settings.minMediaPerPost} media item(s)`,
+                })
+              }
             }
             break
           case 'concat':
@@ -1005,6 +1018,11 @@ export class PostsService {
                 path: 'items',
                 message: `Total thread media exceeds ${settings.maxMediaPerPost} items limit`,
               })
+            } else if (totalMediaCount < settings.minMediaPerPost) {
+              errors.push({
+                path: 'items',
+                message: `Thread requires at least ${settings.minMediaPerPost} media item(s) in total`,
+              })
             }
             break
         }
@@ -1012,7 +1030,12 @@ export class PostsService {
       }
 
       case 'story':
-        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+        if (!post.resource && settings.minMediaPerPost > 0) {
+          errors.push({
+            path: 'resource',
+            message: `Story requires at least ${settings.minMediaPerPost} media item`,
+          })
+        } else if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
           errors.push({
             path: 'resource.type',
             message: `Unsupported media type for story: ${post.resource.type}`,

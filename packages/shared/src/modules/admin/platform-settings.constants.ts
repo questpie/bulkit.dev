@@ -6,6 +6,7 @@ import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
 type PlatformSettings = {
   /** Post types that are allowed to be published on the platform. */
   allowedPostTypes: PostType[]
+  minMediaPerPost: number
   /** Maximum length of a post in characters. */
   maxPostLength: number
   /** Maximum number of media items allowed per post. */
@@ -37,6 +38,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   x: {
     allowedPostTypes: ['post', 'reel', 'thread'],
     maxPostLength: 280,
+    minMediaPerPost: 1,
     maxMediaPerPost: 4,
     mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
     mediaMaxSizeInBytes: 512 * 1024 * 1024, // 512 MB
@@ -46,6 +48,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   },
   facebook: {
     allowedPostTypes: ['post', 'thread', 'reel', 'story'],
+    minMediaPerPost: 0,
     maxPostLength: 63206,
     maxMediaPerPost: 10,
     mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
@@ -60,6 +63,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   tiktok: {
     allowedPostTypes: ['post', 'reel'],
     maxPostLength: 2200,
+    minMediaPerPost: 1,
     maxMediaPerPost: 1,
     mediaAllowedMimeTypes: ['video/mp4'],
     mediaMaxSizeInBytes: 287 * 1024 * 1024, // 287 MB
@@ -69,6 +73,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   youtube: {
     allowedPostTypes: ['post', 'reel'],
     maxPostLength: 5000,
+    minMediaPerPost: 1,
     maxMediaPerPost: 1,
     mediaAllowedMimeTypes: ['video/mp4'],
     mediaMaxSizeInBytes: 256 * 1024 * 1024 * 1024, // 256 GB
@@ -78,6 +83,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   instagram: {
     allowedPostTypes: ['post', 'reel', 'story', 'thread'],
     maxPostLength: 2200,
+    minMediaPerPost: 1,
     maxMediaPerPost: 10,
     mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4'],
     mediaMaxSizeInBytes: 100 * 1024 * 1024, // 100 MB
@@ -91,6 +97,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   linkedin: {
     allowedPostTypes: ['post', 'reel', 'thread'],
     maxPostLength: 3000,
+    minMediaPerPost: 0,
     maxMediaPerPost: 20,
     mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
     mediaMaxSizeInBytes: 200 * 1024 * 1024, // 200 MB
