@@ -21,7 +21,7 @@ export const POST_TYPE_NAME = {
   thread: 'Thread',
 } as const
 
-export const POST_STATUS = ['draft', 'scheduled', 'published'] as const
+export const POST_STATUS = ['draft', 'scheduled', 'partially-published', 'published'] as const
 export type PostStatus = (typeof POST_STATUS)[number]
 
 export const PLATFORMS = [

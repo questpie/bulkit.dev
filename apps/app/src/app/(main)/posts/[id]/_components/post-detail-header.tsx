@@ -67,7 +67,7 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
         }
       >
         <div className='flex flex-row gap-4 items-center'>
-          <HeaderButton variant='outline' icon={<PiChat />} label='Comments' />
+          {/* <HeaderButton variant='outline' icon={<PiChat />} label='Comments' /> */}
           <ResponsiveDialog>
             <ResponsiveDialogTrigger asChild>
               <HeaderButton
@@ -119,7 +119,7 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
             Publish
           </Button>
         ) : (
-          <Button variant='ghost' disabled className='w-full md:w-auto' size='lg'>
+          <Button disabled className='w-full md:w-auto' size='lg'>
             <LuSend className='h-4 w-4' />
             Published
           </Button>

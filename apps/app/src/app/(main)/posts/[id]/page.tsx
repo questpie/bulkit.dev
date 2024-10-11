@@ -73,7 +73,7 @@ export default async function PostDetail(props: {
       {/* <Separator /> */}
 
       <div className='flex flex-row w-full flex-1 h-full -mt-4 overflow-auto'>
-        <div className='py-4 flex flex-col gap-4 flex-1'>
+        <div className='py-4 flex flex-col gap-4 flex-1 mb-12 overflow-auto'>
           <PostCommonFields />
           <Tabs className='gap-4' value={selectedTab}>
             <div className='px-4 mb-4'>
@@ -86,7 +86,7 @@ export default async function PostDetail(props: {
           </Tabs>
         </div>
 
-        <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border py-4 bottom-0 sticky'>
+        <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border py-4 bottom-0 h-full overflow-auto '>
           <div className='flex flex-row items-center gap-2'>
             <h4 className='text-lg font-bold'>{POST_TYPE_NAME[postResp.data.type]} Preview</h4>
             <PiEye />

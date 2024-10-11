@@ -59,6 +59,8 @@ export const channelsTable = pgTable(
     socialMediaIntegrationId: text('social_media_integration_id').references(
       () => socialMediaIntegrationsTable.id
     ),
+
+    archivedAt: timestamp('archived_at', { mode: 'string', withTimezone: true }),
     ...timestampCols(),
   },
   (table) => ({

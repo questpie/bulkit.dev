@@ -1,21 +1,21 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { channelsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { channelsTable, scheduledPostsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
+import { ChannelCantBeDeletedException } from '@bulkit/api/modules/channels/exceptions/channel-cant-be-deleted.exception'
+import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
-import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import { getAllowedPlatformsFromPostType } from '@bulkit/shared/modules/admin/utils/platform-settings.utils'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import { treaty } from '@elysiajs/eden'
-import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(channelAuthRoutes)
-  .use(injectDatabase)
   .use(organizationMiddleware)
+  .use(injectDatabase)
+  .use(injectChannelService)
   .get(
     '/',
     async (ctx) => {
@@ -26,7 +26,12 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         : undefined
 
       const channels = await ctx.db
-        .select()
+        .select({
+          ...getTableColumns(channelsTable),
+          postsCount: sql<string>`COUNT(${scheduledPostsTable.id})`,
+          publishedPostsCount: sql<string>`COUNT(CASE WHEN ${scheduledPostsTable.publishedAt} IS NOT NULL THEN 1 ELSE NULL END)`,
+          scheduledPostsCount: sql<string>`COUNT(CASE WHEN ${scheduledPostsTable.publishedAt} IS NULL AND ${scheduledPostsTable.scheduledAt} IS NOT NULL THEN 1 ELSE NULL END)`,
+        })
         .from(channelsTable)
         .where(
           and(
@@ -40,6 +45,8 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           )
         )
         .orderBy(desc(channelsTable.name))
+        .leftJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+        .groupBy(channelsTable.id)
         .limit(limit + 1)
         .offset(cursor)
 
@@ -49,7 +56,12 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       const nextCursor = hasNextPage ? cursor + limit : null
 
       return {
-        data: results,
+        data: results.map((r) => ({
+          ...r,
+          postsCount: Number(r.postsCount),
+          publishedPostsCount: Number(r.publishedPostsCount),
+          scheduledPostsCount: Number(r.scheduledPostsCount),
+        })),
         nextCursor,
       }
     },
@@ -68,7 +80,16 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       ]),
       response: {
         200: t.Object({
-          data: t.Array(selectChannelSchema),
+          data: t.Array(
+            t.Composite([
+              selectChannelSchema,
+              t.Object({
+                postsCount: t.Numeric(),
+                publishedPostsCount: t.Numeric(),
+                scheduledPostsCount: t.Numeric(),
+              }),
+            ])
+          ),
           nextCursor: t.Nullable(t.Numeric()),
         }),
       },
@@ -112,18 +133,24 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { id } = ctx.params
 
-      const result = await ctx.db
-        .delete(channelsTable)
-        .where(
-          and(eq(channelsTable.id, id), eq(channelsTable.organizationId, ctx.organization!.id))
-        )
-        .returning()
+      try {
+        const channel = await ctx.channelsService.deleteById(ctx.db, {
+          id: id,
+          organizationId: ctx.organization!.id,
+        })
 
-      if (result.length === 0) {
-        return ctx.error(404, { message: 'Channel not found' })
+        if (channel) {
+          return ctx.error(404, { message: 'Channel not found' })
+        }
+
+        return { message: 'Channel deleted successfully' }
+      } catch (err) {
+        if (err instanceof ChannelCantBeDeletedException) {
+          return ctx.error(400, { message: err.message })
+        }
+
+        return ctx.error(500, { message: 'Something went wrong' })
       }
-
-      return { message: 'Channel deleted successfully' }
     },
     {
       detail: {
@@ -137,6 +164,52 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
           message: t.String(),
         }),
         404: t.Object({
+          message: t.String(),
+        }),
+        400: t.Object({
+          message: t.String(),
+        }),
+        500: t.Object({
+          message: t.String(),
+        }),
+      },
+    }
+  )
+  .patch(
+    '/:id/archive',
+    async (ctx) => {
+      const { id } = ctx.params
+
+      try {
+        const channel = await ctx.channelsService.archiveById(ctx.db, {
+          id,
+          organizationId: ctx.organization!.id,
+        })
+
+        if (!channel) {
+          return ctx.error(404, { message: 'Channel not found' })
+        }
+
+        return { message: 'Channel archived successfully' }
+      } catch (err) {
+        return ctx.error(500, { message: 'Something went wrong' })
+      }
+    },
+    {
+      detail: {
+        tags: ['Channels'],
+      },
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+        404: t.Object({
+          message: t.String(),
+        }),
+        500: t.Object({
           message: t.String(),
         }),
       },

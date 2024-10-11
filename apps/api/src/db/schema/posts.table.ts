@@ -33,6 +33,8 @@ export const postsTable = pgTable(
 
     scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
 
+    archivedAt: timestamp('archived_at', { mode: 'string', withTimezone: true }),
+
     // workflowId: text('workflow_id').references(() => workflowsTable.id),
     ...timestampCols(),
   },

@@ -1,20 +1,19 @@
 'use client'
 
 import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
-import { ThemeToggle } from '@bulkit/app/app/(main)/_components/theme-toggle'
-import { Button } from '@bulkit/ui/components/ui/button'
+import { Spinner } from '@bulkit/ui/components/ui/spinner'
 import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { LuAtSign, LuLogOut, LuPieChart, LuSend, LuSettings } from 'react-icons/lu'
+import { LuAtSign, LuLogOut, LuSend, LuSettings } from 'react-icons/lu'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
-  {
-    name: 'Dashboard',
-    icon: LuPieChart,
-    href: '/',
-  },
+  // {
+  //   name: 'Dashboard',
+  //   icon: LuPieChart,
+  //   href: '/',
+  // },
   {
     name: 'Channels',
     icon: LuAtSign,
@@ -25,19 +24,19 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     icon: LuSend,
     href: '/posts',
   },
-  {
-    name: 'Aministration',
-    icon: LuSettings,
-    href: '/admin',
-    admin: true,
-  },
+  // {
+  //   name: 'Aministration',
+  //   icon: LuSettings,
+  //   href: '/admin',
+  //   admin: true,
+  // },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const isAdmin = !!useAuthData()?.user.isAdmin
   const { logout } = useAuthActions()
-  console.log(isAdmin)
+  // console.log(isAdmin)
 
   const items = NAV_ITEMS.filter((item) => !item.admin || isAdmin)
 
@@ -59,7 +58,7 @@ export function Sidebar() {
                 <li className='w-full' key={item.href}>
                   <Link
                     className={cn(
-                      'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-2 hover:bg-accent font-bold',
+                      'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold',
                       {
                         'text-primary cursor-default pointer-events-none bg-primary/20':
                           item.href === pathname,
@@ -76,15 +75,36 @@ export function Sidebar() {
           </nav>
         </div>
 
-        <div className='flex gap-4 md:flex-row flex-col justify-around items-center border-t py-2 h-16'>
-          {/* <Button size='icon' variant='outline'>
-          <LuUser />
-        </Button> */}
-          <ThemeToggle />
-          <Button size='icon' variant='outline' onClick={() => logout.mutateAsync()}>
-            <LuLogOut />
-          </Button>
-        </div>
+        <ul className='flex gap-4  flex-col  border-t py-2 '>
+          <li className='w-full'>
+            <Link
+              className={cn(
+                'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold',
+                {
+                  'text-primary cursor-default pointer-events-none bg-primary/20':
+                    '/settings' === pathname,
+                }
+              )}
+              href={'/settings'}
+            >
+              <LuSettings className='size-5' />
+              <span className='hidden md:inline'>Settings</span>
+            </Link>
+          </li>
+          <li className='w-full'>
+            <button
+              type='button'
+              className={cn(
+                'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold'
+              )}
+              onClick={() => logout.mutate()}
+              disabled={logout.isPending}
+            >
+              {logout.isPending ? <Spinner /> : <LuLogOut className='size-5' />}
+              <span className='hidden md:inline'>Log Out</span>
+            </button>
+          </li>
+        </ul>
       </aside>
 
       <div className='sm:hidden z-10 fixed bottom-0 left-0 h-14 right-0 bg-background border-t border-border'>

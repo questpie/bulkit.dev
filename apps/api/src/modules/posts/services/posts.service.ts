@@ -30,7 +30,7 @@ import type {
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, asc, eq, getTableColumns, inArray } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray, isNotNull, or } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
@@ -767,6 +767,97 @@ export class PostsService {
       ...post,
       resource: post.resource,
     }
+  }
+
+  async deleteById(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+    }
+  ): Promise<boolean> {
+    // First, check if the post exists and is in a deletable state
+    const post = await db
+      .select({
+        id: postsTable.id,
+        status: postsTable.status,
+      })
+      .from(postsTable)
+      .where(
+        and(
+          eq(postsTable.id, opts.postId),
+          eq(postsTable.organizationId, opts.orgId),
+          inArray(postsTable.status, ['draft', 'scheduled'])
+        )
+      )
+      .then((res) => res[0])
+
+    if (!post) {
+      return false // Post not found or not in a deletable state
+    }
+
+    // Delete associated resources
+    await this.deleteAssociatedResources(db, opts.postId, opts.orgId)
+
+    // Delete the post
+    await db.delete(postsTable).where(eq(postsTable.id, opts.postId)).execute()
+
+    return true
+  }
+
+  private async deleteAssociatedResources(
+    db: TransactionLike,
+    postId: string,
+    orgId: string
+  ): Promise<void> {
+    // Get all resource IDs associated with the post
+    const resourceIds = await db
+      .select({ resourceId: resourcesTable.id })
+      .from(resourcesTable)
+      .leftJoin(regularPostMediaTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
+      .leftJoin(threadMediaTable, eq(threadMediaTable.resourceId, resourcesTable.id))
+      .leftJoin(reelPostsTable, eq(reelPostsTable.resourceId, resourcesTable.id))
+      .leftJoin(storyPostsTable, eq(storyPostsTable.resourceId, resourcesTable.id))
+      .where(
+        or(
+          eq(regularPostMediaTable.regularPostId, postId),
+          eq(threadMediaTable.threadPostId, postId),
+          eq(reelPostsTable.postId, postId),
+          eq(storyPostsTable.postId, postId)
+        )
+      )
+      .then((res) => res.map((r) => r.resourceId).filter((id): id is string => id !== null))
+
+    // Schedule cleanup for these resources
+    if (resourceIds.length > 0) {
+      await this.resourcesService.scheduleCleanup(db, {
+        organizationId: orgId,
+        ids: resourceIds,
+      })
+    }
+  }
+
+  async archiveById(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+    }
+  ) {
+    return db
+      .select({
+        id: postsTable.id,
+        status: postsTable.status,
+      })
+      .from(postsTable)
+      .where(
+        and(
+          eq(postsTable.id, opts.postId),
+          eq(postsTable.organizationId, opts.orgId),
+          isNotNull(postsTable.archivedAt)
+        )
+      )
+      .then((res) => res[0])
   }
 
   async validate(post: Post): Promise<Static<typeof PostValidationResultSchema> | null> {

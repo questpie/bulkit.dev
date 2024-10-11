@@ -1,10 +1,11 @@
 import { apiServer } from '@bulkit/app/api/api.server'
+import { Pagination } from '@bulkit/app/app/(main)/_components/pagination-buttons'
 import { ChannelsPageHeader } from '@bulkit/app/app/(main)/channels/_components/channels-header'
 import { ChannelsTable } from '@bulkit/app/app/(main)/channels/_components/channels-table'
 import { getPagination } from '@bulkit/app/app/_utils/pagination'
 
-export default async function ChannelsPage(props: { serachParams: Record<string, any> }) {
-  const pagination = getPagination(props.serachParams)
+export default async function ChannelsPage(props: { searchParams: Record<string, any> }) {
+  const pagination = getPagination(props.searchParams)
   const channels = await apiServer.channels.index.get({
     query: {
       limit: pagination.limit,
@@ -13,9 +14,14 @@ export default async function ChannelsPage(props: { serachParams: Record<string,
   })
 
   return (
-    <div className='flex flex-col'>
+    <div className='flex flex-col gap-4'>
       <ChannelsPageHeader />
       <ChannelsTable channels={channels.data?.data ?? []} />
+      <Pagination
+        canGoNext={!!channels.data?.nextCursor}
+        canGoPrev={pagination.page > 1}
+        className='justify-end px-4'
+      />
     </div>
   )
 }

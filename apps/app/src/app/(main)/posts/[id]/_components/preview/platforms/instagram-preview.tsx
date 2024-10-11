@@ -70,7 +70,9 @@ function PostFooter() {
         </div>
         <PiBookmarkSimple className='w-6 h-6' />
       </div>
-      <div className='font-semibold text-sm'>{likes} likes</div>
+      <div className='font-semibold text-sm' suppressHydrationWarning>
+        {likes} likes
+      </div>
     </div>
   )
 }

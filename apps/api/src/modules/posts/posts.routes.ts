@@ -1,18 +1,20 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
-import { postsTable } from '@bulkit/api/db/db.schema'
+import { selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
+import { channelsTable, postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import {
+  PostChannelSchema,
   PostDetailsSchema,
   PostSchema,
   PostValidationResultSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, isNull } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
@@ -32,16 +34,32 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           type: postsTable.type,
           createdAt: postsTable.createdAt,
           scheduledAt: postsTable.scheduledAt,
+          channels: selectRelatedEntitiesM2M({
+            select: {
+              id: channelsTable.id,
+              name: channelsTable.name,
+              platform: channelsTable.platform,
+              imageUrl: channelsTable.imageUrl,
+            },
+            joinOn: eq(scheduledPostsTable.channelId, channelsTable.id),
+            joinTable: scheduledPostsTable,
+            table: channelsTable,
+            where: eq(scheduledPostsTable.postId, postsTable.id),
+          }),
         })
         .from(postsTable)
         .where(
           and(
             eq(postsTable.organizationId, ctx.organization!.id),
+            isNull(postsTable.archivedAt),
             ctx.query.type ? eq(postsTable.type, ctx.query.type) : undefined,
-            ctx.query.status ? eq(postsTable.status, ctx.query.status) : undefined
+            ctx.query.status ? eq(postsTable.status, ctx.query.status) : undefined,
+            ctx.query.channelId ? eq(scheduledPostsTable.channelId, ctx.query.channelId) : undefined
           )
         )
         .orderBy(desc(postsTable.createdAt))
+        .leftJoin(scheduledPostsTable, eq(scheduledPostsTable.postId, postsTable.id))
+        .groupBy(postsTable.id)
         .limit(limit + 1)
         .offset(cursor)
 
@@ -63,10 +81,18 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         t.Object({
           type: t.Optional(StringLiteralEnum(POST_TYPE)),
           status: t.Optional(StringLiteralEnum(POST_STATUS)),
+          channelId: t.Optional(t.String()),
         }),
       ]),
       response: t.Object({
-        data: t.Array(t.Omit(PostDetailsSchema, ['channels'])),
+        data: t.Array(
+          t.Composite([
+            t.Omit(PostDetailsSchema, ['channels']),
+            t.Object({
+              channels: t.Array(t.Pick(PostChannelSchema, ['id', 'name', 'platform', 'imageUrl'])),
+            }),
+          ])
+        ),
         nextCursor: t.Nullable(t.Number()),
       }),
     }

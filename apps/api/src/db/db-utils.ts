@@ -49,3 +49,40 @@ export function selectRelatedEntities<T extends PgTable, TSelection extends Colu
     ${opts.limit ? sql`LIMIT ${opts.limit}` : sql``}
   )`
 }
+
+export type SelectRelatedEntitiesM2MOpts<
+  T extends PgTable,
+  J extends PgTable,
+  TSelection extends ColumnSelection,
+> = {
+  table: T
+  joinTable: J
+  select: TSelection
+  where: SQL
+  joinOn: SQL
+  primaryKey?: Column
+  limit?: number
+}
+
+export function selectRelatedEntitiesM2M<
+  T extends PgTable,
+  J extends PgTable,
+  TSelection extends ColumnSelection,
+>(opts: SelectRelatedEntitiesM2MOpts<T, J, TSelection>) {
+  const columnsToSelect = Object.entries(opts.select).map(
+    ([alias, column]) =>
+      sql`'${sql.raw(alias)}', ${column}` as SQL<TSelectionResult<TSelection>[keyof TSelection]>
+  )
+
+  return sql<TSelectionResult<TSelection>[]>`(
+    SELECT COALESCE(json_agg(
+      json_build_object(
+        ${sql.join(columnsToSelect, sql`, `)}
+      )
+    ) FILTER (WHERE ${opts.primaryKey ?? (opts.table as any).id} IS NOT NULL), '[]'::json)
+    FROM ${opts.table}
+    JOIN ${opts.joinTable} ON ${opts.joinOn}
+    WHERE ${opts.where}
+    ${opts.limit ? sql`LIMIT ${opts.limit}` : sql``}
+  )`
+}

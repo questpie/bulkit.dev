@@ -54,7 +54,7 @@ export const publishPostJob = jobFactory.createJob({
     }
 
     const channel = await channelsService.getChannelWithIntegration(db, {
-      channelId: scheduledPost.channelId,
+      id: scheduledPost.channelId,
     })
 
     if (!channel) {
