@@ -102,7 +102,12 @@ export function DatePicker(props: DatePickerProps) {
     <ResponsivePopover>
       <div className='rounded-md border-border flex overflow-hidden border bg-background'>
         <ResponsivePopoverTrigger asChild>
-          <Button variant='ghost' className='w-auto rounded-none' suppressHydrationWarning>
+          <Button
+            variant='ghost'
+            disabled={props.disabled}
+            className='w-auto rounded-none'
+            suppressHydrationWarning
+          >
             <LuCalendar className='h-4 w-4 ' />
 
             {values ? (
@@ -137,6 +142,7 @@ export function DatePicker(props: DatePickerProps) {
           selected={values?.date ? new Date(values.date) : undefined}
           month={month}
           className='w-full'
+          // @ts-expect-error
           onSelect={(selectedDate) => {
             if (selectedDate) {
               return props.onValueChange(

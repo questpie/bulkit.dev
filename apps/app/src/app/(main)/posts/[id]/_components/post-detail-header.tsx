@@ -77,12 +77,14 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
                 className='md:hidden'
               />
             </ResponsiveDialogTrigger>
-            <ResponsiveDialogContent mobileProps={{ className: 'p-4' }}>
-              <ResponsiveDialogHeader>
+            <ResponsiveDialogContent mobileProps={{ className: 'flex flex-col h-[95dvh]' }}>
+              <ResponsiveDialogHeader className='px-4'>
                 <ResponsiveDialogTitle>Preview</ResponsiveDialogTitle>
               </ResponsiveDialogHeader>
 
-              <PostPreview />
+              <div className='flex-1 pb-2 px-4 overflow-auto relative'>
+                <PostPreview />
+              </div>
             </ResponsiveDialogContent>
           </ResponsiveDialog>
         </div>

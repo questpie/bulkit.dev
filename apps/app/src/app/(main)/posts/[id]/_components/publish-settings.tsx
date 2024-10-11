@@ -1,6 +1,7 @@
 'use client'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { useIsPostLocked } from '@bulkit/app/app/(main)/posts/[id]/_components/post-form'
 import { PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { cn } from '@bulkit/transactional/style-utils'
@@ -26,6 +27,7 @@ export function PublishSettings() {
   const form = useFormContext<Post>()
 
   const channels = form.watch('channels')
+  const isPostLocked = useIsPostLocked()
 
   return (
     <div className='flex flex-col px-4 gap-4'>
@@ -53,6 +55,7 @@ export function PublishSettings() {
               <div className='flex-1 flex justify-end'>
                 <FormControl>
                   <DatePicker
+                    disabled={isPostLocked}
                     value={field.value ?? undefined}
                     onValueChange={(date) => {
                       field.onChange(date?.toISOString() ?? null)
@@ -122,6 +125,7 @@ export function PublishSettings() {
                           <div className='flex-1 flex justify-end'>
                             <FormControl>
                               <DatePicker
+                                disabled={isPostLocked}
                                 value={field.value ?? undefined}
                                 onValueChange={(date) => {
                                   field.onChange(date?.toISOString() ?? null)

@@ -14,6 +14,7 @@ type ResourceUploaderProps = {
   allowedTypes?: string[]
   maxFiles?: number
   maxSize?: number // in bytes
+  disabled?: boolean
 }
 
 function useResourceUploader({
@@ -21,6 +22,7 @@ function useResourceUploader({
   allowedTypes = ['image/*', 'video/*', 'audio/*'],
   maxFiles = 10,
   maxSize = 1024 * 1024 * 1024, // 1024MB
+  disabled,
 }: ResourceUploaderProps) {
   const mutation = useMutation({
     mutationFn: (...args: Parameters<typeof apiClient.resources.index.post>) =>
@@ -37,6 +39,7 @@ function useResourceUploader({
   })
 
   const dropzone = useDropzone({
+    disabled,
     onDropAccepted: useCallback(
       (acceptedFiles: File[]) => {
         toast.promise(
@@ -96,7 +99,8 @@ export function ResourceDropzone(props: ResourceUploaderProps) {
       {...getRootProps()}
       className={cn(
         'border-2 text-sm transition text-muted-foreground duration-200 flex flex-col gap-4 hover:bg-accent/50 border-dashed border-border rounded-xl p-5 text-center cursor-pointer',
-        isDragActive && 'bg-primary/20 border-primary text-primary'
+        isDragActive && 'bg-primary/20 border-primary text-primary',
+        props.disabled && 'opacity-80 pointer-events-none'
       )}
     >
       <LuUploadCloud className='h-12 w-12 mx-auto' />
@@ -123,6 +127,7 @@ export function ResourceButtonUpload(
     <>
       <input {...getInputProps()} type='button' />
       <Button
+        disabled={props.disabled}
         {...props.buttonProps}
         {...getRootProps()}
         type='button'

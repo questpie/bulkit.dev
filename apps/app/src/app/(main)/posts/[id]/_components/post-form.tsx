@@ -48,7 +48,6 @@ import { typeboxResolver } from '@hookform/resolvers/typebox'
 import { Type, type Static } from '@sinclair/typebox'
 import { useMutation } from '@tanstack/react-query'
 import { nanoid } from 'nanoid'
-import { useRouter } from 'next/navigation'
 import objectHash from 'object-hash'
 import { useEffect, useRef } from 'react'
 import {
@@ -70,6 +69,18 @@ type PostFormProviderProps = {
 
 const calculateFormHash = (obj: object) => {
   return objectHash(obj, { excludeKeys: (key) => key === 'id' })
+}
+
+export function useIsPostLocked() {
+  const form = useFormContext<Post>()
+
+  const postStatus = useWatch({
+    control: form.control,
+    name: 'status',
+  })
+
+  // we can add additional conditions here
+  return postStatus !== 'draft'
 }
 
 export function PostFormProvider(props: PostFormProviderProps) {
@@ -143,6 +154,8 @@ export function PostCommonFields() {
     name: 'type',
   })
 
+  const isPostLocked = useIsPostLocked()
+
   return (
     <div className='px-4 pb-4'>
       <FormField
@@ -155,6 +168,7 @@ export function PostCommonFields() {
 
               <FormControl>
                 <ChannelPicker
+                  isDisabled={isPostLocked}
                   value={field.value}
                   onValueChange={field.onChange}
                   postType={postType}
@@ -176,6 +190,8 @@ export function RegularPostFields() {
     control: form.control,
     name: 'media',
   })
+
+  const isPostLocked = useIsPostLocked()
 
   const lastMediaOrder = mediaArray.fields[mediaArray.fields.length - 1]?.order ?? 1
 
@@ -204,7 +220,12 @@ export function RegularPostFields() {
               <FormLabel>Post content</FormLabel>
 
               <FormControl>
-                <Textarea rows={10} {...field} placeholder='Write your post here' />
+                <Textarea
+                  disabled={isPostLocked}
+                  rows={10}
+                  {...field}
+                  placeholder='Write your post here'
+                />
               </FormControl>
 
               <FormMessage />
@@ -215,10 +236,14 @@ export function RegularPostFields() {
 
       <p className='text-sm font-medium'>Post Media</p>
       <div className='flex w-full'>
-        {mediaArray.fields.length < 10 && (
+        {mediaArray.fields.length < 10 && !isPostLocked && (
           <ResourceButtonUpload
+            buttonProps={{
+              disabled: isPostLocked,
+            }}
             maxFiles={10 - mediaArray.fields.length}
             onUploaded={(resources) => {
+              if (!isPostLocked) return
               for (const resource of resources) {
                 mediaArray.append({
                   id: nanoid(),
@@ -233,13 +258,14 @@ export function RegularPostFields() {
       </div>
       {!!mediaArray.fields.length && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={mediaArray.fields}>
+          <SortableContext disabled={isPostLocked} items={mediaArray.fields}>
             <div className='flex flex-row gap-4 flex-wrap w-full'>
               {mediaArray.fields.map((media, index) => {
                 return (
                   <MediaItem
                     key={media.id}
                     onRemove={() => {
+                      if (isPostLocked) return
                       let i = 0
                       for (const item of mediaArray.fields) {
                         if (i === index) {
@@ -269,8 +295,10 @@ function MediaItem(props: {
   media: Static<typeof PostMediaSchema>
   onRemove: () => void
 }) {
+  const isPostLocked = useIsPostLocked()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.media.id,
+    disabled: isPostLocked,
   })
 
   const style = {
@@ -280,16 +308,18 @@ function MediaItem(props: {
 
   return (
     <div ref={setNodeRef} style={style} className='relative group'>
-      <div
-        {...attributes}
-        {...listeners}
-        className='absolute w-full h-full z-10 p-1 flex items-center justify-center bg-black/50 rounded-lg  cursor-move opacity-0 group-hover:opacity-100 transition-opacity'
-      >
-        <PiDotsSixBold className='text-white' size={32} />
-      </div>
+      {!isPostLocked && (
+        <div
+          {...attributes}
+          {...listeners}
+          className='absolute w-full h-full z-10 p-1 flex items-center justify-center bg-black/50 rounded-lg  cursor-move opacity-0 group-hover:opacity-100 transition-opacity'
+        >
+          <PiDotsSixBold className='text-white' size={32} />
+        </div>
+      )}
       <ResourcePreview
         key={props.media.id}
-        onRemove={props.onRemove}
+        onRemove={!isPostLocked ? props.onRemove : undefined}
         resource={props.media.resource}
         className={cn('h-24 w-24', isDragging && 'opacity-50')}
       />
@@ -298,6 +328,7 @@ function MediaItem(props: {
 }
 export function StoryPostFields() {
   const form = useFormContext<Extract<Post, { type: 'story' }>>()
+  const isPostLocked = useIsPostLocked()
 
   return (
     <div className='flex flex-col gap-4 w-full px-4'>
@@ -312,8 +343,9 @@ export function StoryPostFields() {
               {!field.value && (
                 <ResourceDropzone
                   maxFiles={1}
+                  disabled={isPostLocked}
                   onUploaded={(resources) => {
-                    field.onChange(resources[0]!)
+                    if (!isPostLocked) field.onChange(resources[0]!)
                   }}
                 />
               )}
@@ -321,9 +353,13 @@ export function StoryPostFields() {
                 <div className='flex flex-row gap-4 flex-wrap w-full'>
                   <ResourcePreview
                     className='h-24 w-24'
-                    onRemove={() => {
-                      field.onChange(null)
-                    }}
+                    onRemove={
+                      !isPostLocked
+                        ? () => {
+                            field.onChange(null)
+                          }
+                        : undefined
+                    }
                     resource={field.value}
                   />
                 </div>
@@ -338,6 +374,7 @@ export function StoryPostFields() {
 
 export function ReelPostFields() {
   const form = useFormContext<Extract<Post, { type: 'reel' }>>()
+  const isPostLocked = useIsPostLocked()
 
   return (
     <div className='flex flex-col gap-4 w-full px-4'>
@@ -350,7 +387,12 @@ export function ReelPostFields() {
               <FormLabel>Reel description</FormLabel>
 
               <FormControl>
-                <Textarea rows={10} {...field} placeholder='Write your reel description here' />
+                <Textarea
+                  disabled={isPostLocked}
+                  rows={10}
+                  {...field}
+                  placeholder='Write your reel description here'
+                />
               </FormControl>
 
               <FormMessage />
@@ -369,6 +411,7 @@ export function ReelPostFields() {
               {!field.value && (
                 <ResourceDropzone
                   maxFiles={1}
+                  disabled={isPostLocked}
                   allowedTypes={['video/*']}
                   onUploaded={(resources) => {
                     field.onChange(resources[0]!)
@@ -379,9 +422,13 @@ export function ReelPostFields() {
                 <div className='flex flex-row gap-4 flex-wrap w-full'>
                   <ResourcePreview
                     className='h-24 w-24'
-                    onRemove={() => {
-                      field.onChange(null)
-                    }}
+                    onRemove={
+                      !isPostLocked
+                        ? () => {
+                            field.onChange(null)
+                          }
+                        : undefined
+                    }
                     resource={field.value}
                   />
                 </div>
@@ -403,6 +450,7 @@ export function ThreadPostFields() {
   })
 
   const errors = form.formState.errors.items
+  const isPostLocked = useIsPostLocked()
 
   const sensors = useSensors(useSensor(PointerSensor))
 
@@ -431,7 +479,7 @@ export function ThreadPostFields() {
         </Alert>
       )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={itemsArray.fields}>
+        <SortableContext disabled={isPostLocked} items={itemsArray.fields}>
           {itemsArray.fields.map((item, index) => {
             return (
               <ThreadItem
@@ -439,7 +487,7 @@ export function ThreadPostFields() {
                 name={`items.${index}`}
                 item={item}
                 onRemove={
-                  itemsArray.fields.length <= 0
+                  isPostLocked || itemsArray.fields.length <= 0
                     ? undefined
                     : () => {
                         let i = 0
@@ -465,9 +513,11 @@ export function ThreadPostFields() {
       <div className='flex justify-end'>
         <Button
           variant='secondary'
-          onClick={() =>
+          disabled={isPostLocked}
+          onClick={() => {
+            if (isPostLocked) return
             itemsArray.append({ text: '', order: lastItemOrder + 1, media: [], id: nanoid() })
-          }
+          }}
         >
           <LuPlus /> Add Thread Item
         </Button>
@@ -490,9 +540,11 @@ function ThreadItem(props: {
 
   const errors = get(form.formState.errors, props.name)
 
+  const isPostLocked = useIsPostLocked()
+
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: props.item.id,
-    disabled: !props.canDrag,
+    disabled: !props.canDrag || isPostLocked,
   })
 
   const style = {
@@ -558,7 +610,12 @@ function ThreadItem(props: {
                     {/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
 
                     <FormControl>
-                      <Textarea rows={10} {...field} placeholder='Write your thread here' />
+                      <Textarea
+                        disabled={isPostLocked}
+                        rows={10}
+                        {...field}
+                        placeholder='Write your thread here'
+                      />
                     </FormControl>
 
                     <FormMessage />
@@ -578,10 +635,12 @@ function ThreadItem(props: {
                     <FormControl>
                       <div className='flex flex-col gap-3'>
                         <div className='flex w-full'>
-                          {mediaArray.fields.length < 10 && (
+                          {mediaArray.fields.length < 10 && !isPostLocked && (
                             <ResourceButtonUpload
+                              disabled={isPostLocked}
                               maxFiles={10 - mediaArray.fields.length}
                               onUploaded={(resources) => {
+                                if (isPostLocked) return
                                 for (const resource of resources) {
                                   mediaArray.append({
                                     id: nanoid(),
@@ -602,13 +661,14 @@ function ThreadItem(props: {
                             collisionDetection={closestCenter}
                             onDragEnd={handleMediaDragEnd}
                           >
-                            <SortableContext items={mediaArray.fields}>
+                            <SortableContext disabled={isPostLocked} items={mediaArray.fields}>
                               <div className='flex flex-row gap-4 flex-wrap w-full'>
                                 {mediaArray.fields.map((media, index) => {
                                   return (
                                     <MediaItem
                                       key={media.id}
                                       onRemove={() => {
+                                        if (isPostLocked) return
                                         let i = 0
                                         for (const item of mediaArray.fields) {
                                           if (i === index) {
@@ -639,7 +699,14 @@ function ThreadItem(props: {
 
             <div className='flex justify-end pt-4'>
               {props.onRemove && (
-                <Button variant='outline' onClick={props.onRemove}>
+                <Button
+                  variant='outline'
+                  disabled={isPostLocked}
+                  onClick={() => {
+                    if (isPostLocked) return
+                    props.onRemove?.()
+                  }}
+                >
                   <LuTrash2 /> Remove
                 </Button>
               )}

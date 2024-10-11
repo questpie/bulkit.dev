@@ -70,35 +70,37 @@ export function PostPreview() {
   const PreviewComponent = PLATFORM_PREVIEW[selectedChannel?.platform]
 
   return (
-    <div className='flex flex-col gap-6'>
+    <div className='flex flex-col gap-4'>
       {channels.length > 1 && (
-        <Select
-          onValueChange={(value) => {
-            const channel = channels.find((channel) => channel.id === value)
-            if (channel) {
-              setSelectedChannel(channel)
-            }
-          }}
-          value={selectedChannel?.id}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
+        <div className='-top-0.5 sticky py-3 -mt-1 z-10 bg-background'>
+          <Select
+            onValueChange={(value) => {
+              const channel = channels.find((channel) => channel.id === value)
+              if (channel) {
+                setSelectedChannel(channel)
+              }
+            }}
+            value={selectedChannel?.id}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
 
-          <SelectContent>
-            {channels.map((channel) => {
-              const Icon = PLATFORM_ICON[channel.platform]
+            <SelectContent>
+              {channels.map((channel) => {
+                const Icon = PLATFORM_ICON[channel.platform]
 
-              return (
-                <SelectItem key={channel.id} value={channel.id}>
-                  <div className='flex flex-row gap-2 items-center'>
-                    <Icon className='inline' /> {channel.name}
-                  </div>
-                </SelectItem>
-              )
-            })}
-          </SelectContent>
-        </Select>
+                return (
+                  <SelectItem key={channel.id} value={channel.id}>
+                    <div className='flex flex-row gap-2 items-center'>
+                      <Icon className='inline' /> {channel.name}
+                    </div>
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       <PreviewComponent

@@ -10,7 +10,7 @@ export function PostDetailTablist() {
     <TabsList className='w-full'>
       <TabsTrigger
         value={PostDetailTab.Content}
-        className='flex-1'
+        className='flex-1 h-full'
         onClick={(e) => {
           router.push(`?tab=${PostDetailTab.Content}`)
         }}
@@ -19,7 +19,7 @@ export function PostDetailTablist() {
       </TabsTrigger>
       <TabsTrigger
         value={PostDetailTab.Publish}
-        className='flex-1'
+        className='flex-1 h-full'
         onClick={() => {
           router.push(`?tab=${PostDetailTab.Publish}`)
         }}

@@ -31,9 +31,15 @@ type ChannelPickerProps = {
   value: Channel[]
   onValueChange: (value: Channel[]) => void
   postType?: PostType
+  isDisabled?: boolean
 }
 
-const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange, postType }) => {
+const ChannelPicker: React.FC<ChannelPickerProps> = ({
+  value,
+  onValueChange,
+  postType,
+  isDisabled,
+}) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -51,6 +57,7 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange, pos
         },
       })
     },
+    enabled: !isDisabled,
     initialPageParam: 0,
     getNextPageParam: (prev) => prev.data?.nextCursor,
   })
@@ -117,13 +124,14 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange, pos
             <button
               type='button'
               key={channel.id}
-              className='relative cursor-pointer focus:outline-ring'
+              className='relative cursor-pointer focus:outline-ring disabled:pointer-events-none'
               onClick={() => {
                 const newValue = isSelected
                   ? value.filter((v) => v.id !== channel.id)
                   : [...value, channel]
                 onValueChange(newValue)
               }}
+              disabled={isDisabled}
             >
               <Avatar
                 className={cn(
@@ -154,7 +162,12 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({ value, onValueChange, pos
 
         {queryFlatData.length > value.length && queryFlatData.length > FIRST_ROW_ITEMS_COUNT && (
           <ResponsiveDialogTrigger asChild>
-            <Button variant='outline' size='icon' className='size-12 rounded-full'>
+            <Button
+              variant='outline'
+              size='icon'
+              className='size-12 rounded-full'
+              disabled={isDisabled}
+            >
               <PiPlus className='size-5' />
             </Button>
           </ResponsiveDialogTrigger>
