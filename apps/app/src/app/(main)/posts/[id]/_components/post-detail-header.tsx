@@ -49,6 +49,10 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: apiClient.posts({ id: post.id }).
+  })
+
   return (
     <>
       <Header

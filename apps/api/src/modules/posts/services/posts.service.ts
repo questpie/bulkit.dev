@@ -14,6 +14,7 @@ import {
   type SelectPost,
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import {
   injectResourcesService,
@@ -786,14 +787,19 @@ export class PostsService {
       .where(
         and(
           eq(postsTable.id, opts.postId),
-          eq(postsTable.organizationId, opts.orgId),
-          inArray(postsTable.status, ['draft', 'scheduled'])
+          eq(postsTable.organizationId, opts.orgId)
+          // inArray(postsTable.status, ['draft', 'scheduled'])
         )
       )
+      .limit(1)
       .then((res) => res[0])
 
     if (!post) {
       return false // Post not found or not in a deletable state
+    }
+
+    if (!['draft', 'scheduled'].includes(post.status)) {
+      throw new PostCantBeDeletedException(post.id)
     }
 
     // Delete associated resources

@@ -3,6 +3,7 @@ import { selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
 import { channelsTable, postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
@@ -262,3 +263,61 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       })
     })
   })
+  .delete(
+    '/:id',
+    async (ctx) => {
+      try {
+        const deleted = await ctx.postService.deleteById(ctx.db, {
+          orgId: ctx.organization!.id,
+          postId: ctx.params.id,
+        })
+
+        if (!deleted) {
+          return ctx.error(404, { message: 'Post not found' })
+        }
+
+        return { success: true }
+      } catch (err) {
+        if (err instanceof PostCantBeDeletedException) {
+          return ctx.error(400, { message: err.message })
+        }
+
+        return ctx.error(500, { message: 'Error while deleting post' })
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        404: t.Object({ message: t.String() }),
+        200: t.Object({ success: t.Boolean() }),
+        500: t.Object({ message: t.String() }),
+        400: t.Object({ message: t.String() }),
+      },
+    }
+  )
+  .patch(
+    '/:id/archive',
+    async (ctx) => {
+      const archived = await ctx.postService.archiveById(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
+
+      if (!archived) {
+        return ctx.error(404, { message: 'Post not found' })
+      }
+
+      return { success: true }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        404: t.Object({ message: t.String() }),
+        200: t.Object({ success: t.Boolean() }),
+      },
+    }
+  )
