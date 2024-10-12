@@ -38,7 +38,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
   x: {
     allowedPostTypes: ['post', 'reel', 'thread'],
     maxPostLength: 280,
-    minMediaPerPost: 1,
+    minMediaPerPost: 0,
     maxMediaPerPost: 4,
     mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
     mediaMaxSizeInBytes: 512 * 1024 * 1024, // 512 MB
