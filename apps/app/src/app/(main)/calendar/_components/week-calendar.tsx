@@ -11,7 +11,7 @@ import {
   startOfDay,
   startOfWeek,
 } from 'date-fns'
-import { createContext, useContext, useEffect, type PropsWithChildren, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface WeekCalendarProps {
   today?: Date
@@ -71,7 +71,10 @@ export function CalendarHeader() {
   )
 }
 
-export function CalendarDates(props: { sidebarDisplayStep?: number }) {
+export function CalendarDates(props: {
+  sidebarDisplayStep?: number
+  renderSlot?: (opts: { slotStart: Date; slotEnd: Date }) => ReactNode
+}) {
   const sidebarDisplayStep = props.sidebarDisplayStep ?? 2
   const { today, slotDurationMinutes } = useContext(CalendarContext)
   const weekStart = startOfWeek(today)
@@ -81,42 +84,38 @@ export function CalendarDates(props: { sidebarDisplayStep?: number }) {
   )
 
   return (
-    <div className='hidden flex-row relative md:flex'>
-      <div className='w-12 flex flex-col'>
-        {minutes.map((startOfSlotMinutes, i) => {
-          const hour = Math.floor(startOfSlotMinutes / 60)
-          const minute = startOfSlotMinutes - hour * 60
-          const slotDate = addMinutes(weekStart, startOfSlotMinutes)
+    <div className='hidden flex-col relative md:flex'>
+      {minutes.map((startOfSlotMinutes, i) => {
+        const hour = Math.floor(startOfSlotMinutes / 60)
+        const minute = startOfSlotMinutes - hour * 60
+        const slotDate = addMinutes(weekStart, startOfSlotMinutes)
 
-          const showText = i % sidebarDisplayStep === 0
+        const showText = i % sidebarDisplayStep === 0
 
-          return (
+        return (
+          <div className='min-h-10 w-full  flex flex-row' key={startOfSlotMinutes}>
             <div
-              className='text-xs text-muted-foreground  h-16 flex justify-center '
+              className='text-xs border-r text-muted-foreground w-12 flex justify-center '
               key={`minutes-${startOfSlotMinutes}`}
             >
               {showText && format(slotDate, 'HH:mm')}
             </div>
-          )
-        })}
-      </div>
-      {Array.from({ length: 7 }, (_, day) => {
-        const weekDay = startOfDay(addDays(weekStart, day))
+            {Array.from({ length: 7 }).map((_, day) => {
+              const weekDay = startOfDay(addDays(weekStart, day))
+              const slotStart = addMinutes(weekDay, startOfSlotMinutes)
+              const slotEnd = addMinutes(slotStart, slotDurationMinutes)
+              const isPast = isBefore(slotEnd, today)
 
-        return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-          <div key={day} className='flex border-l flex-col flex-1'>
-            {minutes.map((startOfSlotMinutes) => {
               return (
                 <CalendarDate
+                  key={`${day}-${startOfSlotMinutes}`}
                   day={day}
                   isMobile={true}
                   slotDurationMinutes={slotDurationMinutes}
                   startOfSlotMinutes={startOfSlotMinutes}
                   today={today}
                   weekDay={weekDay}
-                  key={startOfSlotMinutes}
-                  // renderSlot={}
+                  renderSlot={props.renderSlot}
                 />
               )
             })}
@@ -133,7 +132,7 @@ type CalendarDateProps = {
   today: Date
   startOfSlotMinutes: number
   day: number
-  renderSlot?: (opts: { date: Date }) => ReactNode
+  renderSlot?: (opts: { slotStart: Date; slotEnd: Date }) => ReactNode
   isMobile: boolean
 }
 function CalendarDate({
@@ -160,7 +159,7 @@ function CalendarDate({
       // biome-ignore lint/a11y/useSemanticElements: <explanation>
       role='button'
       className={cn(
-        'h-16 flex flex-col border-b focus:ring-2 p-2  uring-ring outline-none',
+        'h-full flex flex-col flex-1 border-r border-b focus:ring-2 p-1  uring-ring outline-none',
         isThisSlot && 'border-primary border bg-primary/20'
       )}
       // onClick={() => onSlotClick?.(slotDate)}
@@ -201,7 +200,9 @@ function CalendarDate({
       data-mobile={!isMobile}
     >
       {/* <div className='text-xs text-muted-foreground'>{format(slotDate, 'HH:mm')}</div> */}
-      <div className='flex-1'>{renderSlot?.({ date: slotDate })}</div>
+      <div className='flex-1'>
+        {renderSlot?.({ slotStart: slotDate, slotEnd: addMinutes(slotDate, slotDurationMinutes) })}
+      </div>
     </div>
   )
 }

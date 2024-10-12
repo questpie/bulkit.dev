@@ -222,59 +222,75 @@ export function RegularPostFields() {
         }}
       />
 
-      <p className='text-sm font-medium'>Post Media</p>
-      <div className='flex w-full'>
-        {mediaArray.fields.length < 10 && !isPostLocked && (
-          <ResourceButtonUpload
-            buttonProps={{
-              disabled: isPostLocked,
-            }}
-            maxFiles={10 - mediaArray.fields.length}
-            onUploaded={(resources) => {
-              if (isPostLocked) return
-              for (const resource of resources) {
-                mediaArray.append({
-                  id: nanoid(),
-                  // id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
-                  order: lastMediaOrder + 1,
-                  resource,
-                })
-              }
-            }}
-          />
-        )}
-      </div>
-      {!!mediaArray.fields.length && (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext disabled={isPostLocked} items={mediaArray.fields}>
-            <div className='flex flex-row gap-4 flex-wrap w-full'>
-              {mediaArray.fields.map((media, index) => {
-                return (
-                  <MediaItem
-                    key={media.id}
-                    onRemove={() => {
-                      if (isPostLocked) return
-                      let i = 0
-                      for (const item of mediaArray.fields) {
-                        if (i === index) {
-                          continue
-                        }
-                        mediaArray.update(i, {
-                          ...item,
-                          order: i + 1,
-                        })
-                        i++
-                      }
-                      mediaArray.remove(index)
+      <FormField
+        name='media'
+        control={form.control}
+        render={() => {
+          return (
+            <FormItem className='flex flex-col'>
+              <FormLabel>Post Media</FormLabel>
+              <FormMessage />
+              <div className='flex w-full'>
+                {mediaArray.fields.length < 10 && !isPostLocked && (
+                  <ResourceButtonUpload
+                    buttonProps={{
+                      disabled: isPostLocked,
                     }}
-                    media={media}
+                    maxFiles={10 - mediaArray.fields.length}
+                    onUploaded={(resources) => {
+                      if (isPostLocked) return
+                      for (const resource of resources) {
+                        mediaArray.append({
+                          id: nanoid(),
+                          // id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
+                          order: lastMediaOrder + 1,
+                          resource,
+                        })
+                      }
+                    }}
                   />
-                )
-              })}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
+                )}
+              </div>
+
+              {!!mediaArray.fields.length && (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext disabled={isPostLocked} items={mediaArray.fields}>
+                    <div className='flex flex-row gap-4 flex-wrap w-full'>
+                      {mediaArray.fields.map((media, index) => {
+                        return (
+                          <MediaItem
+                            key={media.id}
+                            onRemove={() => {
+                              if (isPostLocked) return
+                              let i = 0
+                              for (const item of mediaArray.fields) {
+                                if (i === index) {
+                                  continue
+                                }
+                                mediaArray.update(i, {
+                                  ...item,
+                                  order: i + 1,
+                                })
+                                i++
+                              }
+                              mediaArray.remove(index)
+                            }}
+                            media={media}
+                          />
+                        )
+                      })}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              )}
+            </FormItem>
+          )
+        }}
+      />
     </div>
   )
 }

@@ -21,3 +21,8 @@ export function StringLiteralEnum<T extends string[]>(
 export function Nullable<T extends TSchema>(type: T) {
   return Type.Union([type, Type.Null()])
 }
+
+export const TimestampsSchema = Type.Object({
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+})

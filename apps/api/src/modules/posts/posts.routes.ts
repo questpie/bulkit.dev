@@ -5,6 +5,7 @@ import { injectChannelService } from '@bulkit/api/modules/channels/services/chan
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { scheduledPostsRoutes } from '@bulkit/api/modules/posts/scheduled-post.routes'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import {
@@ -19,6 +20,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
+  .use(scheduledPostsRoutes)
   .use(injectPostService)
   .use(injectChannelService)
   .use(organizationMiddleware)
@@ -83,6 +85,9 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           type: t.Optional(StringLiteralEnum(POST_TYPE)),
           status: t.Optional(StringLiteralEnum(POST_STATUS)),
           channelId: t.Optional(t.String()),
+
+          dateFrom: t.Optional(t.String()),
+          dateTo: t.Optional(t.String()),
         }),
       ]),
       response: t.Object({
@@ -156,7 +161,6 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         }
 
         const errors = await ctx.postService.validate(post)
-        console.log(errors, post)
 
         if (errors) {
           return ctx.error(400, { errors, post })

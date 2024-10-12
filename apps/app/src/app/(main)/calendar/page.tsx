@@ -1,24 +1,24 @@
-'use client'
-
+import { apiServer } from '@bulkit/app/api/api.server'
 import { Header } from '@bulkit/app/app/(main)/_components/header'
-import {
-  CalendarDates,
-  CalendarHeader,
-  WeekCalendar,
-} from '@bulkit/app/app/(main)/calendar/_components/week-calendar'
+import { getCalendarParams } from '@bulkit/app/app/(main)/calendar/calendar-utils'
+import { PostsCalendar } from '@bulkit/app/app/(main)/calendar/posts-calendar'
 
-export default function CalendarPage() {
+export default async function CalendarPage(page: { searchParams: Record<string, string> }) {
+  const calendarData = getCalendarParams(page.searchParams)
+
+  const scheduledPosts = await apiServer.posts['scheduled-posts'].index.get({
+    query: {
+      limit: 500,
+      dateFrom: calendarData.dateFrom.toISOString(),
+      dateTo: calendarData.dateTo.toISOString(),
+      cursor: 0,
+    },
+  })
+
   return (
     <>
       <Header title='Calendar' />
-      <div className='w-full flex-1 h-full relative flex flex-col overflow-auto'>
-        <WeekCalendar>
-          <div className='bg-background top-0 sticky z-10'>
-            <CalendarHeader />
-          </div>
-          <CalendarDates />
-        </WeekCalendar>
-      </div>
+      <PostsCalendar posts={scheduledPosts.data?.data ?? []} />
     </>
   )
 }

@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 type GetRelativeTimeStringOpts = {
   date: Date
   from?: Date
@@ -37,4 +38,8 @@ export function getRelativeTimeString({
   }
 
   return rtf.format(0, 'second')
+}
+
+export function getIsoDateString(date: Date): string {
+  return format(date, 'yyyy-MM-dd')
 }
