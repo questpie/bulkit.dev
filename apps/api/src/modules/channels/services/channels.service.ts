@@ -46,7 +46,7 @@ class ChannelsService {
         )
       )
       .leftJoin(scheduledPostsTable, eq(channelsTable.id, scheduledPostsTable.channelId))
-      .groupBy(channelsTable.id)
+      .groupBy(channelsTable.id, socialMediaIntegrationsTable.id)
       .limit(1)
       .then((rows) => rows[0])
       .then((item) => {
