@@ -29,6 +29,7 @@ export function PostsHeader() {
       return res
     },
     onSuccess: (res) => {
+      router.refresh()
       router.push(`/posts/${res.data.id}`)
     },
   })

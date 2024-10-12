@@ -4,9 +4,17 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { type Platform, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
+import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
+import { isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
 import { Button } from '@bulkit/ui/components/ui/button'
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@bulkit/ui/components/ui/dropdown-menu'
+import {
+  ResponsiveConfirmDialog,
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
@@ -16,15 +24,17 @@ import {
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
 import { useFormContext, type FieldPath } from 'react-hook-form'
-import { LuSend } from 'react-icons/lu'
-import { PiChat, PiEye } from 'react-icons/pi'
+import { LuMoreVertical, LuSend, LuTrash } from 'react-icons/lu'
+import { PiEye } from 'react-icons/pi'
 
 export type PostDetailHeaderProps = {
   post: Post
 }
 export function PostDetailHeader({ post }: PostDetailHeaderProps) {
   const form = useFormContext()
+  const router = useRouter()
 
   const publishMutation = useMutation({
     mutationFn: apiClient.posts({ id: post.id }).publish.patch,
@@ -50,7 +60,19 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: apiClient.posts({ id: post.id }).
+    mutationFn: apiClient.posts({ id: post.id }).delete,
+    onSuccess: (res) => {
+      if (!res.error) {
+        toast.success('Post deleted')
+        router.refresh()
+        router.push('/posts')
+        return
+      }
+
+      toast.error('Failed to delete post', {
+        description: res.error.value.message,
+      })
+    },
   })
 
   return (
@@ -91,6 +113,37 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
               </div>
             </ResponsiveDialogContent>
           </ResponsiveDialog>
+
+          {isPostDeletable(post) && (
+            <DropdownMenu>
+              <ResponsiveConfirmDialog
+                title='Delete post'
+                confirmLabel='Delete'
+                onConfirm={() => deleteMutation.mutateAsync(undefined).then((r) => !r.error)}
+                cancelLabel='Cancel'
+                content='Are you sure you want to delete this post?'
+              >
+                <DropdownMenuTrigger asChild>
+                  <div>
+                    <HeaderButton
+                      variant='outline'
+                      icon={<LuMoreVertical />}
+                      label='Options'
+                      onClick={() => console.log('click')}
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <ResponsiveDialogTrigger asChild>
+                    <DropdownMenuItem className='text-destructive gap-2'>
+                      <LuTrash />
+                      Delete
+                    </DropdownMenuItem>
+                  </ResponsiveDialogTrigger>
+                </DropdownMenuContent>
+              </ResponsiveConfirmDialog>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* {post.status === 'draft' ? (

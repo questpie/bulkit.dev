@@ -52,7 +52,9 @@ export const threadPostsTable = pgTable(
   {
     id: primaryKeyCol('id'),
     postId: text('post_id')
-      .references(() => postsTable.id)
+      .references(() => postsTable.id, {
+        onDelete: 'cascade',
+      })
       .notNull(),
     order: integer('order').notNull(),
     text: text('text').notNull(),

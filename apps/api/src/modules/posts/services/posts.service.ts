@@ -22,7 +22,7 @@ import {
 } from '@bulkit/api/modules/resources/services/resources.service'
 import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
-import { generateNewPostName } from '@bulkit/shared/modules/posts/post.utils'
+import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
 import type {
   PostChannel,
   PostSchema,
@@ -798,7 +798,7 @@ export class PostsService {
       return false // Post not found or not in a deletable state
     }
 
-    if (!['draft', 'scheduled'].includes(post.status)) {
+    if (!isPostDeletable(post)) {
       throw new PostCantBeDeletedException(post.id)
     }
 
@@ -821,13 +821,15 @@ export class PostsService {
       .select({ resourceId: resourcesTable.id })
       .from(resourcesTable)
       .leftJoin(regularPostMediaTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
+      .innerJoin(regularPostsTable, eq(regularPostsTable.id, regularPostMediaTable.regularPostId))
       .leftJoin(threadMediaTable, eq(threadMediaTable.resourceId, resourcesTable.id))
+      .innerJoin(threadPostsTable, eq(threadPostsTable.id, threadMediaTable.threadPostId))
       .leftJoin(reelPostsTable, eq(reelPostsTable.resourceId, resourcesTable.id))
       .leftJoin(storyPostsTable, eq(storyPostsTable.resourceId, resourcesTable.id))
       .where(
         or(
-          eq(regularPostMediaTable.regularPostId, postId),
-          eq(threadMediaTable.threadPostId, postId),
+          eq(regularPostsTable.postId, postId),
+          eq(threadPostsTable.postId, postId),
           eq(reelPostsTable.postId, postId),
           eq(storyPostsTable.postId, postId)
         )

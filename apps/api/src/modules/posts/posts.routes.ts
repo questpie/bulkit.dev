@@ -282,6 +282,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           return ctx.error(400, { message: err.message })
         }
 
+        appLogger.error(err)
         return ctx.error(500, { message: 'Error while deleting post' })
       }
     },
