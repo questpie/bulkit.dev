@@ -382,8 +382,12 @@ export class PostsService {
 
         scheduledPost: {
           id: scheduledPostsTable.id,
+          status: scheduledPostsTable.status,
           scheduledAt: scheduledPostsTable.scheduledAt,
+          startedAt: scheduledPostsTable.startedAt,
           publishedAt: scheduledPostsTable.publishedAt,
+          failedAt: scheduledPostsTable.failedAt,
+          failureReason: scheduledPostsTable.failureReason,
           parentPostId: scheduledPostsTable.parentPostId,
           parentPostSettings: scheduledPostsTable.parentPostSettings,
           repostSettings: scheduledPostsTable.repostSettings,
@@ -776,26 +780,12 @@ export class PostsService {
       orgId: string
       postId: string
     }
-  ): Promise<boolean> {
+  ): Promise<null | Post> {
     // First, check if the post exists and is in a deletable state
-    const post = await db
-      .select({
-        id: postsTable.id,
-        status: postsTable.status,
-      })
-      .from(postsTable)
-      .where(
-        and(
-          eq(postsTable.id, opts.postId),
-          eq(postsTable.organizationId, opts.orgId)
-          // inArray(postsTable.status, ['draft', 'scheduled'])
-        )
-      )
-      .limit(1)
-      .then((res) => res[0])
+    const post = await this.getById(db, opts)
 
     if (!post) {
-      return false // Post not found or not in a deletable state
+      return null // Post not found or not in a deletable state
     }
 
     if (!isPostDeletable(post)) {
@@ -808,7 +798,7 @@ export class PostsService {
     // Delete the post
     await db.delete(postsTable).where(eq(postsTable.id, opts.postId)).execute()
 
-    return true
+    return post
   }
 
   private async deleteAssociatedResources(

@@ -14,7 +14,11 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 import type { Static } from 'elysia'
-import { POST_STATUS, POST_TYPE } from '../../../../../packages/shared/src/constants/db.constants'
+import {
+  POST_STATUS,
+  POST_TYPE,
+  SCHEDULED_POST_STATUS,
+} from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { channelsTable } from './channels.table'
 import { commentsTable } from './comments.table'
@@ -170,8 +174,13 @@ export const scheduledPostsTable = pgTable(
     channelId: text('channel_id')
       .references(() => channelsTable.id)
       .notNull(),
+
+    status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('scheduled'),
+
     scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true }),
+    failedAt: timestamp('failed_at', { mode: 'string', withTimezone: true }),
+    startedAt: timestamp('started_at', { mode: 'string', withTimezone: true }),
     failureReason: text('failure_reason'),
 
     parentPostId: text('parent_post_id'),

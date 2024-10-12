@@ -276,6 +276,16 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           return ctx.error(404, { message: 'Post not found' })
         }
 
+        // remove jobs of scheduled posts
+        for (const channel of deleted.channels) {
+          if (channel.scheduledPost?.status === 'scheduled') {
+            /**
+             * This will throw if scheduled job is not in queue, but we should not fail the request because of it
+             */
+            await publishPostJob.remove(channel.scheduledPost.id).catch(() => null)
+          }
+        }
+
         return { success: true }
       } catch (err) {
         if (err instanceof PostCantBeDeletedException) {

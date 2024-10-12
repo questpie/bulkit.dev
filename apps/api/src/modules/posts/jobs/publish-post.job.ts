@@ -7,8 +7,9 @@ import { injectChannelService } from '@bulkit/api/modules/channels/services/chan
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
 import { Type } from '@sinclair/typebox'
-import { and, count, eq, getTableColumns, isNotNull } from 'drizzle-orm'
+import { and, count, eq, getTableColumns, isNotNull, or } from 'drizzle-orm'
 
+// TODO: implement timeout mechanism maybe
 export const publishPostJob = jobFactory.createJob({
   name: 'publish-post',
   schema: Type.Object({
@@ -27,12 +28,30 @@ export const publishPostJob = jobFactory.createJob({
         ...getTableColumns(scheduledPostsTable),
       })
       .from(scheduledPostsTable)
-      .where(and(eq(scheduledPostsTable.id, job.data.scheduledPostId)))
+      .where(
+        and(
+          eq(scheduledPostsTable.id, job.data.scheduledPostId),
+          or(eq(scheduledPostsTable.status, 'scheduled'), eq(scheduledPostsTable.status, 'failed'))
+        )
+      )
       .then((r) => r[0])
 
     if (!scheduledPost) {
       throw new UnrecoverableError(`Scheduled post not found: ${job.data.scheduledPostId}`)
     }
+
+    // mark scheduled post as running
+    await db
+      .update(scheduledPostsTable)
+      .set({
+        status: 'running',
+        startedAt: new Date().toISOString(),
+        failedAt: null,
+        failureReason: null,
+      })
+      .where(eq(scheduledPostsTable.id, scheduledPost.id))
+
+    // scheduled post must be in scheduled state
 
     const post = await postService.getById(db, {
       postId: scheduledPost.postId,
@@ -72,6 +91,7 @@ export const publishPostJob = jobFactory.createJob({
       await db
         .update(scheduledPostsTable)
         .set({
+          status: 'published',
           publishedAt: new Date().toISOString(),
         })
         .where(eq(scheduledPostsTable.id, scheduledPost.id))
@@ -95,14 +115,48 @@ export const publishPostJob = jobFactory.createJob({
         )
         .then((r) => r[0])
 
-      if (publishedPosts && publishedPosts.count === post.channels.length) {
+      if (publishedPosts) {
         await db
           .update(postsTable)
           .set({
-            status: 'published',
+            status:
+              publishedPosts.count === post.channels.length ? 'published' : 'partially-published',
           })
           .where(eq(postsTable.id, post.id))
       }
     })
+  },
+
+  events: {
+    onStalled: async (job) => {
+      // mark scheduled post as failed, reason job stalled
+      const { db } = iocResolve(ioc.use(injectDatabase))
+
+      await db
+        .update(scheduledPostsTable)
+        .set({
+          status: 'failed',
+          failedAt: new Date().toISOString(),
+          failureReason: 'Job stalled',
+        })
+        .where(eq(scheduledPostsTable.id, job))
+    },
+
+    onFailed: async (job, error) => {
+      const scheduledPostId = typeof job === 'string' ? job : job?.data.scheduledPostId
+      if (!scheduledPostId) {
+        return
+      }
+      // mark scheduled post as failed, reason job failed
+      const { db } = iocResolve(ioc.use(injectDatabase))
+      await db
+        .update(scheduledPostsTable)
+        .set({
+          status: 'failed',
+          failedAt: new Date().toISOString(),
+          failureReason: error.message,
+        })
+        .where(eq(scheduledPostsTable.id, scheduledPostId))
+    },
   },
 })

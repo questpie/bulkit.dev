@@ -1,4 +1,9 @@
-import { PLATFORMS, POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import {
+  PLATFORMS,
+  POST_STATUS,
+  POST_TYPE,
+  SCHEDULED_POST_STATUS,
+} from '@bulkit/shared/constants/db.constants'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { Nullable, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
@@ -35,8 +40,12 @@ export const PostChannelSchema = Type.Object({
   scheduledPost: Nullable(
     Type.Object({
       id: Type.String({}),
+      status: StringLiteralEnum(SCHEDULED_POST_STATUS),
       scheduledAt: Nullable(Type.String({})),
       publishedAt: Nullable(Type.String({})),
+      failedAt: Nullable(Type.String({})),
+      failureReason: Nullable(Type.String({})),
+      startedAt: Nullable(Type.String({})),
       parentPostId: Nullable(Type.String({})),
       parentPostSettings: Nullable(ParentPostSettingsSchema),
       repostSettings: Nullable(RepostSettingsSchema),

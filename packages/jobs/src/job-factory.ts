@@ -32,7 +32,7 @@ export type BaseJobOptions<T extends TSchema = TAnySchema> = {
   }
 
   events?: {
-    [key in keyof WorkerListener<Static<T>> as `on${Capitalize<key>}`]: WorkerListener<
+    [key in keyof WorkerListener<Static<T>> as `on${Capitalize<key>}`]?: WorkerListener<
       Static<T>
     >[key]
   }
@@ -96,7 +96,8 @@ export class JobFactory {
 
       for (const event in options.events) {
         const rawEventName = event.replace(/^on/, '') as keyof WorkerListener<Static<T>>
-        worker.on(rawEventName, options.events[event as keyof typeof options.events])
+        if (!options.events[event as keyof typeof options.events]) continue
+        worker.on(rawEventName, options.events[event as keyof typeof options.events]!)
       }
 
       appLogger.info('Worker registered', options.name)
