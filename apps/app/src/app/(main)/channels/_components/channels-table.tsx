@@ -16,7 +16,6 @@ import {
   ResponsiveConfirmDialog,
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
-import { Separator } from '@bulkit/ui/components/ui/separator'
 import {
   Table,
   TableBody,
@@ -124,46 +123,46 @@ export function ChannelTableRow(props: ChannelTableRowProps) {
               View
             </Link>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='outline' className='h-8 w-8 p-0'>
-                <LuMoreVertical className='h-4 w-4' />
-                <span className='sr-only'>Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align='end'>
-              {props.channel.url ? (
-                <DropdownMenuItem asChild>
-                  <Link href={props.channel.url}>
-                    <LuExternalLink className='mr-2 h-4 w-4' />
+          <ResponsiveConfirmDialog
+            title='Delete channel'
+            confirmLabel='Delete'
+            cancelLabel='Cancel'
+            content='Are you sure you want to delete this channel?'
+            onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant='outline' className='h-8 w-8 p-0'>
+                  <LuMoreVertical className='h-4 w-4' />
+                  <span className='sr-only'>Open menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align='end'>
+                {props.channel.url ? (
+                  <DropdownMenuItem asChild>
+                    <Link href={props.channel.url}>
+                      <LuExternalLink className='mr-2 h-4 w-4' />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem disabled>
+                    <LuLink2Off className='mr-2 h-4 w-4' />
                     <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem disabled>
-                  <LuLink2Off className='mr-2 h-4 w-4' />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-              )}
+                  </DropdownMenuItem>
+                )}
 
-              <DropdownMenuSeparator />
+                <DropdownMenuSeparator />
 
-              <ResponsiveConfirmDialog
-                title='Delete channel'
-                confirmLabel='Delete'
-                cancelLabel='Cancel'
-                content='Are you sure you want to delete this channel?'
-                onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
-              >
                 <ResponsiveDialogTrigger className='w-full text-left' asChild>
                   <DropdownMenuItem className='text-destructive'>
                     <LuTrash className='mr-2 h-4 w-4' />
                     <span>Delete</span>
                   </DropdownMenuItem>
                 </ResponsiveDialogTrigger>
-              </ResponsiveConfirmDialog>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </ResponsiveConfirmDialog>
         </div>
       </TableCell>
     </TableRow>

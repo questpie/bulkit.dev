@@ -1,15 +1,26 @@
 'use client'
-import type { apiClient, RouteOutput } from '@bulkit/app/api/api.client'
+import { apiClient, type RouteOutput } from '@bulkit/app/api/api.client'
 import {
   POST_STATUS_TO_BADGE_VARIANT,
   POST_STATUS_TO_COLOR,
   POST_TYPE_ICON,
 } from '@bulkit/app/app/(main)/posts/post.constants'
+import { isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@bulkit/ui/components/ui/dropdown-menu'
+import {
+  ResponsiveConfirmDialog,
+  ResponsiveDialogTrigger,
+} from '@bulkit/ui/components/ui/responsive-dialog'
 import {
   Table,
   TableBody,
@@ -19,8 +30,10 @@ import {
   TableRow,
 } from '@bulkit/ui/components/ui/table'
 import { cn } from '@bulkit/ui/lib'
+import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
-import { LuEye } from 'react-icons/lu'
+import { useRouter } from 'next/navigation'
+import { LuEye, LuMoreVertical, LuTrash } from 'react-icons/lu'
 
 export type Post = RouteOutput<typeof apiClient.posts.index.get>['data'][number]
 
@@ -61,6 +74,14 @@ type PostTableRowProps = {
 
 export function PostTableRow(props: PostTableRowProps) {
   const Icon = POST_TYPE_ICON[props.post.type]
+  const router = useRouter()
+
+  const deleteMutation = useMutation({
+    mutationFn: apiClient.posts({ id: props.post.id }).delete,
+    onSuccess: () => {
+      router.refresh()
+    },
+  })
 
   return (
     <TableRow key={props.post.id}>
@@ -106,13 +127,39 @@ export function PostTableRow(props: PostTableRowProps) {
         {new Date(props.post.createdAt).toLocaleDateString()}
       </TableCell>
       <TableCell>
-        <div className='flex justify-center  gap-2'>
+        <div className='flex justify-start items-center gap-2'>
           <Button variant='secondary' asChild>
             <Link href={`/posts/${props.post.id}`}>
               <LuEye className='h-4 w-4' />
               View
             </Link>
           </Button>
+          {isPostDeletable(props.post) && (
+            <ResponsiveConfirmDialog
+              title='Delete Post'
+              confirmLabel='Delete'
+              cancelLabel='Cancel'
+              content='Are you sure you want to delete this post?'
+              onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant='outline' className='h-8 w-8 p-0'>
+                    <LuMoreVertical className='h-4 w-4' />
+                    <span className='sr-only'>Open menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align='end'>
+                  <ResponsiveDialogTrigger className='w-full text-left' asChild>
+                    <DropdownMenuItem className='text-destructive'>
+                      <LuTrash className='mr-2 h-4 w-4' />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </ResponsiveDialogTrigger>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ResponsiveConfirmDialog>
+          )}
         </div>
       </TableCell>
     </TableRow>
