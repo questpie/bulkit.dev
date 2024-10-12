@@ -6,6 +6,7 @@ import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-util
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { Type } from '@sinclair/typebox'
 import { and, count, eq, getTableColumns, isNotNull, or } from 'drizzle-orm'
 
@@ -20,7 +21,6 @@ export const publishPostJob = jobFactory.createJob({
     const { postService, db, channelsService } = iocResolve(
       ioc.use(injectDatabase).use(injectPostService).use(injectChannelService)
     )
-
     job.log('Getting scheduled post')
 
     const scheduledPost = await db
@@ -61,7 +61,7 @@ export const publishPostJob = jobFactory.createJob({
       throw new UnrecoverableError(`Post of scheduled post not found: ${scheduledPost.postId}`)
     }
     // Check if the post is ready to be published
-    if (post.status !== 'scheduled') {
+    if (post.status !== 'scheduled' && post.status !== 'partially-published') {
       throw new UnrecoverableError(`Post must by in scheduled state to be published: ${post.id}`)
     }
 
@@ -129,6 +129,8 @@ export const publishPostJob = jobFactory.createJob({
 
   events: {
     onStalled: async (job) => {
+      if (typeof job === 'string') return
+
       // mark scheduled post as failed, reason job stalled
       const { db } = iocResolve(ioc.use(injectDatabase))
 
@@ -139,7 +141,7 @@ export const publishPostJob = jobFactory.createJob({
           failedAt: new Date().toISOString(),
           failureReason: 'Job stalled',
         })
-        .where(eq(scheduledPostsTable.id, job))
+        .where(and(eq(scheduledPostsTable.id, job), eq(scheduledPostsTable.status, 'running')))
     },
 
     onFailed: async (job, error) => {
@@ -156,7 +158,12 @@ export const publishPostJob = jobFactory.createJob({
           failedAt: new Date().toISOString(),
           failureReason: error.message,
         })
-        .where(eq(scheduledPostsTable.id, scheduledPostId))
+        .where(
+          and(
+            eq(scheduledPostsTable.id, scheduledPostId),
+            eq(scheduledPostsTable.status, 'running')
+          )
+        )
     },
   },
 })

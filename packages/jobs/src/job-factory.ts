@@ -95,7 +95,9 @@ export class JobFactory {
       )
 
       for (const event in options.events) {
-        const rawEventName = event.replace(/^on/, '') as keyof WorkerListener<Static<T>>
+        const rawEventName = event.replace(/^on/, '').toLowerCase() as keyof WorkerListener<
+          Static<T>
+        >
         if (!options.events[event as keyof typeof options.events]) continue
         worker.on(rawEventName, options.events[event as keyof typeof options.events]!)
       }
