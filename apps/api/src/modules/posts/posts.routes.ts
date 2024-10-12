@@ -146,12 +146,6 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     '/',
     async (ctx) => {
       return ctx.db.transaction(async (trx) => {
-        const errors = await ctx.postService.validate(ctx.body)
-
-        if (errors) {
-          return ctx.error(400, errors)
-        }
-
         const post = await ctx.postService.update(trx, {
           orgId: ctx.organization!.id,
           post: ctx.body,
@@ -161,13 +155,20 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           return ctx.error(404, { message: 'Post not found' })
         }
 
+        const errors = await ctx.postService.validate(post)
+        console.log(errors, post)
+
+        if (errors) {
+          return ctx.error(400, { errors, post })
+        }
+
         return post
       })
     },
     {
       body: PostSchema,
       response: {
-        400: PostValidationResultSchema,
+        400: t.Object({ errors: PostValidationResultSchema, post: PostSchema }),
         404: t.Object({ message: t.String() }),
         200: PostSchema,
       },
@@ -188,42 +189,67 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       // validate
       const errors = await ctx.postService.validate(post)
       if (errors) {
-        return ctx.error(400, errors)
+        return ctx.error(400, { errors, message: 'Post validation failed' })
       }
 
-      for (const channel of post.channels) {
-        if (!channel.scheduledPost) continue
-        const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+      const areAllScheduledPostsDraft = post.channels.every(
+        (channel) => channel.scheduledPost?.status === 'draft'
+      )
 
-        let delay = 1000
+      if (post.status !== 'draft' || !areAllScheduledPostsDraft) {
+        // TODO: implement the reschedule and unschedule functionality
+        return ctx.error(400, {
+          message:
+            "Cannot publish post already scheduled post. Please use the 'reschedule' functionality instead",
+        })
+      }
 
-        if (scheduledAt) {
-          delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
+      await ctx.db.transaction(async (trx) => {
+        for (const channel of post.channels) {
+          if (!channel.scheduledPost) continue
+          const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+
+          let delay = 1000
+
+          if (scheduledAt) {
+            delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
+          }
+
+          await trx.transaction(async (trx) => {
+            // mark scheduledPost as status scheduled
+            await trx
+              .update(scheduledPostsTable)
+              .set({
+                status: 'scheduled',
+              })
+              .where(eq(scheduledPostsTable.id, channel.scheduledPost!.id))
+
+            await publishPostJob.invoke(
+              {
+                scheduledPostId: channel.scheduledPost!.id,
+              },
+              {
+                jobId: channel.scheduledPost!.id,
+                delay,
+                attempts: 3,
+                backoff: {
+                  type: 'exponential',
+                  delay: 1000,
+                },
+              }
+            )
+          })
         }
 
-        await publishPostJob.invoke(
-          {
-            scheduledPostId: channel.scheduledPost.id,
-          },
-          {
-            jobId: channel.scheduledPost.id,
-            delay,
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 1000,
-            },
-          }
-        )
-      }
-
-      await ctx.db
-        .update(postsTable)
-        .set({
-          status: 'scheduled',
-        })
-        .where(eq(postsTable.id, post.id))
-
+        await trx
+          .update(postsTable)
+          .set({
+            // if we added another channel to a scheduled post and again published it,
+            //  we want to keep existing status
+            status: post.status === 'draft' ? 'scheduled' : post.status,
+          })
+          .where(eq(postsTable.id, post.id))
+      })
       return {
         ...post,
         status: 'scheduled',
@@ -231,7 +257,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     },
     {
       response: {
-        400: PostValidationResultSchema,
+        400: t.Object({ errors: t.Optional(PostValidationResultSchema), message: t.String() }),
         404: t.Object({ message: t.String() }),
         200: PostSchema,
       },

@@ -862,11 +862,14 @@ export class PostsService {
     // const platformsToValidate = post.platforms.length ? post.platforms : PLATFORMS
     const platformsToValidate = dedupe(post.channels, (c) => c.platform).map((c) => c.platform)
 
-    const validationResults: Static<typeof PostValidationResultSchema> = Object.fromEntries(
+    const validationResults = Object.fromEntries(
       PLATFORMS.map((platform) => [platform, []])
-    ) as unknown as Static<typeof PostValidationResultSchema>
+    ) as unknown as Static<typeof PostValidationResultSchema>['platforms']
 
-    let isInvalid = false
+    const commonErrors = await this.validateCommon(post)
+
+    let isInvalid = commonErrors.length > 0
+
     for (const platform of platformsToValidate) {
       const errors = await this.validatePost(post, platform)
       if (errors.length) {
@@ -875,7 +878,44 @@ export class PostsService {
       }
     }
 
-    return isInvalid ? validationResults : null
+    return isInvalid
+      ? {
+          common: commonErrors,
+          platforms: validationResults,
+        }
+      : null
+  }
+
+  private async validateCommon(post: Post): Promise<Static<typeof PostValidationErrorSchema>[]> {
+    const errors: Static<typeof PostValidationErrorSchema>[] = []
+    // Common validations
+    if (post.name.length > 100) {
+      errors.push({ path: 'name', message: 'Post name exceeds 100 characters limit' })
+    }
+
+    if (post.channels.length === 0) {
+      errors.push({ path: 'channels', message: 'Post must have at least one channel' })
+    }
+    switch (post.type) {
+      case 'reel':
+        if (!post.resource) {
+          errors.push({
+            path: 'resource',
+            message: 'Reel media is required',
+          })
+        }
+        break
+      case 'story':
+        if (!post.resource) {
+          errors.push({
+            path: 'resource',
+            message: 'Story media is required',
+          })
+        }
+        break
+    }
+
+    return errors
   }
 
   private async validatePost(
@@ -884,11 +924,6 @@ export class PostsService {
   ): Promise<Static<typeof PostValidationErrorSchema>[]> {
     const settings = DEFAULT_PLATFORM_SETTINGS[platform]
     const errors: Static<typeof PostValidationErrorSchema>[] = []
-
-    // Common validations
-    if (post.name.length > 100) {
-      errors.push({ path: 'name', message: 'Post name exceeds 100 characters limit' })
-    }
 
     switch (post.type) {
       case 'post':
@@ -938,7 +973,6 @@ export class PostsService {
             message: `Unsupported media type for reel: ${post.resource.type}`,
           })
         }
-        // Add size check for reel resource if size is available
         break
 
       case 'thread': {
@@ -1028,12 +1062,7 @@ export class PostsService {
       }
 
       case 'story':
-        if (!post.resource && settings.minMediaPerPost > 0) {
-          errors.push({
-            path: 'resource',
-            message: `Story requires at least ${settings.minMediaPerPost} media item`,
-          })
-        } else if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
           errors.push({
             path: 'resource.type',
             message: `Unsupported media type for story: ${post.resource.type}`,

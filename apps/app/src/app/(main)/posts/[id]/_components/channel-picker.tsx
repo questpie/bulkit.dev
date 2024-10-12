@@ -85,6 +85,10 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({
             publishedAt: null,
             repostSettings: null,
             scheduledAt: null,
+            failedAt: null,
+            status: 'scheduled',
+            failureReason: null,
+            startedAt: null,
           },
         } satisfies Channel
       }),

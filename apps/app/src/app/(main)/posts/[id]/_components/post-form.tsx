@@ -8,7 +8,7 @@ import {
   ResourceButtonUpload,
   ResourceDropzone,
 } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-uploader'
-import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
+import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils'
 import {
   getPostSchemaFromType,
   PostDetailsSchema,
@@ -107,22 +107,10 @@ export function PostFormProvider(props: PostFormProviderProps) {
   const updateMutation = useMutation({
     mutationFn: apiClient.posts.index.put,
     onSuccess: (res) => {
-      if (res.error) {
-        if (res.error.status === 400) {
-          toast.error('Failed to save post. Please check the form for errors.')
-          for (const platform in res.error.value) {
-            const platformErrors = res.error.value[platform as Platform]
-            for (const error of platformErrors) {
-              form.setError(error.path as FieldPath<Post>, {
-                type: 'manual',
-                message: `${PLATFORM_TO_NAME[platform as Platform]}: ${error.message}`,
-              })
-            }
-          }
-        }
-
-        return
+      if (res.error?.status === 400 && res.error.value.errors) {
+        setPostValidationErrors(form, res.error.value.errors)
       }
+
       // form.reset(res.data)
       // router.refresh()
     },

@@ -24,7 +24,13 @@ export const POST_TYPE_NAME = {
 export const POST_STATUS = ['draft', 'scheduled', 'partially-published', 'published'] as const
 export type PostStatus = (typeof POST_STATUS)[number]
 
-export const SCHEDULED_POST_STATUS = ['scheduled', 'running', 'published', 'failed'] as const
+export const SCHEDULED_POST_STATUS = [
+  'draft',
+  'scheduled',
+  'running',
+  'published',
+  'failed',
+] as const
 export type ScheduledPostStatus = (typeof SCHEDULED_POST_STATUS)[number]
 export const PLATFORMS = [
   'instagram',

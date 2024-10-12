@@ -123,7 +123,7 @@ export const PostValidationErrorSchema = Type.Object({
   message: Type.String(),
 })
 
-export const PostValidationResultSchema = Type.Record(
-  StringLiteralEnum(PLATFORMS),
-  Type.Array(PostValidationErrorSchema)
-)
+export const PostValidationResultSchema = Type.Object({
+  common: Type.Array(PostValidationErrorSchema),
+  platforms: Type.Record(StringLiteralEnum(PLATFORMS), Type.Array(PostValidationErrorSchema)),
+})

@@ -175,7 +175,7 @@ export const scheduledPostsTable = pgTable(
       .references(() => channelsTable.id)
       .notNull(),
 
-    status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('scheduled'),
+    status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('draft'),
 
     scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
     publishedAt: timestamp('published_at', { mode: 'string', withTimezone: true }),

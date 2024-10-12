@@ -4,6 +4,7 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
+import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils'
 import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
 import { isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
 import { Button } from '@bulkit/ui/components/ui/button'
@@ -41,20 +42,13 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
     onSuccess: (res) => {
       if (!res.error) {
         toast.success('Post published')
+        router.refresh()
         return
       }
 
       if (res.error.status === 400) {
-        toast.error('Failed to publish post. Please check the form for errors.')
-        for (const platform in res.error.value) {
-          const platformErrors = res.error.value[platform as Platform]
-          for (const error of platformErrors) {
-            form.setError(error.path as FieldPath<Post>, {
-              type: 'manual',
-              message: `${PLATFORM_TO_NAME[platform as Platform]}: ${error.message}`,
-            })
-          }
-        }
+        toast.error('Publish failed', { description: res.error.value.message })
+        if (res.error.value.errors) setPostValidationErrors(form, res.error.value.errors)
       }
     },
   })
