@@ -1,3 +1,4 @@
+import { httpError } from '@bulkit/api/common/http-error-handler'
 import { pinioLogger } from '@bulkit/api/common/logger'
 import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -14,6 +15,7 @@ export const api = new Elysia()
   // TODO: add logger level to env
   .use(ip())
   // .use(applyRateLimit())
+  .use(httpError())
   .use(
     pinioLogger.into({
       customProps(ctx) {

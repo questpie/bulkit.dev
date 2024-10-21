@@ -1,0 +1,16 @@
+{
+  "name": "@bulkit/seed",
+  "module": "src/index.ts",
+  "files": ["src"],
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0",
+    "drizzle-orm": "^0.33.0"
+  },
+  "dependencies": {
+    "@bulkit/shared": "workspace:*"
+  }
+}

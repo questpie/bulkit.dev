@@ -1,3 +1,4 @@
+import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
@@ -6,6 +7,7 @@ import { lucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { and, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
@@ -29,7 +31,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
           .limit(1)
 
         if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
-          return error(400, { message: 'Invalid token' })
+          throw HttpError.BadRequest('Invalid token')
         }
 
         const user = await trx
@@ -40,7 +42,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
           .then((r) => r[0])
 
         if (!user) {
-          return error(400, { message: 'Invalid user' })
+          throw HttpError.BadRequest('Invalid user')
         }
 
         const existingSuperAdmin = await trx
@@ -72,9 +74,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
         window: 60,
       },
       response: {
-        400: t.Object({
-          message: t.String(),
-        }),
+        400: HttpErrorSchema(),
         200: t.Object({
           session: t.Object({
             id: t.String(),

@@ -1,16 +1,18 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { emailVerificationsTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
 import { mailClient } from '@bulkit/api/mail/mail.client'
+import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import MailMagicLink from '@bulkit/transactional/emails/mail-magic-link'
-import { and, eq } from 'drizzle-orm'
 import { Elysia, t } from 'elysia'
-import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
+import { HttpError } from 'elysia-http-error'
+import { createDate, TimeSpan } from 'oslo'
 
 export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
   .use(injectDatabase)
+  .use(injectAuthService)
   .use(applyRateLimit({ limit: 10, window: 60 }))
   .post(
     '/',
@@ -63,72 +65,15 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
   )
   .get(
     '/verify',
-    async ({ query, db, error, redirect }) => {
+    async ({ query, db, error, redirect, authService }) => {
       return db.transaction(async (trx) => {
-        const { token } = query
+        const validatedToken = await authService.validateMagicLinkToken(trx, query.token)
 
-        const storedToken = await trx
-          .select()
-          .from(emailVerificationsTable)
-          .where(
-            and(
-              eq(emailVerificationsTable.id, token),
-              eq(emailVerificationsTable.type, 'magic-link')
-            )
-          )
-          .limit(1)
-          .then((r) => r[0])
-
-        if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
-          return error(400, 'Invalid token')
-        }
-
-        let user = await trx
-          .select()
-          .from(usersTable)
-          .where(eq(usersTable.email, storedToken.email))
-          .limit(1)
-          .then((r) => r[0])
-
+        const user = await authService.findOrCreate(trx, validatedToken.email)
         if (!user) {
-          const name = storedToken.email.split('@')[0]
-            ? `${storedToken.email.split('@')[0]}`
-            : `User ${crypto.getRandomValues(new Uint8Array(2)).join('')}`
-
-          // Create a new user if they don't exist
-          user = await trx
-            .insert(usersTable)
-            .values({ email: storedToken.email, name })
-            .returning()
-            .then((r) => r[0]!)
+          throw HttpError.BadRequest('Invalid user')
         }
-
-        // Delete the used token
-        await trx.delete(emailVerificationsTable).where(and(eq(emailVerificationsTable.id, token)))
-
-        const existingSuperAdmin = await trx
-          .select()
-          .from(superAdminsTable)
-          .limit(1)
-          .then((r) => r[0])
-        if (!existingSuperAdmin && user) {
-          await trx.insert(superAdminsTable).values({ userId: user.id })
-        }
-
-        /**
-         * Create short-lived auth token user can use to create session at POST /auth/session
-         * This is here for a reason, that we want this to work also with mobile auth, so we cannot just set cookie here
-         * And we also don't want to send raw token in redirectTo query params, because of security reasons
-         */
-        const authToken = await trx
-          .insert(emailVerificationsTable)
-          .values({
-            email: user!.email,
-            type: 'auth-code',
-            expiresAt: createDate(new TimeSpan(5, 'm')),
-          })
-          .returning()
-          .then((r) => r[0]!)
+        const authToken = await authService.generateAuthCode(trx, user.email!)
 
         if (!query.redirectTo) {
           return {

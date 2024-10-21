@@ -2,6 +2,7 @@ import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 import { ip } from 'elysia-ip'
 import { injectRedis } from '@bulkit/api/redis/redis-clients'
+import { HttpError } from 'elysia-http-error'
 
 interface RateLimitOptions {
   /**
@@ -61,7 +62,7 @@ export const rateLimit = () => {
           ctx.set.headers['x-ratelimit-reset'] = String(reset)
 
           if (remaining === 0) {
-            return ctx.error(429, 'Too many requests')
+            throw HttpError.TooManyRequests()
           }
         })
       },

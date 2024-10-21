@@ -1,4 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
+import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { channelsTable, scheduledPostsTable, selectChannelSchema } from '@bulkit/api/db/db.schema'
 import { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
@@ -10,6 +11,7 @@ import { getAllowedPlatformsFromPostType } from '@bulkit/shared/modules/admin/ut
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(channelAuthRoutes)
@@ -108,7 +110,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       })
 
       if (!channel) {
-        return ctx.error(404, { message: 'Channel not found' })
+        throw HttpError.NotFound('Channel not found')
       }
 
       return channel
@@ -122,9 +124,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
       }),
       response: {
         200: selectChannelSchema,
-        404: t.Object({
-          message: t.String(),
-        }),
+        404: HttpErrorSchema(),
       },
     }
   )
@@ -140,16 +140,16 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         })
 
         if (channel) {
-          return ctx.error(404, { message: 'Channel not found' })
+          throw HttpError.NotFound('Channel not found')
         }
 
         return { message: 'Channel deleted successfully' }
       } catch (err) {
         if (err instanceof ChannelCantBeDeletedException) {
-          return ctx.error(400, { message: err.message })
+          throw HttpError.BadRequest(err.message)
         }
 
-        return ctx.error(500, { message: 'Something went wrong' })
+        throw HttpError.Internal()
       }
     },
     {
@@ -163,15 +163,9 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         200: t.Object({
           message: t.String(),
         }),
-        404: t.Object({
-          message: t.String(),
-        }),
-        400: t.Object({
-          message: t.String(),
-        }),
-        500: t.Object({
-          message: t.String(),
-        }),
+        404: HttpErrorSchema(),
+        400: HttpErrorSchema(),
+        500: HttpErrorSchema(),
       },
     }
   )
@@ -180,20 +174,16 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
     async (ctx) => {
       const { id } = ctx.params
 
-      try {
-        const channel = await ctx.channelsService.archiveById(ctx.db, {
-          id,
-          organizationId: ctx.organization!.id,
-        })
+      const channel = await ctx.channelsService.archiveById(ctx.db, {
+        id,
+        organizationId: ctx.organization!.id,
+      })
 
-        if (!channel) {
-          return ctx.error(404, { message: 'Channel not found' })
-        }
-
-        return { message: 'Channel archived successfully' }
-      } catch (err) {
-        return ctx.error(500, { message: 'Something went wrong' })
+      if (!channel) {
+        throw HttpError.NotFound('Channel not found')
       }
+
+      return { message: 'Channel archived successfully' }
     },
     {
       detail: {
@@ -206,12 +196,8 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         200: t.Object({
           message: t.String(),
         }),
-        404: t.Object({
-          message: t.String(),
-        }),
-        500: t.Object({
-          message: t.String(),
-        }),
+        404: HttpErrorSchema(),
+        500: HttpErrorSchema(),
       },
     }
   )

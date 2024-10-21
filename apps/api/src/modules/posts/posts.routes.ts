@@ -1,4 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
+import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
 import { channelsTable, postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
@@ -18,6 +19,7 @@ import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
   .use(scheduledPostsRoutes)
@@ -112,7 +114,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       })
 
       if (!post) {
-        return ctx.error(404, { message: 'Post not found' })
+        throw HttpError.NotFound('Post not found')
       }
 
       return post
@@ -122,7 +124,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         id: t.String(),
       }),
       response: {
-        404: t.Object({ message: t.String() }),
+        404: HttpErrorSchema(),
         200: PostSchema,
       },
     }
@@ -157,13 +159,13 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         })
 
         if (!post) {
-          return ctx.error(404, { message: 'Post not found' })
+          throw HttpError.NotFound('Post not found')
         }
 
         const errors = await ctx.postService.validate(post)
 
         if (errors) {
-          return ctx.error(400, { errors, post })
+          throw HttpError.BadRequest('Validation failed', { errors, post })
         }
 
         return post
@@ -172,8 +174,8 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     {
       body: PostSchema,
       response: {
-        400: t.Object({ errors: PostValidationResultSchema, post: PostSchema }),
-        404: t.Object({ message: t.String() }),
+        400: HttpErrorSchema(t.Object({ errors: PostValidationResultSchema, post: PostSchema })),
+        404: HttpErrorSchema(),
         200: PostSchema,
       },
     }
@@ -187,13 +189,13 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       })
 
       if (!post) {
-        return ctx.error(404, { message: 'Post not found' })
+        throw HttpError.NotFound('Post not found')
       }
 
       // validate
       const errors = await ctx.postService.validate(post)
       if (errors) {
-        return ctx.error(400, { errors, message: 'Post validation failed' })
+        throw HttpError.BadGateway('Post validation failed', { errors })
       }
 
       const areAllScheduledPostsDraft = post.channels.every(
@@ -202,10 +204,9 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
 
       if (post.status !== 'draft' || !areAllScheduledPostsDraft) {
         // TODO: implement the reschedule and unschedule functionality
-        return ctx.error(400, {
-          message:
-            "Cannot publish post already scheduled post. Please use the 'reschedule' functionality instead",
-        })
+        throw HttpError.BadGateway(
+          "Cannot publish post already scheduled post. Please use the 'reschedule' functionality instead"
+        )
       }
 
       await ctx.db.transaction(async (trx) => {
@@ -261,8 +262,8 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     },
     {
       response: {
-        400: t.Object({ errors: t.Optional(PostValidationResultSchema), message: t.String() }),
-        404: t.Object({ message: t.String() }),
+        400: HttpErrorSchema(t.Object({ errors: t.Optional(PostValidationResultSchema) })),
+        404: HttpErrorSchema(),
         200: PostSchema,
       },
     }
@@ -275,7 +276,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       })
 
       if (!post) {
-        return ctx.error(404, { message: 'Post not found' })
+        throw HttpError.NotFound('Post not found')
       }
 
       const newPost = await ctx.postService.create(trx, {
@@ -303,7 +304,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         })
 
         if (!deleted) {
-          return ctx.error(404, { message: 'Post not found' })
+          throw HttpError.NotFound('Post not found')
         }
 
         // remove jobs of scheduled posts
@@ -319,11 +320,11 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         return { success: true }
       } catch (err) {
         if (err instanceof PostCantBeDeletedException) {
-          return ctx.error(400, { message: err.message })
+          throw HttpError.BadRequest(err.message)
         }
 
         appLogger.error(err)
-        return ctx.error(500, { message: 'Error while deleting post' })
+        throw HttpError.Internal('Error while deleting post')
       }
     },
     {
@@ -331,10 +332,10 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         id: t.String(),
       }),
       response: {
-        404: t.Object({ message: t.String() }),
         200: t.Object({ success: t.Boolean() }),
-        500: t.Object({ message: t.String() }),
-        400: t.Object({ message: t.String() }),
+        404: HttpErrorSchema(),
+        500: HttpErrorSchema(),
+        400: HttpErrorSchema(),
       },
     }
   )
@@ -347,7 +348,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       })
 
       if (!archived) {
-        return ctx.error(404, { message: 'Post not found' })
+        throw HttpError.NotFound('Post not found')
       }
 
       return { success: true }
@@ -357,8 +358,8 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         id: t.String(),
       }),
       response: {
-        404: t.Object({ message: t.String() }),
         200: t.Object({ success: t.Boolean() }),
+        404: HttpErrorSchema(),
       },
     }
   )

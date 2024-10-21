@@ -107,8 +107,8 @@ export function PostFormProvider(props: PostFormProviderProps) {
   const updateMutation = useMutation({
     mutationFn: apiClient.posts.index.put,
     onSuccess: (res) => {
-      if (res.error?.status === 400 && res.error.value.errors) {
-        setPostValidationErrors(form, res.error.value.errors)
+      if (res.error?.status === 400 && res.error.value.data.errors) {
+        setPostValidationErrors(form, res.error.value.data.errors)
       }
 
       // form.reset(res.data)

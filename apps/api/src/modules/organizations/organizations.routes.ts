@@ -1,4 +1,5 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
+import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import {
   insertOrganizationInviteSchema,
@@ -14,6 +15,7 @@ import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
 export const organizationRoutes = new Elysia({
   prefix: '/organizations',
@@ -118,7 +120,7 @@ export const organizationRoutes = new Elysia({
         .then((res) => res[0])
 
       if (!organization) {
-        return error(404, { message: 'Organization not found' })
+        throw HttpError.NotFound('Organization not found')
       }
 
       return {
@@ -132,9 +134,7 @@ export const organizationRoutes = new Elysia({
           selectOrganizationSchema,
           t.Object({ role: StringLiteralEnum(USER_ROLE) }),
         ]),
-        404: t.Object({
-          message: t.String(),
-        }),
+        404: HttpErrorSchema(),
       },
     }
   )
@@ -153,7 +153,7 @@ export const organizationRoutes = new Elysia({
         .then((res) => res[0])
 
       if (!userOrg || !['owner'].includes(userOrg.role)) {
-        return error(403, { message: 'Insufficient permissions' })
+        return HttpError.Forbidden('Insufficient permissions')
       }
 
       const invite = await db
@@ -172,9 +172,7 @@ export const organizationRoutes = new Elysia({
     {
       response: {
         200: selectOrganizationInviteSchema,
-        403: t.Object({
-          message: t.String(),
-        }),
+        403: HttpErrorSchema(),
       },
       body: insertOrganizationInviteSchema,
     }
@@ -189,7 +187,7 @@ export const organizationRoutes = new Elysia({
         .then((res) => res[0])
 
       if (!invite || new Date(invite.expiresAt).getTime() < new Date().getTime()) {
-        throw new Error('Invalid or expired invite')
+        throw HttpError.BadRequest('Invalid or expired invite')
       }
 
       await db.transaction(async (trx) => {
@@ -209,9 +207,7 @@ export const organizationRoutes = new Elysia({
         200: t.Object({
           message: t.String(),
         }),
-        400: t.Object({
-          message: t.String(),
-        }),
+        400: HttpErrorSchema(),
       },
     }
   )

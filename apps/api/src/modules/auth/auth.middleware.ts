@@ -1,6 +1,7 @@
 import { lucia } from '@bulkit/api/modules/auth/lucia'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 import type { Session, User } from 'lucia'
 
 /**
@@ -30,7 +31,7 @@ export const authMiddleware = new Elysia({
       if (!value) return
       onBeforeHandle(({ auth, error }) => {
         if (!auth) {
-          return error(401, { message: 'Unauthorized' })
+          throw HttpError.Unauthorized('Unauthorized')
         }
       })
     },
@@ -43,6 +44,7 @@ export const authMiddleware = new Elysia({
  */
 export const protectedMiddleware = new Elysia({
   name: 'protected.middleware',
+  detail: {},
 })
   .use(authMiddleware)
   .guard({ isSignedIn: true })
@@ -50,6 +52,13 @@ export const protectedMiddleware = new Elysia({
     return {
       auth: auth!,
     }
+  })
+  .guard({
+    response: {
+      401: t.Object({
+        message: t.String(),
+      }),
+    },
   })
   .as('plugin')
 

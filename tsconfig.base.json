@@ -34,6 +34,7 @@
       "@bulkit/jobs/*": ["./packages/jobs/src/*"],
       "@bulkit/redis/*": ["./packages/redis/src/*"],
       "@bulkit/app/*": ["./apps/app/src/*"],
+      "@bulkit/seed/*": ["./packages/seed/src/*"],
       "@bulkit/ui/*": ["./packages/ui/src/*"],
       "@bulkit/transactional/*": ["./packages/transactional/src/*"]
     }

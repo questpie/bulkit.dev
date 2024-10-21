@@ -3,6 +3,7 @@ import { superAdminsTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { eq } from 'drizzle-orm'
 import Elysia from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
 export const adminMiddleware = new Elysia({ name: 'admin.middleware' })
   .use(injectDatabase)
@@ -15,9 +16,7 @@ export const adminMiddleware = new Elysia({ name: 'admin.middleware' })
       .limit(1)
 
     if (!superAdmin) {
-      return ctx.error(403, {
-        message: 'Forbidden',
-      })
+      throw HttpError.Forbidden('Forbidden')
     }
   })
   .as('plugin')

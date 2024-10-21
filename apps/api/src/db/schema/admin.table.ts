@@ -56,6 +56,7 @@ export const aiTextProvidersTable = pgTable('ai_text_provider', {
   id: primaryKeyCol(),
   name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
   model: text('model').notNull(),
+  apiKey: text('api_key').notNull(),
   ...timestampCols(),
 })
 

@@ -19,3 +19,5 @@ export async function bootWorker() {
 
   appLogger.info('Workers instances running')
 }
+
+await bootWorker()

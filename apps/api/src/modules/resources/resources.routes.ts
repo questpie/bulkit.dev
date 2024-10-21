@@ -1,9 +1,11 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
+import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
@@ -32,7 +34,7 @@ export const resourceRoutes = new Elysia({
       })
 
       if (!r) {
-        return ctx.error(404, { message: 'Resource not found' })
+        throw HttpError.NotFound('Resource not found')
       }
 
       return r
@@ -40,7 +42,7 @@ export const resourceRoutes = new Elysia({
     {
       params: t.Object({ id: t.String({ minLength: 1 }) }),
       response: {
-        404: t.Object({ message: t.String({ minLength: 1 }) }),
+        404: HttpErrorSchema(),
         200: ResourceSchema,
       },
     }
@@ -57,12 +59,12 @@ export const resourceRoutes = new Elysia({
         })
         .catch((err) => {
           console.error(err)
-          return ctx.error(500, { message: 'Failed to create resources' })
+          throw HttpError.Internal('Failed to create resources')
         })
     },
     {
       response: {
-        500: t.Object({ message: t.String({ minLength: 1 }) }),
+        500: HttpErrorSchema(),
         200: t.Array(ResourceSchema),
       },
       body: t.Object({

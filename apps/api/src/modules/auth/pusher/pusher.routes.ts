@@ -2,6 +2,7 @@ import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { pusher } from '@bulkit/api/pusher/pusher.client'
 import { doesMatchChannel, parseChannelName } from '@bulkit/shared/utils/pusher'
 import Elysia, { t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 import type { User } from 'lucia'
 
 function getUserInfo(user: User) {
@@ -46,7 +47,7 @@ export const pusherAuthRoute = new Elysia({ prefix: '/pusher' })
       }
 
       if (!shouldAuthorize) {
-        return error(403, 'Forbidden')
+        throw HttpError.Forbidden()
       }
 
       const authResponse = pusher.authorizeChannel(body.socketId, body.channelName, {

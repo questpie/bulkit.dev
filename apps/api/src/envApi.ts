@@ -10,10 +10,6 @@ export const envApi = createEnv({
       Type.String({ default: generalEnv.PUBLIC_NODE_ENV === 'development' ? 'debug' : 'info' })
     ),
 
-    RUNTIME_MODE: Type.Union([Type.Literal('worker'), Type.Literal('api'), Type.Literal('all')], {
-      default: 'all',
-    }),
-
     API_KEY_ENCRYPTION_SECRET: Type.String({
       minLength: 64,
       maxLength: 64,
@@ -22,7 +18,15 @@ export const envApi = createEnv({
     }),
 
     // database
-    DATABASE_URL: Type.String(),
+    RUN_BOOTSTRAP_SEEDERS: StringBoolean({ default: false }),
+
+    // database
+    DB_HOST: Type.String(),
+    DB_PORT: StringInt(),
+    DB_USER: Type.String(),
+    DB_PASSWORD: Type.String(),
+    DB_NAME: Type.String(),
+    DB_AUTO_MIGRATE: StringBoolean({ default: false }),
 
     // server
     SERVER_URL: Type.String(),
@@ -102,9 +106,14 @@ export const envApi = createEnv({
 
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
 
-    RUNTIME_MODE: process.env.RUNTIME_MODE,
+    RUN_BOOTSTRAP_SEEDERS: process.env.RUN_BOOTSTRAP_SEEDERS,
 
-    DATABASE_URL: process.env.DATABASE_URL,
+    DB_HOST: process.env.DB_HOST,
+    DB_PORT: process.env.DB_PORT,
+    DB_USER: process.env.DB_USER,
+    DB_PASSWORD: process.env.DB_PASSWORD,
+    DB_NAME: process.env.DB_NAME,
+    DB_AUTO_MIGRATE: process.env.DB_AUTO_MIGRATE,
 
     SERVER_URL: process.env.SERVER_URL,
 

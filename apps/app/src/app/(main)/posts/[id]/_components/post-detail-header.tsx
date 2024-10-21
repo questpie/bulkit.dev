@@ -48,7 +48,7 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
 
       if (res.error.status === 400) {
         toast.error('Publish failed', { description: res.error.value.message })
-        if (res.error.value.errors) setPostValidationErrors(form, res.error.value.errors)
+        if (res.error.value.data.errors) setPostValidationErrors(form, res.error.value.data.errors)
       }
     },
   })
