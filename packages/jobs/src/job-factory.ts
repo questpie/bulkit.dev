@@ -1,12 +1,14 @@
 import { generalEnv } from '@bulkit/shared/env/general.env'
+import { parse } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
-import { Value } from '@sinclair/typebox/value'
 import {
+  FlowProducer,
   Queue,
   Worker,
   type BulkJobOptions,
   type ConnectionOptions,
+  type FlowJob,
   type Job,
   type JobsOptions,
   type QueueOptions,
@@ -14,12 +16,12 @@ import {
   type WorkerListener,
   type WorkerOptions,
 } from 'bullmq'
-export { UnrecoverableError } from 'bullmq'
 
-export type BaseJobOptions<T extends TSchema = TAnySchema> = {
+export type BaseJobOptions<T extends TSchema = TAnySchema, R extends TSchema = TAnySchema> = {
   name: string
   schema?: T
-  handler: (job: Job<Static<T>>) => Promise<any>
+  returnSchema?: R
+  handler: (job: Job<Static<T>, Static<R>>) => Promise<Static<R>>
   workerOptions?: Omit<WorkerOptions, 'connection' | 'prefix'>
   queueOptions?: Omit<QueueOptions, 'connection' | 'prefix'>
 
@@ -38,23 +40,36 @@ export type BaseJobOptions<T extends TSchema = TAnySchema> = {
   }
 }
 
+type CreatedJob<TData extends TSchema, TReturn extends TSchema> = {
+  name: string
+  _queue: Queue
+  _schema: TData
+  _returnSchema: TReturn
+}
+
 type JobFactoryOptions = {
   verbose?: boolean
 }
 
 export class JobFactory {
+  readonly flowProducer: FlowProducer
+
   constructor(
     private readonly connection: ConnectionOptions,
     private readonly options: JobFactoryOptions = {}
-  ) {}
+  ) {
+    this.flowProducer = new FlowProducer({ connection })
+  }
 
   private info(job: Job, ...args: any[]) {
     if (this.options.verbose) {
-      appLogger.info(`[${job.name}:${job.id}] ${JSON.stringify(args)}`)
+      appLogger.info(`[${job.name}:${job.id}]`, ...args)
     }
   }
 
-  createJob<T extends TSchema = TAnySchema>(options: BaseJobOptions<T>) {
+  createJob<T extends TSchema = TAnySchema, R extends TSchema = TAnySchema>(
+    options: BaseJobOptions<T, R>
+  ) {
     const _scopedGlobal = global as any
 
     let worker: Worker | null = null
@@ -68,9 +83,7 @@ export class JobFactory {
           if (options.schema) {
             this.info(job, 'Validating')
             try {
-              job.data = Value.Check(options.schema, job.data)
-                ? job.data
-                : Value.Cast(options.schema, job.data)
+              job.data = parse(options.schema, job.data)
             } catch (err) {
               console.error(err)
               throw err
@@ -154,24 +167,22 @@ export class JobFactory {
     }
 
     const invoke = async (data: Static<T>, opts: JobsOptions = {}) => {
+      let dataValidated = data
       if (options.schema) {
-        if (!Value.Check(options.schema, data)) {
-          throw new Error('Invalid job data')
-        }
+        dataValidated = parse(options.schema, data)
       }
 
-      await queue.add(options.name, data, opts)
+      await queue.add(options.name, dataValidated, opts)
     }
 
     const invokeBulk = async (jobs: { data: Static<T>; opts?: BulkJobOptions }[]) => {
       const payload: Parameters<typeof queue.addBulk>[0] = jobs.map((j) => {
+        let dataValidated = j.data
         if (options.schema) {
-          if (!Value.Check(options.schema, j.data)) {
-            throw new Error('Invalid job data')
-          }
+          dataValidated = parse(options.schema, j.data)
         }
 
-        return { name: options.name, data: j.data, opts: j.opts }
+        return { name: options.name, data: dataValidated, opts: j.opts }
       })
 
       await queue.addBulk(payload)
@@ -200,6 +211,44 @@ export class JobFactory {
       remove,
       shutdown,
       _queue: queue,
+      _schema: options.schema,
+      _returnSchema: options.returnSchema,
+      name: options.name,
     }
   }
+
+  invokeFlow<
+    TParentJob extends CreatedJob<any, any>,
+    TJobs extends Array<CreatedJob<any, any>>,
+    TJobData extends { [K in keyof TJobs]: Static<TJobs[K]['_schema']> },
+  >(flowOptions: {
+    job: TParentJob
+    data: Static<TParentJob['_schema']>
+    children?: Array<{
+      job: CreatedJob<any, any>
+      data: any
+      children?: Array<any> // Recursive definition
+    }>
+  }) {
+    const { job, data, children } = flowOptions
+
+    const flowJob: FlowJob = {
+      name: job.name,
+      queueName: job._queue.name,
+      data: job._schema ? parse(job._schema, data) : data,
+      children: children?.map(this.mapChild),
+    }
+    return this.flowProducer.add(flowJob)
+  }
+
+  private mapChild = (child: {
+    job: CreatedJob<any, any>
+    data: any
+    children?: Array<any>
+  }): FlowJob => ({
+    name: child.job.name,
+    data: child.job._schema ? parse(child.job._schema, child.data) : child.data,
+    queueName: child.job._queue.name,
+    children: child.children?.map(this.mapChild),
+  })
 }

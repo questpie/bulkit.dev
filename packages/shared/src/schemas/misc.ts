@@ -1,5 +1,11 @@
 import { createEnum } from '@bulkit/shared/utils/misc'
-import { type StringOptions, type TEnum, type TSchema, Type } from '@sinclair/typebox'
+import {
+  type StaticDecode,
+  type StringOptions,
+  type TEnum,
+  type TSchema,
+  Type,
+} from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
 
 export const StringInt = (opts: StringOptions = {}) =>
@@ -26,3 +32,23 @@ export const TimestampsSchema = Type.Object({
   createdAt: Type.String(),
   updatedAt: Type.String(),
 })
+
+export function parse<T extends TSchema>(schema: T, data: unknown): StaticDecode<T> {
+  try {
+    // Apply default values
+    const withDefaults = Value.Default(schema, data)
+
+    // Remove extraneous properties
+    const cleaned = Value.Clean(schema, withDefaults)
+
+    // Convert types (e.g., string to number)
+    const converted = Value.Convert(schema, cleaned)
+
+    // Decode
+    const decoded = Value.Decode(schema, converted)
+
+    return decoded
+  } catch (error) {
+    throw new Error(`Invalid data: ${(error as Error).message}`)
+  }
+}
