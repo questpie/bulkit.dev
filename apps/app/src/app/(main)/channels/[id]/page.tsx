@@ -13,21 +13,21 @@ import { notFound } from 'next/navigation'
 import { LuExternalLink, LuLink2Off } from 'react-icons/lu'
 
 export default async function ChannelDetails(props: {
-  params: { id: string }
-  searchParams: Record<string, any>
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, any>>
 }) {
-  const channelResp = await apiServer.channels({ id: props.params.id }).get()
+  const channelResp = await apiServer.channels({ id: (await props.params).id }).get()
 
   if (!channelResp.data) {
     notFound()
   }
 
-  const pagination = getPagination(props.searchParams)
+  const pagination = getPagination((await props.searchParams))
   const posts = await apiServer.posts.index.get({
     query: {
       limit: pagination.limit,
       cursor: pagination.cursor,
-      channelId: props.params.id,
+      channelId: (await props.params).id,
     },
   })
 

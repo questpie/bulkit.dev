@@ -18,10 +18,10 @@ import type { ReactNode } from 'react'
 import { PiEye } from 'react-icons/pi'
 
 export default async function PostDetail(props: {
-  params: { id: string }
-  searchParams: Record<string, string>
+  params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string>>
 }) {
-  const postResp = await apiServer.posts({ id: props.params.id }).get()
+  const postResp = await apiServer.posts({ id: (await props.params).id }).get()
 
   if (!postResp.data) {
     notFound()
@@ -29,8 +29,8 @@ export default async function PostDetail(props: {
 
   // const Icon = POST_TYPE_ICON[postResp.data.type]
 
-  const selectedTab = Object.values(PostDetailTab).includes(props.searchParams.tab as PostDetailTab)
-    ? (props.searchParams.tab as PostDetailTab)
+  const selectedTab = Object.values(PostDetailTab).includes((await props.searchParams).tab as PostDetailTab)
+    ? ((await props.searchParams).tab as PostDetailTab)
     : PostDetailTab.Content
 
   let content: ReactNode = null

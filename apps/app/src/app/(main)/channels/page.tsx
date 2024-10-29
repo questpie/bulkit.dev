@@ -4,8 +4,8 @@ import { ChannelsPageHeader } from '@bulkit/app/app/(main)/channels/_components/
 import { ChannelsTable } from '@bulkit/app/app/(main)/channels/_components/channels-table'
 import { getPagination } from '@bulkit/app/app/_utils/pagination'
 
-export default async function ChannelsPage(props: { searchParams: Record<string, any> }) {
-  const pagination = getPagination(props.searchParams)
+export default async function ChannelsPage(props: { searchParams: Promise<Record<string, any>> }) {
+  const pagination = getPagination((await props.searchParams))
   const channels = await apiServer.channels.index.get({
     query: {
       limit: pagination.limit,

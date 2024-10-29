@@ -1,12 +1,13 @@
 'use client'
 import { useAuthActions } from '@bulkit/app/app/(auth)/use-auth'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, use } from 'react';
 
 export default function LoginCallbackPage(props: {
-  searchParams: Record<string, string | undefined>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
-  const token = props.searchParams.token
+  const searchParams = use(props.searchParams);
+  const token = searchParams.token
   const { login } = useAuthActions()
   const router = useRouter()
 
