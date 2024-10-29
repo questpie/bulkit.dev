@@ -3,6 +3,9 @@ const nextConfig = {
   images: {
     remotePatterns: [{ hostname: '*' }],
   },
+  experimental:{
+    reactCompiler:true
+  },
   logging:{
     fetches:{
       fullUrl:true
