@@ -4,9 +4,10 @@ import { ORGANIZATION_COOKIE_NAME } from '@bulkit/app/app/(main)/organizations/o
 import { cookies } from 'next/headers'
 
 export async function setOrganization(organizationId: string | null) {
+  const awaitedCookies = await cookies()
   if (organizationId) {
-    cookies().set(ORGANIZATION_COOKIE_NAME, organizationId)
+    awaitedCookies.set(ORGANIZATION_COOKIE_NAME, organizationId)
   } else {
-    cookies().delete(ORGANIZATION_COOKIE_NAME)
+    awaitedCookies.delete(ORGANIZATION_COOKIE_NAME)
   }
 }

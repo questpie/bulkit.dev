@@ -4,9 +4,10 @@ import { AUTH_COOKIE_NAME } from '@bulkit/app/app/(auth)/auth.constants'
 import { cookies } from 'next/headers'
 
 export async function setSession(token: string | null) {
+  const awaitedCookies = await cookies()
   if (token) {
-    cookies().set(AUTH_COOKIE_NAME, token)
+    awaitedCookies.set(AUTH_COOKIE_NAME, token)
   } else {
-    cookies().delete(AUTH_COOKIE_NAME)
+    awaitedCookies.delete(AUTH_COOKIE_NAME)
   }
 }

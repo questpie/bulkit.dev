@@ -8,10 +8,15 @@ import { treaty } from '@elysiajs/eden'
 import { cookies } from 'next/headers'
 
 const apiServer = treaty<ApiType>(env.PUBLIC_API_URL, {
-  headers() {
+  async onRequest(path, opts) {
+    const awaitedCookies = await cookies()
     return {
-      ...buildAuthHeaders(cookies().get(AUTH_COOKIE_NAME)?.value),
-      ...buildOrganizationHeaders(cookies().get(ORGANIZATION_COOKIE_NAME)?.value),
+      ...opts,
+      headers: {
+        ...opts.headers,
+        ...buildAuthHeaders(awaitedCookies.get(AUTH_COOKIE_NAME)?.value),
+        ...buildOrganizationHeaders(awaitedCookies.get(ORGANIZATION_COOKIE_NAME)?.value),
+      },
     }
   },
 })

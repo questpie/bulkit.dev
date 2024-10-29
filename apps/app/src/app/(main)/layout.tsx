@@ -13,7 +13,7 @@ export default async function MainLayout(props: PropsWithChildren) {
     redirect('/login')
   }
 
-  const selectedOrganizationId = cookies().get(ORGANIZATION_COOKIE_NAME)?.value
+  const selectedOrganizationId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
   const [orgsResp, selectedOrganizationResp] = await Promise.all([
     apiServer.organizations.index.get({
       query: {
@@ -28,7 +28,7 @@ export default async function MainLayout(props: PropsWithChildren) {
     redirect('/onboarding/organization')
   }
 
-  const organization = selectedOrganizationResp?.data ?? orgsResp.data?.data[0]
+  const organization = selectedOrganizationResp?.data ?? orgsResp.data?.data[0]!
 
   return (
     <OrganizationProvider organization={organization}>

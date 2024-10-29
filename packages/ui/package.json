@@ -2,7 +2,9 @@
   "name": "@bulkit/ui",
   "module": "src/index.ts",
   "main": "src/index.ts",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "type": "module",
   "scripts": {
     "ui": "bunx shadcn@latest"
@@ -14,7 +16,7 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0",
-    "react": "^18",
+    "react": "^19.0.0-rc-02c0e824-20241028",
     "react-dom": "^18"
   },
   "dependencies": {
