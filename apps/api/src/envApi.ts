@@ -18,9 +18,6 @@ export const envApi = createEnv({
     }),
 
     // database
-    RUN_BOOTSTRAP_SEEDERS: StringBoolean({ default: false }),
-
-    // database
     DB_HOST: Type.String(),
     DB_PORT: StringInt(),
     DB_USER: Type.String(),
@@ -105,8 +102,6 @@ export const envApi = createEnv({
     LOG_LEVEL: process.env.LOG_LEVEL,
 
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
-
-    RUN_BOOTSTRAP_SEEDERS: process.env.RUN_BOOTSTRAP_SEEDERS,
 
     DB_HOST: process.env.DB_HOST,
     DB_PORT: process.env.DB_PORT,

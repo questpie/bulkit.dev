@@ -24,11 +24,11 @@
   },
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {
-    "@biomejs/biome": "^1.9.1",
+    "@biomejs/biome": "^1.9.4",
     "@types/bun": "latest",
     "check-dependency-version-consistency": "^4.1.0",
     "date-fns": "^4.1.0",
-    "npm-check-updates": "^17.1.1",
+    "npm-check-updates": "^17.1.9",
     "rimraf": "^6.0.1"
   }
 }

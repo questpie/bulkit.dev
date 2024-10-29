@@ -12,6 +12,6 @@
   "dependencies": {
     "@sinclair/typebox": "0.32.34",
     "@bulkit/shared": "workspace:*",
-    "bullmq": "^5.13.0"
+    "bullmq": "^5.21.2"
   }
 }

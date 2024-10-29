@@ -5,13 +5,12 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import { Elysia } from 'elysia'
 
 export async function bootApi() {
-  if (envApi.DB_AUTO_MIGRATE) {
-    await runMigrations()
-  }
+  // if (envApi.DB_AUTO_MIGRATE) {
+  //   await runMigrations()
+  // }
 
-  if (envApi.RUN_BOOTSTRAP_SEEDERS) {
-    await runBootstrapSeeders()
-  }
+  await runBootstrapSeeders()
+
   /**
    * TODO: if you want to listen to the api from next.js,
    * you can import the server from index.ts and use it in next.js and delete this file after

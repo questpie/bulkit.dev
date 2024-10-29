@@ -5,6 +5,7 @@ import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
 import {
   FlowProducer,
   Queue,
+  UnrecoverableError,
   Worker,
   type BulkJobOptions,
   type ConnectionOptions,
@@ -16,6 +17,8 @@ import {
   type WorkerListener,
   type WorkerOptions,
 } from 'bullmq'
+
+export { UnrecoverableError } from 'bullmq'
 
 export type BaseJobOptions<T extends TSchema = TAnySchema, R extends TSchema = TAnySchema> = {
   name: string
