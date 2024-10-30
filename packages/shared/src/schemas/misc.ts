@@ -28,9 +28,14 @@ export function Nullable<T extends TSchema>(type: T) {
   return Type.Union([type, Type.Null()])
 }
 
-export const TimestampsSchema = Type.Object({
+export const EntityTimestampsSchema = Type.Object({
   createdAt: Type.String(),
   updatedAt: Type.String(),
+})
+
+export const UnixTimestampSchema = Type.Number({
+  description: 'Unix timestamp in msec',
+  examples: [1685779200000],
 })
 
 export function parse<T extends TSchema>(schema: T, data: unknown): StaticDecode<T> {

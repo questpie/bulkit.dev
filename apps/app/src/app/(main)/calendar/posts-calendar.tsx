@@ -35,6 +35,8 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
     return map
   }, [props.posts])
 
+  console.log(postMap)
+
   return (
     <div className='w-full flex-1 h-full relative flex flex-col overflow-auto'>
       <WeekCalendar>

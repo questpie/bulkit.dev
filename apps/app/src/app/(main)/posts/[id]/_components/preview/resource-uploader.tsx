@@ -131,7 +131,6 @@ export function ResourceButtonUpload(
         {...props.buttonProps}
         {...getRootProps()}
         type='button'
-        role='button'
         isLoading={isUploading}
         loadingText='Uploading...'
         className={cn(

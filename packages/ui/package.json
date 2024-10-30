@@ -2,9 +2,7 @@
   "name": "@bulkit/ui",
   "module": "src/index.ts",
   "main": "src/index.ts",
-  "files": [
-    "src"
-  ],
+  "files": ["src"],
   "type": "module",
   "scripts": {
     "ui": "bunx shadcn@latest"
@@ -47,7 +45,7 @@
     "date-fns-tz": "^3.2.0",
     "embla-carousel-react": "^8.3.1",
     "next-themes": "^0.3.0",
-    "react-day-picker": "^9.2.1",
+    "react-day-picker": "^8.10.1",
     "react-hook-form": "^7.53.1",
     "react-icons": "^5.3.0",
     "sonner": "^1.5.0",

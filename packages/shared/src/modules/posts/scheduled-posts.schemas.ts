@@ -3,7 +3,7 @@ import {
   POST_STATUS,
   SCHEDULED_POST_STATUS,
 } from '@bulkit/shared/constants/db.constants'
-import { Nullable, StringLiteralEnum, TimestampsSchema } from '@bulkit/shared/schemas/misc'
+import { Nullable, StringLiteralEnum, EntityTimestampsSchema } from '@bulkit/shared/schemas/misc'
 import { Type } from '@sinclair/typebox'
 
 export const ScheduledPostSchema = Type.Object({
@@ -29,5 +29,5 @@ export const ScheduledPostSchema = Type.Object({
     status: StringLiteralEnum(POST_STATUS),
   }),
 
-  ...TimestampsSchema.properties,
+  ...EntityTimestampsSchema.properties,
 })
