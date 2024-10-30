@@ -14,43 +14,48 @@ import {
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface WeekCalendarProps {
-  today?: Date
+  currentDate?: Date
   slotDurationMinutes?: number
   renderSlot?: (opts: { date: Date }) => ReactNode
   children?: ReactNode
 }
 
-export const CalendarContext = createContext<{ today: Date; slotDurationMinutes: number }>(
-  {} as any
-)
+export const CalendarContext = createContext<{
+  currentDate: Date
+  today: Date
+  slotDurationMinutes: number
+}>({} as any)
 
 export function WeekCalendar({
-  today = new Date(),
+  currentDate = new Date(),
   slotDurationMinutes = 60,
   children,
 }: WeekCalendarProps) {
   // on mount scroll to this dat
   useEffect(() => {
-    const todayDay = today.getDay()
-    const todayHour = today.getHours()
-    const todayMinute = Math.floor(today.getMinutes() / slotDurationMinutes) * slotDurationMinutes
+    const todayDay = currentDate.getDay()
+    const todayHour = currentDate.getHours()
+    const todayMinute =
+      Math.floor(currentDate.getMinutes() / slotDurationMinutes) * slotDurationMinutes
     const todayElement = document.querySelector(
       `[data-day="${todayDay}"][data-hour="${todayHour}"][data-minutes="${todayMinute}"]`
     ) as HTMLDivElement
     if (todayElement) {
       todayElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [today, slotDurationMinutes])
+  }, [currentDate, slotDurationMinutes])
   return (
-    <CalendarContext.Provider value={{ today, slotDurationMinutes }}>
+    <CalendarContext.Provider
+      value={{ currentDate: currentDate, slotDurationMinutes, today: new Date() }}
+    >
       {children}
     </CalendarContext.Provider>
   )
 }
 
 export function CalendarHeader() {
-  const { today } = useContext(CalendarContext)
-  const weekStart = startOfWeek(today)
+  const { currentDate } = useContext(CalendarContext)
+  const weekStart = startOfWeek(currentDate)
 
   return (
     <div className='flex flex-row flex-1'>
@@ -76,15 +81,15 @@ export function CalendarDates(props: {
   renderSlot?: (opts: { slotStart: Date; slotEnd: Date }) => ReactNode
 }) {
   const sidebarDisplayStep = props.sidebarDisplayStep ?? 2
-  const { today, slotDurationMinutes } = useContext(CalendarContext)
-  const weekStart = startOfWeek(today)
+  const { currentDate, today, slotDurationMinutes } = useContext(CalendarContext)
+  const weekStart = startOfWeek(currentDate)
   const minutes = Array.from(
     { length: Math.floor(24 * (60 / slotDurationMinutes)) },
     (_, i) => i * slotDurationMinutes
   )
 
   return (
-    <div className='hidden flex-col relative md:flex'>
+    <div className='flex-col relative flex'>
       {minutes.map((startOfSlotMinutes, i) => {
         const hour = Math.floor(startOfSlotMinutes / 60)
         const minute = startOfSlotMinutes - hour * 60
@@ -113,6 +118,7 @@ export function CalendarDates(props: {
                   isMobile={true}
                   slotDurationMinutes={slotDurationMinutes}
                   startOfSlotMinutes={startOfSlotMinutes}
+                  currentDate={currentDate}
                   today={today}
                   weekDay={weekDay}
                   renderSlot={props.renderSlot}
@@ -129,6 +135,7 @@ export function CalendarDates(props: {
 type CalendarDateProps = {
   slotDurationMinutes: number
   weekDay: Date
+  currentDate: Date
   today: Date
   startOfSlotMinutes: number
   day: number
@@ -137,6 +144,7 @@ type CalendarDateProps = {
 }
 function CalendarDate({
   slotDurationMinutes,
+  currentDate,
   today,
   day,
   weekDay,

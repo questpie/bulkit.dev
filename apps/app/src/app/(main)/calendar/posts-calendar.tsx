@@ -12,17 +12,21 @@ import { cn } from '@bulkit/transactional/style-utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Card } from '@bulkit/ui/components/ui/card'
 import type { Static } from '@sinclair/typebox'
-import { isAfter, isBefore } from 'date-fns'
-import { useMemo } from 'react'
+import { addDays, endOfWeek, isAfter, isBefore, startOfWeek } from 'date-fns'
+import { useMemo, useState } from 'react'
 
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { Button } from '@bulkit/ui/components/ui/button'
 import { Separator } from '@bulkit/ui/components/ui/separator'
+import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
 
 function getDayKey(date: Date) {
   return getIsoDateString(date)
 }
 
 export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
+  const [currentDate, setCurrentDate] = useState(new Date())
+
   // we will little optimize it by bucketing posts by date
   const postMap = useMemo(() => {
     const map = new Map<string, Static<typeof ScheduledPostSchema>[]>()
@@ -35,12 +39,49 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
     return map
   }, [props.posts])
 
-  console.log(postMap)
+  const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: '2-digit' })
+  const dateFormatter = new Intl.DateTimeFormat('en-US', {
+    day: 'numeric',
+    month: '2-digit',
+    // year: 'numeric',
+  })
+
+  const startDate = startOfWeek(currentDate)
+  const endDate = endOfWeek(currentDate)
 
   return (
     <div className='w-full flex-1 h-full relative flex flex-col overflow-auto'>
-      <WeekCalendar>
+      <WeekCalendar currentDate={currentDate}>
         <div className='bg-background top-0 sticky z-10'>
+          <div className='w-full justify-between flex items-center px-6'>
+            <div className='flex-col items-center gap-2'>
+              <p className='font-bold  text-center text-sm'>{monthFormatter.format(currentDate)}</p>
+              <p className='text-xs text-center text-muted-foreground'>
+                {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
+              </p>
+            </div>
+            <div className='gap-4 flex'>
+              <Button
+                variant='outline'
+                size='icon'
+                onClick={() => setCurrentDate(addDays(currentDate, -7))}
+              >
+                <PiCaretLeft />
+              </Button>
+
+              <Button variant='outline' onClick={() => setCurrentDate(new Date())}>
+                Today
+              </Button>
+
+              <Button
+                variant='outline'
+                size='icon'
+                onClick={() => setCurrentDate(addDays(currentDate, 7))}
+              >
+                <PiCaretRight />
+              </Button>
+            </div>
+          </div>
           <CalendarHeader />
         </div>
         <CalendarDates
