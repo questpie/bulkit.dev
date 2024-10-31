@@ -16,16 +16,12 @@ ARG DATABASE_URL
 COPY . .
 RUN bun install --frozen-lockfile
 
-# Run migrations if DATABASE_URL is specified
-RUN if [ -n "$DATABASE_URL" ]; then \
-        cd apps/api && bun db:migrate; \
-    fi
-
 # Build the API
 RUN cd apps/api && bun build:api
 
 FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
+COPY --from=build /usr/src/app/apps/api/src/db/migrations ./migrations
 
 USER bunuser
 

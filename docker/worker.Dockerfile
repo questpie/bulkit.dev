@@ -16,6 +16,7 @@ RUN cd apps/api && bun build:worker
 
 FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
+# COPY --from=build /usr/src/app/apps/api/src/db/migrations ./migrations
 
 USER bunuser
 

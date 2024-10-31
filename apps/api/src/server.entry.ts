@@ -1,3 +1,4 @@
+import { runMigrations } from '@bulkit/api/db/db.client'
 import { runBootstrapSeeders } from '@bulkit/api/db/seed'
 import { envApi } from '@bulkit/api/envApi'
 import { api } from '@bulkit/api/index'
@@ -5,9 +6,9 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import { Elysia } from 'elysia'
 
 export async function bootApi() {
-  // if (envApi.DB_AUTO_MIGRATE) {
-  //   await runMigrations()
-  // }
+  if (envApi.DB_AUTO_MIGRATE) {
+    await runMigrations()
+  }
 
   await runBootstrapSeeders()
 
