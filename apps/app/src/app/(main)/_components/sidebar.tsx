@@ -1,32 +1,32 @@
 'use client'
 
 import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
-import { Spinner } from '@bulkit/ui/components/ui/spinner'
+import { ProfileDropdown } from '@bulkit/app/app/(main)/_components/profile-dropdown'
 import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { LuAtSign, LuCalendar, LuLogOut, LuSend, LuSettings } from 'react-icons/lu'
+import { PiAt, PiCalendar, PiGear, PiPaperPlane } from 'react-icons/pi'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
   // {
   //   name: 'Dashboard',
   //   icon: LuPieChart,
-  //   href: '/',
+  //   href: '/'
   // },
   {
     name: 'Calendar',
-    icon: LuCalendar,
+    icon: PiCalendar,
     href: '/calendar',
   },
   {
     name: 'Channels',
-    icon: LuAtSign,
+    icon: PiAt,
     href: '/channels',
   },
   {
     name: 'Posts',
-    icon: LuSend,
+    icon: PiPaperPlane,
     href: '/posts',
   },
   // {
@@ -41,7 +41,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const isAdmin = !!useAuthData()?.user.isAdmin
   const { logout } = useAuthActions()
-  // console.log(isAdmin)
 
   const items = NAV_ITEMS.filter((item) => !item.admin || isAdmin)
 
@@ -63,7 +62,7 @@ export function Sidebar() {
                 <li className='w-full' key={item.href}>
                   <Link
                     className={cn(
-                      'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold',
+                      'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent/50 font-bold',
                       {
                         'text-primary cursor-default pointer-events-none bg-primary/20':
                           item.href === pathname,
@@ -82,32 +81,7 @@ export function Sidebar() {
 
         <ul className='flex gap-4  flex-col  border-t py-2 '>
           <li className='w-full'>
-            <Link
-              className={cn(
-                'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold',
-                {
-                  'text-primary cursor-default pointer-events-none bg-primary/20':
-                    '/settings' === pathname,
-                }
-              )}
-              href={'/settings'}
-            >
-              <LuSettings className='size-5' />
-              <span className='hidden md:inline'>Settings</span>
-            </Link>
-          </li>
-          <li className='w-full'>
-            <button
-              type='button'
-              className={cn(
-                'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent font-bold'
-              )}
-              onClick={() => logout.mutate()}
-              disabled={logout.isPending}
-            >
-              {logout.isPending ? <Spinner /> : <LuLogOut className='size-5' />}
-              <span className='hidden md:inline'>Log Out</span>
-            </button>
+            <ProfileDropdown />
           </li>
         </ul>
       </aside>
@@ -137,7 +111,7 @@ export function Sidebar() {
               'text-primary': '/settings' === pathname,
             })}
           >
-            <LuSettings className='size-5' />
+            <PiGear className='size-5' />
             <span className='text-xs'>Settings</span>
           </Link>
         </nav>

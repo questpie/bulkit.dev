@@ -7,7 +7,7 @@ import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
-import { LuSend } from 'react-icons/lu'
+import { PiPaperPlane } from 'react-icons/pi'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
@@ -58,7 +58,7 @@ export default function AuthPage() {
                 loadingText='Sending...'
                 disabled={magicLinkMutation.status === 'success'}
               >
-                <LuSend />
+                <PiPaperPlane />
                 Sign in with Email
               </Button>
             </form>
