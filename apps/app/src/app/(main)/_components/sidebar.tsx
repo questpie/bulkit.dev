@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
+import { OrganizationSelect } from '@bulkit/app/app/(main)/_components/organizations-select'
 import { ProfileDropdown } from '@bulkit/app/app/(main)/_components/profile-dropdown'
 import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
@@ -57,6 +58,10 @@ export function Sidebar() {
             </h1>
           </div>
           <nav>
+            <div className='px-1 md:px-2 mb-4'>
+              <OrganizationSelect />
+            </div>
+
             <ul className='flex flex-col gap-2'>
               {items.map((item) => (
                 <li className='w-full' key={item.href}>
