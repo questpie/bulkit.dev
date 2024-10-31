@@ -1,6 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
-import type { Tokens } from 'arctic'
 import { OAuth2Client } from 'oslo/oauth2'
 
 // Add new type for supported providers
@@ -27,6 +26,12 @@ export type UserInfo = {
   email?: string
   picture?: string
   url: string
+}
+
+export type Tokens = {
+  accessToken: string
+  refreshToken?: string
+  accessTokenExpiresAt?: Date
 }
 
 export class OAuth2Provider {

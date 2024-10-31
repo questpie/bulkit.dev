@@ -183,6 +183,9 @@ export const scheduledPostsTable = pgTable(
     startedAt: timestamp('started_at', { mode: 'string', withTimezone: true }),
     failureReason: text('failure_reason'),
 
+    externalUrl: text('external_id'),
+    externalReferenceId: text('external_reference_id'),
+
     parentPostId: text('parent_post_id'),
     parentPostSettings: jsonb('parent_post_settings').$type<ParentPostSettings>(),
     repostSettings: jsonb('repost_settings').$type<RepostSettings>(),
