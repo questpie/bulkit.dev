@@ -1,49 +1,39 @@
-import { apiServer } from '@bulkit/app/api/api.server'
-import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
-import { OrganizationMembersTable } from '@bulkit/app/app/(main)/organizations/_components/organization-members-table'
-import {
-  OrganizationSendInviteDialog,
-  OrganizationSendInviteDialogTrigger,
-} from '@bulkit/app/app/(main)/organizations/_components/send-invitation-dialog'
-import { ORGANIZATION_COOKIE_NAME } from '@bulkit/app/app/(main)/organizations/organizations.constants'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { PiPaperPlane } from 'react-icons/pi'
+'use client'
+import { useSelectedOrganization } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
+import { Card, CardContent, CardHeader, CardTitle } from '@bulkit/ui/components/ui/card'
+import { Input } from '@bulkit/ui/components/ui/input'
+import { Label } from '@bulkit/ui/components/ui/label'
+import { Separator } from '@bulkit/ui/components/ui/separator'
 
-export default async function OrganizationsPage() {
-  const selectedOrganizationId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
-
-  if (!selectedOrganizationId) {
-    redirect('/onboarding/organization')
+export default function OrganizationGeneralPage() {
+  const selectedOrg = useSelectedOrganization()
+  if (!selectedOrg) {
+    throw new Error('OrganizationGeneralPage must be rendered within OrganizationsProvider')
   }
-
-  const selectedOrg = await apiServer.organizations({ id: selectedOrganizationId }).get()
-  if (!selectedOrg.data) {
-    redirect('/onboarding/organization')
-  }
-
-  const organizationMembers = await apiServer
-    .organizations({ id: selectedOrganizationId })
-    .members.get({
-      query: {
-        cursor: 0,
-        limit: 100,
-      },
-    })
 
   return (
-    <div>
-      <Header title={selectedOrg.data.name}>
-        <OrganizationSendInviteDialog>
-          <OrganizationSendInviteDialogTrigger asChild>
-            <HeaderButton icon={<PiPaperPlane />} variant='secondary' label='Invite Members' />
-          </OrganizationSendInviteDialogTrigger>
-        </OrganizationSendInviteDialog>
-      </Header>
-      <OrganizationMembersTable
-        members={organizationMembers.data?.data ?? []}
-        organizationId={selectedOrganizationId}
-      />
+    <div className='flex flex-col gap-6'>
+      <div className='flex flex-col'>
+        <h4 className='text-xl font-bold'>General</h4>
+        <p className='text-sm text-muted-foreground'>
+          Manage your organization's general settings and information.
+        </p>
+      </div>
+
+      <Separator />
+
+      <div className='flex flex-col gap-6  pb-4 w-full max-w-screen-sm'>
+        <div className='flex flex-col gap-3'>
+          <Label htmlFor='name'>Organization name</Label>
+          <Input
+            id='name'
+            name='name'
+            placeholder='Your organization'
+            value={selectedOrg?.name}
+            disabled
+          />
+        </div>
+      </div>
     </div>
   )
 }
