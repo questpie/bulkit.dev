@@ -1,6 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
 import { DriveManager } from 'flydrive'
-import { FSDriver } from 'flydrive/drivers/fs'
 import { S3Driver } from 'flydrive/drivers/s3'
 
 export const drive = new DriveManager({
