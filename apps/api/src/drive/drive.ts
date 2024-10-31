@@ -8,18 +8,19 @@ export const drive = new DriveManager({
    * Name of the default service. It must be defined inside
    * the service object
    */
-  default: envApi.DEFAULT_DRIVER,
+  default: 's3',
+  // default: envApi.DEFAULT_DRIVER,
 
   /**
    * A collection of services you plan to use in your application
    */
   services: {
-    fs: () => {
-      return new FSDriver({
-        location: new URL('./uploads', import.meta.url),
-        visibility: 'public',
-      })
-    },
+    // fs: () => {
+    //   return new FSDriver({
+    //     location: new URL('./uploads', import.meta.url),
+    //     visibility: 'public',
+    //   })
+    // },
     s3: () => {
       return new S3Driver({
         credentials: {
