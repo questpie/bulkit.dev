@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox'
  */
 export const generalEnv = createEnv({
   client: {
-    PUBLIC_APP_NAME: Type.String({ default: 'Questpie' }),
+    PUBLIC_APP_NAME: Type.String({ default: 'Bulkit.dev' }),
     PUBLIC_NODE_ENV: Type.Union(
       [Type.Literal('production'), Type.Literal('development'), Type.Literal('test')],
       {

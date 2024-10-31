@@ -1,10 +1,18 @@
 'use client'
 import { apiClient } from '@bulkit/app/api/api.client'
-import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
 import { useSelectedOrganization } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
-import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
-import type { SendInvitationSchema } from '@bulkit/shared/modules/organizations/organizations.schemas'
-import { Card, CardContent } from '@bulkit/ui/components/ui/card'
+import { SendInvitationSchema } from '@bulkit/shared/modules/organizations/organizations.schemas'
+import { Button } from '@bulkit/ui/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@bulkit/ui/components/ui/form'
+import { Input } from '@bulkit/ui/components/ui/input'
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -12,8 +20,15 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@bulkit/ui/components/ui/select'
 import { toast } from '@bulkit/ui/components/ui/sonner'
-import { cn } from '@bulkit/ui/lib'
+import useControllableState from '@bulkit/ui/hooks/use-controllable-state'
 import { typeboxResolver } from '@hookform/resolvers/typebox'
 import type { Static } from '@sinclair/typebox'
 import { useMutation } from '@tanstack/react-query'
@@ -23,11 +38,19 @@ import { useForm } from 'react-hook-form'
 
 type SendInvitationFormValues = Static<typeof SendInvitationSchema>
 
-export function SendInvitationDialog(props: PropsWithChildren) {
+export function OrganizationSendInviteDialog(
+  props: PropsWithChildren<{ open?: boolean; onOpenChange?: (open: boolean) => void }>
+) {
+  const [open, onOpenChange] = useControllableState({
+    value: props.open,
+    defaultValue: props.open ?? false,
+    onChange: props.onOpenChange,
+  })
+
   const selectedOrg = useSelectedOrganization()
 
   if (!selectedOrg) {
-    throw new Error('SendInvitationDialog must be used within a OrganizationProvider')
+    throw new Error('OrganizationSendInviteDialog must be used within a OrganizationProvider')
   }
 
   const router = useRouter()
@@ -41,18 +64,27 @@ export function SendInvitationDialog(props: PropsWithChildren) {
 
   const mutation = useMutation({
     mutationFn: (data: SendInvitationFormValues) =>
-      apiClient.organizations({ id: selectedOrg.id }).invite.post({
-        email: data.role,
-        role: data.role,
-      }),
+      apiClient.organizations({ id: selectedOrg.id }).invite.post([
+        {
+          email: data.email,
+          role: data.role,
+        },
+      ]),
     onSuccess: (res) => {
       if (res.error) {
-        return toast.error('Something went wrong')
+        toast.error(res.error.value.message ?? 'Something went wrong')
+        return
       }
-
+      toast.success('Invitation sent successfully')
+      form.reset()
       router.refresh()
+      onOpenChange(false)
     },
   })
+
+  const onSubmit = (data: SendInvitationFormValues) => {
+    mutation.mutate(data)
+  }
 
   const denied = useSearchParams().get('denied')
   if (denied) {
@@ -63,43 +95,79 @@ export function SendInvitationDialog(props: PropsWithChildren) {
   }
 
   return (
-    <ResponsiveDialog>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        if (!newOpen) {
+          form.reset()
+        }
+        onOpenChange(newOpen)
+      }}
+    >
       {props.children}
       <ResponsiveDialogContent>
         <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>Select Provider</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>Send Invitation</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
-        <div className='flex gap-4 flex-wrap justify-center py-8'>
-          {/* TODO: filter only enabled platforms */}
-          {PLATFORMS.map((platform) => {
-            const Icon = PLATFORM_ICON[platform]
-            return (
-              <Card
-                // biome-ignore lint/a11y/useSemanticElements: <explanation>
-                role='button'
-                tabIndex={0}
-                key={platform}
-                className={cn(
-                  'w-24 h-24 hover:bg-accent cursor-pointer',
-                  mutation.isPending && 'opacity-50 pointer-events-none'
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-8'>
+            <div className='flex flex-col gap-4'>
+              <FormField
+                control={form.control}
+                name='email'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder='Enter email' {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Enter the email address of the person you want to invite.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
                 )}
-                onClick={() => {
-                  if (mutation.isPending) return
-                  mutation.mutate(platform)
-                }}
-              >
-                <CardContent className='py-4 text-center flex flex-col gap-2 items-center font-bold text-sm'>
-                  <Icon className='size-8' />
-                  <span className='line-clamp-1 text-nowrap'>{PLATFORM_TO_NAME[platform]}</span>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+              />
+              <FormField
+                control={form.control}
+                name='role'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select a role' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value='member'>Member</SelectItem>
+                        <SelectItem value='admin'>Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>Select the role for the invited user.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <Button
+              type='submit'
+              isLoading={form.formState.isSubmitting}
+              disabled={form.formState.isSubmitSuccessful}
+            >
+              {form.formState.isSubmitting
+                ? 'Sending...'
+                : form.formState.isSubmitSuccessful
+                  ? 'Invitation sent'
+                  : 'Send Invitation'}
+            </Button>
+          </form>
+        </Form>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   )
 }
 
-export const CreateChannelDialogTrigger = ResponsiveDialogTrigger
+export const OrganizationSendInviteDialogTrigger = ResponsiveDialogTrigger
