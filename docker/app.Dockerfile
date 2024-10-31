@@ -4,7 +4,7 @@ COPY . .
 
 ENV NODE_ENV=production
 RUN bun install --frozen-lockfile
-RUN cd apps/app && bun build
+RUN cd apps/app && bun run build
 
 
 FROM node:lts-alpine AS runner
