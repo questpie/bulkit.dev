@@ -11,6 +11,7 @@ import {
   startOfDay,
   startOfWeek,
 } from 'date-fns'
+import { nanoid } from 'nanoid'
 import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface WeekCalendarProps {
@@ -161,9 +162,13 @@ function CalendarDate({
     isAfter(today, slotDate) &&
     isBefore(today, addMinutes(slotDate, slotDurationMinutes))
 
+  const content = renderSlot?.({
+    slotStart: addMinutes(weekDay, startOfSlotMinutes),
+    slotEnd: addMinutes(weekDay, startOfSlotMinutes + slotDurationMinutes),
+  })
+
   return (
     <div
-      key={startOfSlotMinutes}
       // biome-ignore lint/a11y/useSemanticElements: <explanation>
       role='button'
       className={cn(
@@ -207,10 +212,7 @@ function CalendarDate({
       data-hour={hour}
       data-mobile={!isMobile}
     >
-      {/* <div className='text-xs text-muted-foreground'>{format(slotDate, 'HH:mm')}</div> */}
-      <div className='flex-1'>
-        {renderSlot?.({ slotStart: slotDate, slotEnd: addMinutes(slotDate, slotDurationMinutes) })}
-      </div>
+      <div className='flex-1'>{content}</div>
     </div>
   )
 }

@@ -7,18 +7,21 @@ import {
 } from '@bulkit/app/app/(main)/calendar/_components/week-calendar'
 import type { ScheduledPostSchema } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
-import { capitalize } from '@bulkit/shared/utils/string'
-import { cn } from '@bulkit/transactional/style-utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Card } from '@bulkit/ui/components/ui/card'
 import type { Static } from '@sinclair/typebox'
-import { addDays, endOfWeek, isAfter, isBefore, startOfWeek } from 'date-fns'
-import { useMemo, useState } from 'react'
+import { addDays, endOfWeek, format, isAfter, isBefore, startOfWeek } from 'date-fns'
+import { Fragment, useMemo, useState } from 'react'
 
-import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import {
+  ChannelAvatarList,
+  ChannelsAvatar,
+} from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
+import { groupBy } from '@bulkit/shared/utils/misc'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Separator } from '@bulkit/ui/components/ui/separator'
+import { useBreakpoint } from '@bulkit/ui/hooks/use-breakpoint'
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
+import { nanoid } from 'nanoid'
 
 function getDayKey(date: Date) {
   return getIsoDateString(date)
@@ -26,6 +29,8 @@ function getDayKey(date: Date) {
 
 export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
   const [currentDate, setCurrentDate] = useState(new Date())
+
+  const isDesktop = useBreakpoint('sm')
 
   // we will little optimize it by bucketing posts by date
   const postMap = useMemo(() => {
@@ -50,125 +55,164 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
   const endDate = endOfWeek(currentDate)
 
   return (
-    <div className='w-full flex-1 h-full relative flex flex-col overflow-auto'>
-      <WeekCalendar currentDate={currentDate}>
-        <div className='bg-background top-0 sticky z-10'>
-          <div className='w-full justify-between flex items-center px-6'>
-            <div className='flex-col items-center gap-2'>
-              <p className='font-bold  text-center text-sm'>{monthFormatter.format(currentDate)}</p>
-              <p className='text-xs text-center text-muted-foreground'>
-                {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
-              </p>
-            </div>
-            <div className='gap-4 flex'>
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setCurrentDate(addDays(currentDate, -7))}
-              >
-                <PiCaretLeft />
-              </Button>
+    <>
+      <div className='md:hidden block'>
+        <MobilePostsCalendar posts={props.posts} />
+      </div>
+      <div className='w-full flex-1 h-full hidden relative md:flex flex-col overflow-auto'>
+        <WeekCalendar currentDate={currentDate}>
+          <div className='bg-background top-0 sticky z-10'>
+            <div className='w-full justify-between flex items-center px-6'>
+              <div className='flex-col items-center gap-2'>
+                <p className='font-bold  text-center text-sm'>
+                  {monthFormatter.format(currentDate)}
+                </p>
+                <p className='text-xs text-center text-muted-foreground'>
+                  {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
+                </p>
+              </div>
+              <div className='gap-4 flex'>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setCurrentDate(addDays(currentDate, -7))}
+                >
+                  <PiCaretLeft />
+                </Button>
 
-              <Button variant='outline' onClick={() => setCurrentDate(new Date())}>
-                Today
-              </Button>
+                <Button variant='outline' onClick={() => setCurrentDate(new Date())}>
+                  Today
+                </Button>
 
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setCurrentDate(addDays(currentDate, 7))}
-              >
-                <PiCaretRight />
-              </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                >
+                  <PiCaretRight />
+                </Button>
+              </div>
             </div>
+            <CalendarHeader />
           </div>
-          <CalendarHeader />
-        </div>
-        <CalendarDates
-          renderSlot={({ slotStart, slotEnd }) => {
-            const postsInSlot = (postMap.get(getDayKey(slotStart)) || []).filter((p) => {
-              const scheduledAt = new Date(p.scheduledAt)
-              return (
-                (isAfter(scheduledAt, slotStart) && isBefore(scheduledAt, slotEnd)) ||
-                scheduledAt.getTime() === slotEnd.getTime()
+          <CalendarDates
+            renderSlot={({ slotStart, slotEnd }) => {
+              const postsInSlot = (postMap.get(getDayKey(slotStart)) || []).filter((p) => {
+                const scheduledAt = new Date(p.scheduledAt)
+                return (
+                  (isAfter(scheduledAt, slotStart) && isBefore(scheduledAt, slotEnd)) ||
+                  scheduledAt.getTime() === slotEnd.getTime()
+                )
+              })
+
+              if (!postsInSlot.length) {
+                return null
+              }
+
+              const postsByPostId = postsInSlot.reduce(
+                (acc, post) => {
+                  const id = post.post.id
+                  const posts = acc[id] || []
+                  posts.push(post)
+                  acc[id] = posts
+                  return acc
+                },
+                {} as Record<string, Static<typeof ScheduledPostSchema>[]>
               )
-            })
 
-            if (!postsInSlot.length) {
-              return null
-            }
+              return (
+                <Card className='gap-2 p-1 h-full flex flex-col'>
+                  {Object.keys(postsByPostId).map((id, i) => {
+                    const posts = postsByPostId[id]!
+                    const channels = posts.map((p) => p.channel)
+                    const name = posts[0]!.post.name
 
-            const channels = postsInSlot.map((p) => p.channel)
-
-            const postsByPostId = postsInSlot.reduce(
-              (acc, post) => {
-                const id = post.post.id
-                const posts = acc[id] || []
-                posts.push(post)
-                acc[id] = posts
-                return acc
-              },
-              {} as Record<string, Static<typeof ScheduledPostSchema>[]>
-            )
-
-            return (
-              <Card className='gap-2 p-1 h-full flex flex-col'>
-                {Object.keys(postsByPostId).map((id, i) => {
-                  const posts = postsByPostId[id]!
-                  const channels = posts.map((p) => p.channel)
-                  const name = posts[0]!.post.name
-
-                  return (
-                    <>
-                      <div key={id} className='flex flex-col gap-2'>
-                        <span className='text-muted-foreground font-bold text-xs text-ellipsis line-clamp-1'>
-                          {name}
-                        </span>
-                        <div className='flex flex-row gap-1'>
-                          {channels.slice(0, 4).map((channel, index) => {
-                            const PlatformIcon = PLATFORM_ICON[channel.platform]
-
-                            return (
-                              <div key={channel.id} className='relative w-auto'>
-                                <Avatar className={cn('shadow-lg size-8 border border-border')}>
-                                  <AvatarImage src={channel.imageUrl ?? undefined} />
-                                  <AvatarFallback className='bg-muted'>
-                                    {capitalize(channel.name)[0] ?? ''}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div
-                                  className={cn(
-                                    'absolute -bottom-1 -right-1 border rounded-full size-4 flex bg-card justify-center items-center border-border'
-                                  )}
-                                >
-                                  <PlatformIcon className='text-foreground size-3' />
-                                </div>
-                                {index === 2 && channels.length > 4 && (
-                                  <div
-                                    key={`channel-overlay-${channel.id}`}
-                                    className='absolute bottom-0 flex items-center justify-center w-full h-full left-0 bg-black/60 rounded-full p-1'
-                                  >
-                                    <span className='text-xs text-white'>
-                                      +{channels.length - 4}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
+                    return (
+                      <Fragment key={id}>
+                        <div className='flex flex-col gap-2'>
+                          <span className='text-muted-foreground font-bold text-xs text-ellipsis line-clamp-1'>
+                            {name}
+                          </span>
+                          <ChannelAvatarList channels={channels} />
                         </div>
-                      </div>
-                      {i !== Object.keys(postsByPostId).length - 1 && (
-                        <Separator key={`separator-${id}`} />
-                      )}
-                    </>
-                  )
-                })}
-              </Card>
-            )
-          }}
-        />
-      </WeekCalendar>
+                        {i !== Object.keys(postsByPostId).length - 1 && <Separator />}
+                      </Fragment>
+                    )
+                  })}
+                </Card>
+              )
+            }}
+          />
+        </WeekCalendar>
+      </div>
+    </>
+  )
+}
+
+function MobilePostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
+  const groupedPosts = useMemo(() => {
+    const byDate = groupBy(props.posts, (post) => getIsoDateString(new Date(post.scheduledAt)))
+
+    return Object.entries(byDate)
+      .map(([date, posts]) => {
+        const byTime = groupBy(posts, (post) => format(new Date(post.scheduledAt), 'HH:mm'))
+
+        return {
+          date,
+          timeSlots: Object.entries(byTime)
+            .map(([time, postsAtTime]) => {
+              const byPostId = groupBy(postsAtTime, (post) => post.post.id)
+              return { time, posts: Object.values(byPostId) }
+            })
+            .sort((a, b) => a.time.localeCompare(b.time)),
+        }
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }, [props.posts])
+
+  return (
+    <div className='flex flex-col gap-6'>
+      {groupedPosts.map(({ date, timeSlots }) => (
+        <div key={date} className='bg-background rounded-lg shadow px-4 pb-4'>
+          <h2 className='text-sm font-bold text-muted-foreground mb-2'>
+            {format(new Date(date), 'EEEE, MMMM d')}
+          </h2>
+          <ul className='flex flex-col gap-4'>
+            {timeSlots.map(({ time, posts }, index) => (
+              <Fragment key={time}>
+                <li>
+                  <p className='text-sm font-semibold mb-2'>{time}</p>
+                  <ul className='flex flex-col gap-2'>
+                    {posts.map((postsForId) => {
+                      const postName = postsForId[0]?.post.name || ''
+                      const channels = postsForId.map((p) => p.channel)
+
+                      return (
+                        <Card
+                          key={postsForId[0]?.post.id}
+                          className='p-2 flex flex-row justify-between'
+                        >
+                          <div className='flex flex-col'>
+                            <p className='font-bold'>{postName}</p>
+                            <p className='text-xs text-muted-foreground'>
+                              {channels.length} channel{channels.length > 1 ? 's' : ''}
+                            </p>
+                          </div>
+                          <div className='flex flex-col justify-center'>
+                            <ChannelAvatarList channels={channels} />
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </ul>
+                </li>
+
+                {index !== timeSlots.length - 1 && <Separator />}
+              </Fragment>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   )
 }
