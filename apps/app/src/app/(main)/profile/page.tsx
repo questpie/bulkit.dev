@@ -1,46 +1,35 @@
 'use client'
-import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
-import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
-import { Card, CardContent, CardHeader, CardTitle } from '@bulkit/ui/components/ui/card'
+import { useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { Input } from '@bulkit/ui/components/ui/input'
 import { Label } from '@bulkit/ui/components/ui/label'
-import { PiSignOut } from 'react-icons/pi'
+import { Separator } from '@bulkit/ui/components/ui/separator'
 
 export default function ProfilePage() {
   const authData = useAuthData()
-  const { logout } = useAuthActions()
 
   return (
-    <div>
-      <Header title='Profile'>
-        <HeaderButton
-          icon={<PiSignOut />}
-          onClick={() => logout.mutate()}
-          label='Logout'
-          variant='secondary'
-          isLoading={logout.isPending}
-        />
-      </Header>
+    <div className='flex flex-col px-4 gap-6'>
+      <div>
+        <h4 className='text-xl font-bold'>Profile details</h4>
+        <p className='text-sm text-muted-foreground'>
+          Manage your profile details to keep your account information accurate and up-to-date.
+        </p>
+      </div>
 
-      <div className='flex flex-col gap-6 px-4 pb-4 w-full max-w-screen-md'>
-        <Card>
-          <CardHeader className='border-b p-4 border-border'>
-            <CardTitle>Your Email</CardTitle>
-          </CardHeader>
-          <CardContent className='pt-4'>
-            <div className='flex flex-col gap-2'>
-              <Label htmlFor='email'>Email</Label>
-              <Input
-                id='email'
-                name='email'
-                type='email'
-                placeholder='Your email'
-                value={authData?.user.email}
-                disabled
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <Separator />
+
+      <div className='flex flex-col gap-6  pb-4 w-full max-w-screen-sm'>
+        <div className='flex flex-col gap-3'>
+          <Label htmlFor='email'>Email</Label>
+          <Input
+            id='email'
+            name='email'
+            type='email'
+            placeholder='Your email'
+            value={authData?.user.email}
+            disabled
+          />
+        </div>
       </div>
     </div>
   )

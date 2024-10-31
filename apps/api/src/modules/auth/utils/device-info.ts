@@ -51,7 +51,7 @@ function extractCountry(request: Request): string {
   // Extract country from Accept-Language header
   const acceptLanguage = request.headers.get('accept-language')
   if (acceptLanguage) {
-    const country = acceptLanguage.split(',')[0].split('-')[1]
+    const country = acceptLanguage.split(',')[0]?.split('-')[1]
     if (country && country.length === 2) return country.toUpperCase()
   }
 
@@ -61,7 +61,7 @@ function extractCountry(request: Request): string {
 
 function getCountryFromIP(request: Request): string | null {
   const forwardedFor = request.headers.get('x-forwarded-for')
-  const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : request.headers.get('x-real-ip')
+  const ip = forwardedFor ? forwardedFor.split(',')[0]?.trim() : request.headers.get('x-real-ip')
 
   if (!ip) return null
 

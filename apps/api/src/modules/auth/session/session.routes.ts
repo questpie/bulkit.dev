@@ -153,4 +153,61 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
           },
         }
       )
+      .get(
+        '/list',
+        async ({ auth }) => {
+          // remove invalid sessions
+          await lucia.deleteExpiredSessions()
+          const sessions = await lucia.getUserSessions(auth.user.id)
+
+          return sessions.map((session) => ({
+            id: session.id,
+            deviceInfo: session.deviceInfo,
+            expiresAt: session.expiresAt.toISOString(),
+          }))
+        },
+        {
+          detail: {
+            description: 'Lists all active sessions for the authenticated user',
+          },
+          response: {
+            200: t.Array(
+              t.Object({
+                id: t.String(),
+                deviceInfo: t.Object({
+                  browser: t.String(),
+                  os: t.String(),
+                  country: t.String(),
+                  device: t.String(),
+                }),
+                expiresAt: t.String(),
+              })
+            ),
+          },
+        }
+      )
+      .delete(
+        '/revoke',
+        async ({ auth, query }) => {
+          if (query.sessionId) {
+            await lucia.invalidateSession(query.sessionId)
+          } else {
+            await lucia.invalidateUserSessions(auth.user.id)
+          }
+          return { success: true }
+        },
+        {
+          detail: {
+            description: 'Revokes a specific session or all sessions for the authenticated user',
+          },
+          query: t.Object({
+            sessionId: t.Optional(t.String()),
+          }),
+          response: {
+            200: t.Object({
+              success: t.Boolean(),
+            }),
+          },
+        }
+      )
   })
