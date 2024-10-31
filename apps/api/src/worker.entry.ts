@@ -1,19 +1,19 @@
 /**
  * Register all workers here
  */
-import { mailClient } from '@bulkit/api/mail/mail.client'
+import { injectMailClient } from '@bulkit/api/mail/mail.client'
 import { appLogger } from '@bulkit/shared/utils/logger'
 
 // register pinio logger
 import '@bulkit/api/common/logger'
-import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
 
 export async function bootWorker() {
-  // THIS is how you can use dependency injection to overwrite stuff work other processes
-  // ioc.use(iocRegister('db', () => null))
+  const container = iocResolve(ioc.use(injectMailClient))
 
-  mailClient.registerWorker()
+  container.mailClient.registerWorker()
   resourceCleanupJob.registerWorker()
   publishPostJob.registerWorker()
 

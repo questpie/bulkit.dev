@@ -14,6 +14,7 @@ export default async function MainLayout(props: PropsWithChildren) {
   }
 
   const selectedOrganizationId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
+  console.log(selectedOrganizationId)
   const [orgsResp, selectedOrganizationResp] = await Promise.all([
     apiServer.organizations.index.get({
       query: {

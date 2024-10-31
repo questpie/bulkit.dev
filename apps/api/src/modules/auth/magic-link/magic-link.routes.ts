@@ -2,7 +2,7 @@ import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
-import { mailClient } from '@bulkit/api/mail/mail.client'
+import { injectMailClient } from '@bulkit/api/mail/mail.client'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import MailMagicLink from '@bulkit/transactional/emails/mail-magic-link'
@@ -13,10 +13,11 @@ import { createDate, TimeSpan } from 'oslo'
 export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
   .use(injectDatabase)
   .use(injectAuthService)
+  .use(injectMailClient)
   .use(applyRateLimit({ limit: 10, window: 60 }))
   .post(
     '/',
-    async ({ body, db }) => {
+    async ({ body, db, mailClient }) => {
       const { email } = body
 
       // Store token in database

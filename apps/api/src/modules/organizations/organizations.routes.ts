@@ -2,18 +2,24 @@ import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import {
-  insertOrganizationInviteSchema,
   insertOrganizationSchema,
   organizationInvitesTable,
   organizationsTable,
-  selectOrganizationInviteSchema,
   selectOrganizationSchema,
   userOrganizationsTable,
+  usersTable,
 } from '@bulkit/api/db/db.schema'
+import { envApi } from '@bulkit/api/envApi'
+import { injectMailClient } from '@bulkit/api/mail/mail.client'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
+import {
+  OrganizationMemberSchema,
+  SendInvitationSchema,
+} from '@bulkit/shared/modules/organizations/organizations.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import { and, desc, eq } from 'drizzle-orm'
+import { OrganizationInviteMail } from '@bulkit/transactional/emails/organization-invite-mail'
+import { and, desc, eq, getTableColumns } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -25,6 +31,7 @@ export const organizationRoutes = new Elysia({
 })
   .use(protectedMiddleware)
   .use(injectDatabase)
+  .use(injectMailClient)
   .post(
     '/',
     async ({ body, db, auth }) => {
@@ -140,15 +147,22 @@ export const organizationRoutes = new Elysia({
   )
   .post(
     '/:id/invite',
-    async ({ params, body, db, auth, error }) => {
-      const userOrg = await db
-        .select()
+    async (ctx) => {
+      const userOrg = await ctx.db
+        .select({
+          ...getTableColumns(userOrganizationsTable),
+          organization: getTableColumns(organizationsTable),
+        })
         .from(userOrganizationsTable)
         .where(
           and(
-            eq(userOrganizationsTable.organizationId, params.id),
-            eq(userOrganizationsTable.userId, auth.user.id)
+            eq(userOrganizationsTable.organizationId, ctx.params.id),
+            eq(userOrganizationsTable.userId, ctx.auth.user.id)
           )
+        )
+        .innerJoin(
+          organizationsTable,
+          eq(userOrganizationsTable.organizationId, organizationsTable.id)
         )
         .then((res) => res[0])
 
@@ -156,25 +170,49 @@ export const organizationRoutes = new Elysia({
         return HttpError.Forbidden('Insufficient permissions')
       }
 
-      const invite = await db
+      const invites = await ctx.db
         .insert(organizationInvitesTable)
-        .values({
-          ...body,
-          organizationId: params.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-        })
+        .values(
+          ctx.body.map((inv) => ({
+            email: inv.email,
+            role: inv.role,
+            organizationId: ctx.params.id,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+          }))
+        )
         .returning()
 
       // Here you would typically send an email with the invite link
+      for (const inv of invites) {
+        // TODO: this should probably create user ? or at least send him to auth
+        const invUrl = new URL(`/invite/${inv.id}/accept`, envApi.SERVER_URL)
 
-      return invite[0]!
+        await ctx.mailClient.send({
+          subject: `You've been invited to join ${userOrg.organization.name}`,
+          to: inv.email,
+          react: OrganizationInviteMail({
+            data: {
+              email: inv.email,
+              organization: {
+                owner: ctx.auth.user.name,
+                name: userOrg.organization.name,
+              },
+              url: invUrl.toString(),
+            },
+          }),
+        })
+      }
+
+      return { invitesCount: invites.length }
     },
     {
       response: {
-        200: selectOrganizationInviteSchema,
+        200: t.Object({
+          invitesCount: t.Number(),
+        }),
         403: HttpErrorSchema(),
       },
-      body: insertOrganizationInviteSchema,
+      body: t.Array(SendInvitationSchema, { minItems: 1, maxItems: 10 }),
     }
   )
   .post(
@@ -243,6 +281,163 @@ export const organizationRoutes = new Elysia({
             organizationName: t.String(),
           })
         ),
+      },
+    }
+  )
+  .get(
+    '/:id/members',
+    async (ctx) => {
+      const userOrg = await ctx.db
+        .select()
+        .from(userOrganizationsTable)
+        .where(
+          and(
+            eq(userOrganizationsTable.organizationId, ctx.params.id),
+            eq(userOrganizationsTable.userId, ctx.auth.user.id)
+          )
+        )
+        .then((res) => res[0])
+
+      if (!userOrg) {
+        throw HttpError.Forbidden('You are not a member of this organization')
+      }
+
+      const membersQuery = ctx.db
+        .select({
+          id: usersTable.id,
+          email: usersTable.email,
+          name: usersTable.name,
+          role: userOrganizationsTable.role,
+        })
+        .from(userOrganizationsTable)
+        .innerJoin(usersTable, eq(userOrganizationsTable.userId, usersTable.id))
+        .where(eq(userOrganizationsTable.organizationId, ctx.params.id))
+        .orderBy(desc(userOrganizationsTable.createdAt))
+        .limit(ctx.query.limit + 1)
+        .offset(ctx.query.cursor)
+
+      const [members, total] = await Promise.all([membersQuery, ctx.db.$count(membersQuery)])
+
+      const nextCursor =
+        members.length > ctx.query.limit ? ctx.query.cursor + ctx.query.limit : undefined
+      return {
+        data: members.slice(0, ctx.query.limit),
+        nextCursor,
+        total,
+      }
+    },
+    {
+      query: PaginationSchema,
+      response: {
+        200: t.Object({
+          data: t.Array(OrganizationMemberSchema),
+          nextCursor: t.Optional(t.Number()),
+          total: t.Number(),
+        }),
+        403: HttpErrorSchema(),
+      },
+    }
+  )
+
+  .delete(
+    '/:id/members/:userId',
+    async ({ params, db, auth, error }) => {
+      const userOrg = await db
+        .select()
+        .from(userOrganizationsTable)
+        .where(
+          and(
+            eq(userOrganizationsTable.organizationId, params.id),
+            eq(userOrganizationsTable.userId, auth.user.id)
+          )
+        )
+        .then((res) => res[0])
+
+      if (!userOrg || userOrg.role !== 'owner') {
+        throw HttpError.Forbidden('Insufficient permissions')
+      }
+
+      if (params.userId === auth.user.id) {
+        throw HttpError.BadRequest('Cannot remove yourself')
+      }
+
+      const result = await db
+        .delete(userOrganizationsTable)
+        .where(
+          and(
+            eq(userOrganizationsTable.organizationId, params.id),
+            eq(userOrganizationsTable.userId, params.userId)
+          )
+        )
+        .returning()
+
+      if (result.length === 0) {
+        throw HttpError.NotFound('Member not found')
+      }
+
+      return { message: 'Member removed successfully' }
+    },
+    {
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+        400: HttpErrorSchema(),
+        403: HttpErrorSchema(),
+        404: HttpErrorSchema(),
+      },
+    }
+  )
+  .patch(
+    '/:id/members/:userId/role',
+    async ({ params, body, db, auth, error }) => {
+      const userOrg = await db
+        .select()
+        .from(userOrganizationsTable)
+        .where(
+          and(
+            eq(userOrganizationsTable.organizationId, params.id),
+            eq(userOrganizationsTable.userId, auth.user.id)
+          )
+        )
+        .then((res) => res[0])
+
+      if (!userOrg || userOrg.role !== 'owner') {
+        throw HttpError.Forbidden('Insufficient permissions')
+      }
+
+      if (params.userId === auth.user.id) {
+        throw HttpError.BadRequest('Cannot change your own role')
+      }
+
+      const result = await db
+        .update(userOrganizationsTable)
+        .set({ role: body.role })
+        .where(
+          and(
+            eq(userOrganizationsTable.organizationId, params.id),
+            eq(userOrganizationsTable.userId, params.userId)
+          )
+        )
+        .returning()
+
+      if (result.length === 0) {
+        throw HttpError.NotFound('Member not found')
+      }
+
+      return { message: 'Member role updated successfully' }
+    },
+    {
+      body: t.Object({
+        role: StringLiteralEnum(USER_ROLE),
+      }),
+      response: {
+        200: t.Object({
+          message: t.String(),
+        }),
+        400: HttpErrorSchema(),
+        403: HttpErrorSchema(),
+        404: HttpErrorSchema(),
       },
     }
   )

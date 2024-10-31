@@ -5,7 +5,7 @@
  * Users and organizations
  */
 
-export const USER_ROLE = ['owner', 'member'] as const
+export const USER_ROLE = ['owner', 'admin', 'member'] as const
 export type UserRole = (typeof USER_ROLE)[number]
 
 /**

@@ -32,18 +32,19 @@ export default async function PostsPage(props: { searchParams: Promise<Record<st
           />
         </>
       )}
-
-      <div className='text-center py-12'>
-        <h2 className='text-2xl font-semibold mb-2'>No posts yet</h2>
-        <p className='text-muted-foreground mb-4'>Get started by creating your first post</p>
-        <CreatePostDialog>
-          <CreatePostDialogTrigger asChild>
-            <Button>
-              <PiPlus /> Create post
-            </Button>
-          </CreatePostDialogTrigger>
-        </CreatePostDialog>
-      </div>
+      {!posts.data?.data.length && (
+        <div className='text-center py-12'>
+          <h2 className='text-2xl font-semibold mb-2'>No posts yet</h2>
+          <p className='text-muted-foreground mb-4'>Get started by creating your first post</p>
+          <CreatePostDialog>
+            <CreatePostDialogTrigger asChild>
+              <Button>
+                <PiPlus /> Create post
+              </Button>
+            </CreatePostDialogTrigger>
+          </CreatePostDialog>
+        </div>
+      )}
     </div>
   )
 }

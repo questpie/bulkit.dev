@@ -7,7 +7,7 @@ import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { PiAt, PiCalendar, PiGear, PiPaperPlane } from 'react-icons/pi'
+import { PiAt, PiBuilding, PiCalendar, PiGear, PiPaperPlane } from 'react-icons/pi'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
   // {
@@ -29,6 +29,11 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     name: 'Posts',
     icon: PiPaperPlane,
     href: '/posts',
+  },
+  {
+    name: 'Organization settings',
+    icon: PiBuilding,
+    href: '/organizations',
   },
   // {
   //   name: 'Aministration',
