@@ -8,7 +8,7 @@ import {
 } from '@bulkit/api/modules/organizations/services/organizations.service'
 import type { UserRole } from '@bulkit/shared/constants/db.constants'
 import { ORGANIZATION_HEADER } from '@bulkit/shared/modules/organizations/organizations.constants'
-import Elysia, { t } from 'elysia'
+import Elysia from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
 // Constants
@@ -51,8 +51,12 @@ export const organizationMiddleware = new Elysia({
      * Checks if the user has one of the specified roles or is the owner.
      * @param {string[]} roles - Array of allowed roles.
      */
-    hasRole(roles: UserRole[] | true = true) {
+    hasRole(roles: UserRole[] | boolean = true) {
       onBeforeHandle(async ({ organization }) => {
+        if (!roles) {
+          return
+        }
+
         if (!organization) {
           throw HttpError.Forbidden('Insufficient permissions')
         }
