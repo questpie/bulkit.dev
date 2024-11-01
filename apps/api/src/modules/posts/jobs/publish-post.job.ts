@@ -88,16 +88,18 @@ export const publishPostJob = jobFactory.createJob({
 
     job.log('Starting publish transaction')
     await db.transaction(async (db) => {
+      job.log('Publishing post at provider')
+      const result = await channelManager.publisher.publishPost(channel, post)
+
       await db
         .update(scheduledPostsTable)
         .set({
           status: 'published',
           publishedAt: new Date().toISOString(),
+          externalReferenceId: result.externalReferenceId,
+          externalUrl: result.externalUrl,
         })
         .where(eq(scheduledPostsTable.id, scheduledPost.id))
-
-      job.log('Publishing post at provider')
-      await channelManager.publisher.publishPost(channel, post)
     })
     job.log('Post publish transaction committed')
 

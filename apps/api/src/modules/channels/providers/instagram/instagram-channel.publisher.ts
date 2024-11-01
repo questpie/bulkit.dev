@@ -1,5 +1,8 @@
 import { drive } from '@bulkit/api/drive/drive'
-import { ChannelPublisher } from '@bulkit/api/modules/channels/abstract/channel.manager'
+import {
+  ChannelPublisher,
+  type ChannelPostResult,
+} from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
@@ -13,7 +16,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   protected async postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
-  ): Promise<void> {
+  ): Promise<ChannelPostResult> {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
@@ -31,14 +34,15 @@ export class InstagramChannelPublisher extends ChannelPublisher {
         'REELS'
       )
 
-      await this.createAndPublishReel(
+      const postId = await this.createAndPublishReel(
         accessToken,
         mediaId,
         post.description,
         channel.socialMediaIntegration.platformAccountId
       )
 
-      appLogger.info(`Successfully posted reel to Instagram: ${mediaId}`)
+      appLogger.info(`Successfully posted reel to Instagram: ${postId}`)
+      return this.getChannelPostResult(postId, channel)
     } catch (error) {
       appLogger.error('Error posting reel to Instagram:', error)
       throw new Error('Failed to post reel to Instagram')
@@ -49,7 +53,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   protected async postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
-  ): Promise<void> {
+  ): Promise<ChannelPostResult> {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
@@ -67,13 +71,14 @@ export class InstagramChannelPublisher extends ChannelPublisher {
         'STORIES'
       )
 
-      await this.createAndPublishStory(
+      const postId = await this.createAndPublishStory(
         accessToken,
         mediaId,
         channel.socialMediaIntegration.platformAccountId
       )
 
-      appLogger.info(`Successfully posted story to Instagram: ${mediaId}`)
+      appLogger.info(`Successfully posted story to Instagram: ${postId}`)
+      return this.getChannelPostResult(postId, channel)
     } catch (error) {
       appLogger.error('Error posting story to Instagram:', error)
       throw new Error('Failed to post story to Instagram')
@@ -83,7 +88,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   protected async postThread(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'thread' }>
-  ): Promise<void> {
+  ): Promise<ChannelPostResult> {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
@@ -114,14 +119,14 @@ export class InstagramChannelPublisher extends ChannelPublisher {
         mergedText,
         channel.socialMediaIntegration.platformAccountId
       )
-
-      await this.publishMedia(
+      const postId = await this.publishMedia(
         accessToken,
         containerId,
         channel.socialMediaIntegration.platformAccountId
       )
 
-      appLogger.info(`Successfully posted thread as carousel to Instagram: ${containerId}`)
+      appLogger.info(`Successfully posted thread as carousel to Instagram: ${postId}`)
+      return this.getChannelPostResult(postId, channel)
     } catch (error) {
       appLogger.error('Error posting thread to Instagram:', error)
       throw new Error('Failed to post thread to Instagram')
@@ -131,7 +136,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
   protected async postPost(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
-  ): Promise<void> {
+  ): Promise<ChannelPostResult> {
     try {
       const accessToken = channel.socialMediaIntegration.accessToken
 
@@ -176,13 +181,14 @@ export class InstagramChannelPublisher extends ChannelPublisher {
         )
       }
 
-      await this.publishMedia(
+      const postId = await this.publishMedia(
         accessToken,
         containerId,
         channel.socialMediaIntegration.platformAccountId
       )
 
-      appLogger.info(`Successfully posted to Instagram: ${containerId}`)
+      appLogger.info(`Successfully posted to Instagram: ${postId}`)
+      return this.getChannelPostResult(postId, channel)
     } catch (error) {
       appLogger.error('Error posting to Instagram:', error)
       throw new Error('Failed to post to Instagram')
@@ -314,7 +320,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     accessToken: string,
     containerId: string,
     instagramId: string
-  ): Promise<void> {
+  ): Promise<string> {
     const params = new URLSearchParams({
       creation_id: containerId,
       access_token: accessToken,
@@ -327,13 +333,16 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     if (!response.ok) {
       throw new Error(`Failed to publish media: ${await response.text()}`)
     }
+
+    const data = await response.json()
+    return data.id
   }
 
   private async createAndPublishStory(
     accessToken: string,
     mediaId: string,
     instagramId: string
-  ): Promise<void> {
+  ): Promise<string> {
     const params = new URLSearchParams({
       // media_type: 'STORY',
       creation_id: mediaId,
@@ -347,6 +356,8 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     if (!response.ok) {
       throw new Error(`Failed to create and publish story: ${await response.text()}`)
     }
+    const data = await response.json()
+    return data.id
   }
 
   private async createAndPublishReel(
@@ -354,7 +365,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     mediaId: string,
     caption: string,
     instagramId: string
-  ): Promise<void> {
+  ): Promise<string> {
     const params = new URLSearchParams({
       creation_id: mediaId,
       caption: caption,
@@ -368,6 +379,9 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     if (!response.ok) {
       throw new Error(`Failed to create and publish reel: ${await response.text()}`)
     }
+
+    const data = await response.json()
+    return data.id
   }
 
   private async initializeResumeableUpload(
@@ -408,6 +422,13 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     const data = await response.json()
     if (data.data[0].quota_usage >= 50) {
       throw new Error('Publishing rate limit reached')
+    }
+  }
+
+  private getChannelPostResult(postId: string, channel: ChannelWithIntegration): ChannelPostResult {
+    return {
+      externalReferenceId: postId,
+      externalUrl: `https://www.instagram.com/p/${postId}/`,
     }
   }
 }

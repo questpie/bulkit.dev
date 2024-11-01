@@ -21,10 +21,15 @@ export abstract class ChannelAuthenticator {
   ): Promise<ChannelWithIntegration>
 }
 
+export type ChannelPostResult = {
+  externalReferenceId: string
+  externalUrl: string
+}
+
 export abstract class ChannelPublisher {
   constructor(private readonly authenticator: ChannelAuthenticator) {}
 
-  async publishPost(channel: ChannelWithIntegration, post: Post) {
+  async publishPost(channel: ChannelWithIntegration, post: Post): Promise<ChannelPostResult> {
     let refreshedChannel = channel
 
     if (
@@ -35,34 +40,44 @@ export abstract class ChannelPublisher {
       refreshedChannel = await this.authenticator.handleRenewal(db, channel)
     }
 
+    let result: ChannelPostResult
+
     switch (post.type) {
       case 'post':
-        return this.postPost(refreshedChannel, post)
+        result = await this.postPost(refreshedChannel, post)
+        break
       case 'reel':
-        return this.postReel(refreshedChannel, post)
+        result = await this.postReel(refreshedChannel, post)
+        break
       case 'story':
-        return this.postStory(refreshedChannel, post)
+        result = await this.postStory(refreshedChannel, post)
+        break
       case 'thread':
-        return this.postThread(refreshedChannel, post)
+        result = await this.postThread(refreshedChannel, post)
+        break
+      default:
+        throw new Error(`Unsupported post type: ${(post as any).type}`)
     }
+
+    return result
   }
 
   protected abstract postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
-  ): Promise<void>
+  ): Promise<ChannelPostResult>
   protected abstract postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
-  ): Promise<void>
+  ): Promise<ChannelPostResult>
   protected abstract postThread(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'thread' }>
-  ): Promise<void>
+  ): Promise<ChannelPostResult>
   protected abstract postPost(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
-  ): Promise<void>
+  ): Promise<ChannelPostResult>
 }
 
 export abstract class ChannelManager {
