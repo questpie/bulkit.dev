@@ -2,15 +2,19 @@ import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type ChannelPostResult,
+  type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { buildXClient } from '@bulkit/api/modules/channels/providers/x/x-api-client'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
+import { Rettiwt } from 'rettiwt-api'
 import type { TwitterApi } from 'twitter-api-v2'
 
 export class XChannelPublisher extends ChannelPublisher {
+  private rettiwt = new Rettiwt()
+
   protected async postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
@@ -102,6 +106,29 @@ export class XChannelPublisher extends ChannelPublisher {
       appLogger.error('Error posting tweet:')
       appLogger.error(error)
       throw new Error('Failed to post tweet')
+    }
+  }
+
+  protected async getMetrics(
+    scheduledPost: {
+      id: string
+      externalReferenceId: string
+    },
+    oldMetrics: PostMetrics | null
+  ): Promise<PostMetrics> {
+    const tweetData = await this.rettiwt.tweet.details(scheduledPost.externalReferenceId)
+
+    if (!tweetData) {
+      throw new Error('Failed to get tweet metrics')
+    }
+
+    return {
+      likes: tweetData.likeCount ?? oldMetrics?.likes ?? 0,
+      shares: tweetData.retweetCount ?? oldMetrics?.shares ?? 0,
+      comments: tweetData.replyCount ?? oldMetrics?.comments ?? 0,
+      impressions: tweetData.viewCount ?? oldMetrics?.impressions ?? 0,
+      clicks: oldMetrics?.clicks ?? 0,
+      reach: oldMetrics?.reach ?? 0,
     }
   }
 

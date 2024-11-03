@@ -1,4 +1,5 @@
 import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
+import { postMetricsHistoryTable, type InsertPostMetricsHistory } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
@@ -26,6 +27,10 @@ export type ChannelPostResult = {
   externalUrl: string
 }
 
+export type PostMetrics = Omit<
+  InsertPostMetricsHistory,
+  'id' | 'createdAt' | 'updatedAt' | 'scheduledPostId'
+>
 export abstract class ChannelPublisher {
   constructor(private readonly authenticator: ChannelAuthenticator) {}
 
@@ -62,6 +67,40 @@ export abstract class ChannelPublisher {
     return result
   }
 
+  async saveMetrics(scheduledPostId: string) {
+    const { db } = iocResolve(ioc.use(injectDatabase))
+    const scheduledPost = await db.query.scheduledPostsTable.findFirst({
+      where: (scheduledPostsTable, { eq }) => eq(scheduledPostsTable.id, scheduledPostId),
+    })
+
+    if (scheduledPost?.status !== 'published') {
+      throw new Error('Post is not published')
+    }
+
+    if (!scheduledPost.externalReferenceId) {
+      throw new Error('Post has no external reference id')
+    }
+
+    const oldMetrics = await db.query.postMetricsHistoryTable.findFirst({
+      where: (postMetricsHistoryTable, { eq }) =>
+        eq(postMetricsHistoryTable.scheduledPostId, scheduledPost.id),
+      orderBy: (postMetricsHistoryTable, { desc }) => desc(postMetricsHistoryTable.createdAt),
+    })
+
+    const metrics = await this.getMetrics(
+      { id: scheduledPost.id, externalReferenceId: scheduledPost.externalReferenceId },
+      oldMetrics ?? null
+    )
+
+    return db
+      .insert(postMetricsHistoryTable)
+      .values({
+        ...metrics,
+        scheduledPostId: scheduledPost.id,
+      })
+      .returning()
+  }
+
   protected abstract postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
@@ -78,6 +117,14 @@ export abstract class ChannelPublisher {
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
   ): Promise<ChannelPostResult>
+
+  protected abstract getMetrics(
+    scheduledPost: {
+      id: string
+      externalReferenceId: string
+    },
+    oldMetrics: PostMetrics | null
+  ): Promise<PostMetrics>
 }
 
 export abstract class ChannelManager {
