@@ -10,6 +10,7 @@ import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { youtube_v3 } from 'googleapis'
+import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 
 export class YoutubeChannelPublisher extends ChannelPublisher {
   protected async postReel(
@@ -76,10 +77,8 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
   }
 
   protected async getMetrics(
-    scheduledPost: {
-      id: string
-      externalReferenceId: string
-    },
+    channel: ChannelWithIntegration,
+    scheduledPost: ScheduledPostWithExternalReference,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics> {
     const client = await buildYouTubeClient(

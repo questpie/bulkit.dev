@@ -2,10 +2,12 @@ import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type ChannelPostResult,
+  type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
+import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import fetch from 'node-fetch'
 
@@ -192,6 +194,43 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     } catch (error) {
       appLogger.error('Error posting to Instagram:', error)
       throw new Error('Failed to post to Instagram')
+    }
+  }
+
+  protected async getMetrics(
+    channel: ChannelWithIntegration,
+    scheduledPost: ScheduledPostWithExternalReference,
+    oldMetrics: PostMetrics | null
+  ): Promise<PostMetrics> {
+    try {
+      const accessToken = channel.socialMediaIntegration.accessToken
+      const mediaId = scheduledPost.externalReferenceId
+
+      const params = new URLSearchParams({
+        fields: 'like_count,comments_count,engagement',
+        access_token: accessToken,
+      })
+
+      const response = await fetch(`${this.baseUrl}/${mediaId}/insights?${params}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to get Instagram post metrics: ${await response.text()}`)
+      }
+
+      const data = await response.json()
+
+      // Instagram API doesn't provide all metrics directly, so we'll use what's available
+      return {
+        likes: data.like_count ?? oldMetrics?.likes ?? 0,
+        shares: oldMetrics?.shares ?? 0, // Instagram API doesn't provide share count
+        comments: data.comments_count ?? oldMetrics?.comments ?? 0,
+        impressions: data.engagement ?? oldMetrics?.impressions ?? 0, // Using engagement as a proxy for impressions
+        clicks: oldMetrics?.clicks ?? 0, // Instagram API doesn't provide click count
+        reach: oldMetrics?.reach ?? 0, // Instagram API doesn't provide reach in this endpoint
+      }
+    } catch (error) {
+      appLogger.error('Error getting Instagram post metrics:', error)
+      throw new Error('Failed to get Instagram post metrics')
     }
   }
 
