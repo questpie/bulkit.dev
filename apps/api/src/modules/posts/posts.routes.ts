@@ -17,6 +17,7 @@ import {
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
+import { addSeconds, isBefore, max } from 'date-fns'
 import { and, desc, eq, isNull } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
@@ -209,41 +210,42 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
         )
       }
 
-      await ctx.db.transaction(async (trx) => {
+      const scheduledPosts = await ctx.db.transaction(async (trx) => {
+        const scheduledPosts: { scheduledPostId: string; delay: number }[] = []
+        let earliestScheduledAt: Date | null = null
+
         for (const channel of post.channels) {
           if (!channel.scheduledPost) continue
-          const scheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+          // if user didn't schedule the channel manually, use the post's scheduledAt
+          const userDefinedScheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
 
-          let delay = 1000
+          // clamp scheduledAt to now if is set before now
+          const scheduledAtClamped = userDefinedScheduledAt
+            ? max([new Date(userDefinedScheduledAt), addSeconds(new Date(), 1)])
+            : new Date()
 
-          if (scheduledAt) {
-            delay = Math.max(new Date(scheduledAt).getTime() - new Date().getTime(), 1000)
+          // we are keeping track of the earliest scheduledAt to use it as the post's scheduledAt
+          if (earliestScheduledAt === null || isBefore(scheduledAtClamped, earliestScheduledAt)) {
+            earliestScheduledAt = scheduledAtClamped
           }
 
-          await trx.transaction(async (trx) => {
-            // mark scheduledPost as status scheduled
-            await trx
-              .update(scheduledPostsTable)
-              .set({
-                status: 'scheduled',
-              })
-              .where(eq(scheduledPostsTable.id, channel.scheduledPost!.id))
+          const delay = Math.max(
+            new Date(scheduledAtClamped).getTime() - new Date().getTime(),
+            1000
+          )
 
-            await publishPostJob.invoke(
-              {
-                scheduledPostId: channel.scheduledPost!.id,
-              },
-              {
-                jobId: channel.scheduledPost!.id,
-                delay,
-                attempts: 3,
-                backoff: {
-                  type: 'exponential',
-                  delay: 1000,
-                },
-              }
-            )
-          })
+          await trx
+            .update(scheduledPostsTable)
+            .set({
+              status: 'scheduled',
+              // if the channel had defined a scheduledAt before we just have to make sure we keep the clamped value
+              ...(channel.scheduledPost.scheduledAt
+                ? { scheduledAt: scheduledAtClamped.toISOString() }
+                : {}),
+            })
+            .where(eq(scheduledPostsTable.id, channel.scheduledPost!.id))
+
+          scheduledPosts.push({ scheduledPostId: channel.scheduledPost!.id, delay })
         }
 
         await trx
@@ -252,9 +254,32 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
             // if we added another channel to a scheduled post and again published it,
             //  we want to keep existing status
             status: post.status === 'draft' ? 'scheduled' : post.status,
+            // by setting this we are making sure, that we are always able to display the scheduled post on timeline
+            // even if the user didn't schedule it manually
+            // the earliestScheduledAt will never be sooner than 1 second from now
+            scheduledAt: post.scheduledAt ?? earliestScheduledAt?.toISOString(),
           })
           .where(eq(postsTable.id, post.id))
+
+        return scheduledPosts
       })
+
+      // we sucessfully published the post, so we can now schedule the jobs
+      for (const { scheduledPostId, delay } of scheduledPosts) {
+        await publishPostJob.invoke(
+          { scheduledPostId },
+          {
+            jobId: scheduledPostId,
+            delay,
+            attempts: 3,
+            backoff: {
+              type: 'exponential',
+              delay: 1000,
+            },
+          }
+        )
+      }
+
       return {
         ...post,
         status: 'scheduled',

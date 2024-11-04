@@ -4,7 +4,7 @@ import {
   SCHEDULED_POST_STATUS,
 } from '@bulkit/shared/constants/db.constants'
 import { Nullable, StringLiteralEnum, EntityTimestampsSchema } from '@bulkit/shared/schemas/misc'
-import { Type } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 
 export const ScheduledPostSchema = Type.Object({
   id: Type.String({}),
@@ -31,3 +31,16 @@ export const ScheduledPostSchema = Type.Object({
 
   ...EntityTimestampsSchema.properties,
 })
+
+export type ScheduledPost = Static<typeof ScheduledPostSchema>
+
+export const ScheduledPostWithExternalReferenceSchema = Type.Composite([
+  Type.Omit(ScheduledPostSchema, ['channel', 'post']),
+  Type.Object({
+    externalReferenceId: Type.String({}),
+    externalUrl: Nullable(Type.String({})),
+  }),
+])
+export type ScheduledPostWithExternalReference = Static<
+  typeof ScheduledPostWithExternalReferenceSchema
+>

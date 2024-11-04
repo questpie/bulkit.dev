@@ -5,6 +5,8 @@ import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-aut
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
+import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
+import { and } from 'drizzle-orm'
 import type { InferContext } from 'elysia'
 
 export abstract class ChannelAuthenticator {
@@ -67,11 +69,19 @@ export abstract class ChannelPublisher {
     return result
   }
 
-  async saveMetrics(scheduledPostId: string) {
+  async saveMetrics(channel: ChannelWithIntegration, scheduledPostId: string) {
     const { db } = iocResolve(ioc.use(injectDatabase))
     const scheduledPost = await db.query.scheduledPostsTable.findFirst({
-      where: (scheduledPostsTable, { eq }) => eq(scheduledPostsTable.id, scheduledPostId),
+      where: (scheduledPostsTable, { eq }) =>
+        and(
+          eq(scheduledPostsTable.id, scheduledPostId),
+          eq(scheduledPostsTable.channelId, channel.id)
+        ),
     })
+
+    if (!scheduledPost) {
+      throw new Error(`Post with id ${scheduledPostId} not found for channel ${channel.id}`)
+    }
 
     if (scheduledPost?.status !== 'published') {
       throw new Error('Post is not published')
@@ -87,10 +97,7 @@ export abstract class ChannelPublisher {
       orderBy: (postMetricsHistoryTable, { desc }) => desc(postMetricsHistoryTable.createdAt),
     })
 
-    const metrics = await this.getMetrics(
-      { id: scheduledPost.id, externalReferenceId: scheduledPost.externalReferenceId },
-      oldMetrics ?? null
-    )
+    const metrics = await this.getMetrics(channel, scheduledPost, oldMetrics ?? null)
 
     return db
       .insert(postMetricsHistoryTable)
@@ -119,10 +126,8 @@ export abstract class ChannelPublisher {
   ): Promise<ChannelPostResult>
 
   protected abstract getMetrics(
-    scheduledPost: {
-      id: string
-      externalReferenceId: string
-    },
+    channel: ChannelWithIntegration,
+    scheduledPost: ScheduledPostWithExternalReference,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics>
 }

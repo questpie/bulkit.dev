@@ -1,3 +1,4 @@
+import type { SelectScheduledPost } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
@@ -8,6 +9,7 @@ import { buildXClient } from '@bulkit/api/modules/channels/providers/x/x-api-cli
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
+import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { Rettiwt } from 'rettiwt-api'
 import type { TwitterApi } from 'twitter-api-v2'
@@ -110,10 +112,8 @@ export class XChannelPublisher extends ChannelPublisher {
   }
 
   protected async getMetrics(
-    scheduledPost: {
-      id: string
-      externalReferenceId: string
-    },
+    channel: ChannelWithIntegration,
+    scheduledPost: ScheduledPostWithExternalReference,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics> {
     const tweetData = await this.rettiwt.tweet.details(scheduledPost.externalReferenceId)

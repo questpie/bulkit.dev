@@ -236,6 +236,7 @@ export const postMetricsHistoryTable = pgTable(
 )
 
 export type InsertPostMetricsHistory = typeof postMetricsHistoryTable.$inferInsert
+export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
 
 // Add relations for the new table
 export const postMetricsHistoryRelations = relations(postMetricsHistoryTable, ({ one }) => ({
