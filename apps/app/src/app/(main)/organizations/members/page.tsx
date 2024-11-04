@@ -34,8 +34,8 @@ export default async function OrganizationsPage() {
 
   return (
     <div className='flex flex-col gap-6'>
-      <div className='flex flex-row items-center justify-between'>
-        <div className='flex flex-col'>
+      <div className='flex flex-row gap-4 items-center justify-between'>
+        <div className='flex flex-col flex-1'>
           <h4 className='text-xl font-bold'>Members</h4>
           <p className='text-sm text-muted-foreground'>
             Manage your organization members and their roles

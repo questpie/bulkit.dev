@@ -21,8 +21,14 @@ export default async function OrganizationLayout({ children }: { children: React
   return (
     <>
       <Header title={`${selectedOrg.data.name}'s settings`} />
-      <div className='flex-1 w-full h-full flex flex-row'>
-        <OrganizationSidebar />
+      <div className='flex-1 w-full h-full flex md:flex-row flex-col'>
+        <OrganizationSidebar
+          className={{
+            wrapper: 'w-full md:w-48',
+            nav: 'flex flex-row md:flex-col py-0',
+            item: 'flex-1 md:flex-none min-w-24 flex flex-row justify-center md:justify-start',
+          }}
+        />
         <main className='flex-1 px-6 pt-4'>{children}</main>
       </div>
     </>

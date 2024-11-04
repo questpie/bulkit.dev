@@ -53,7 +53,7 @@ export function OrganizationMembersTable(props: {
           </TableBody>
         </Table>
       </div>
-      <div className='sm:hidden px-4'>
+      <div className='sm:hidden w-full flex flex-col gap-2'>
         {props.members.map((member) => (
           <OrganizationMemberCard
             key={member.id}

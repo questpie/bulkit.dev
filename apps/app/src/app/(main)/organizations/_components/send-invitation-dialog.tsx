@@ -105,7 +105,7 @@ export function OrganizationSendInviteDialog(
       }}
     >
       {props.children}
-      <ResponsiveDialogContent>
+      <ResponsiveDialogContent className='px-4 pb-4'>
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Send Invitation</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>

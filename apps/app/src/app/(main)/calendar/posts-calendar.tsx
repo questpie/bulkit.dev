@@ -9,26 +9,33 @@ import type { ScheduledPostSchema } from '@bulkit/shared/modules/posts/scheduled
 import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
 import { Card } from '@bulkit/ui/components/ui/card'
 import type { Static } from '@sinclair/typebox'
-import { addDays, endOfWeek, format, isAfter, isBefore, startOfWeek } from 'date-fns'
-import { Fragment, useMemo, useState } from 'react'
+import { addDays, format, isAfter, isBefore } from 'date-fns'
+import { Fragment, useMemo } from 'react'
 
-import {
-  ChannelAvatarList,
-  ChannelsAvatar,
-} from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
+import { getCalendarParams } from '@bulkit/app/app/(main)/calendar/calendar-utils'
+import { ChannelAvatarList } from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
 import { groupBy } from '@bulkit/shared/utils/misc'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Separator } from '@bulkit/ui/components/ui/separator'
 import { useBreakpoint } from '@bulkit/ui/hooks/use-breakpoint'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
-import { nanoid } from 'nanoid'
+import { LuCalendar } from 'react-icons/lu'
 
 function getDayKey(date: Date) {
   return getIsoDateString(date)
 }
 
 export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const searchParams = useSearchParams()
+  const { currentDay, dateFrom, dateTo } = getCalendarParams(searchParams)
+  const router = useRouter()
+
+  const setCurrentDate = (date: Date) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('day', getIsoDateString(date))
+    router.replace(`/calendar?${params.toString()}`)
+  }
 
   const isDesktop = useBreakpoint('sm')
 
@@ -44,38 +51,23 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
     return map
   }, [props.posts])
 
-  const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: '2-digit' })
-  const dateFormatter = new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: '2-digit',
-    // year: 'numeric',
-  })
-
-  const startDate = startOfWeek(currentDate)
-  const endDate = endOfWeek(currentDate)
-
   return (
     <>
       <div className='md:hidden block'>
         <MobilePostsCalendar posts={props.posts} />
       </div>
       <div className='w-full flex-1 h-full hidden relative md:flex flex-col overflow-auto'>
-        <WeekCalendar currentDate={currentDate}>
+        <WeekCalendar currentDate={currentDay}>
           <div className='bg-background top-0 sticky z-10'>
             <div className='w-full justify-between flex items-center px-6'>
               <div className='flex-col items-center gap-2'>
-                <p className='font-bold  text-center text-sm'>
-                  {monthFormatter.format(currentDate)}
-                </p>
-                <p className='text-xs text-center text-muted-foreground'>
-                  {dateFormatter.format(startDate)} - {dateFormatter.format(endDate)}
-                </p>
+                <p className='text-sm font-bold text-center'>{formatWeek(dateFrom, dateTo)}</p>
               </div>
               <div className='gap-4 flex'>
                 <Button
                   variant='outline'
                   size='icon'
-                  onClick={() => setCurrentDate(addDays(currentDate, -7))}
+                  onClick={() => setCurrentDate(addDays(currentDay, -7))}
                 >
                   <PiCaretLeft />
                 </Button>
@@ -87,7 +79,7 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
                 <Button
                   variant='outline'
                   size='icon'
-                  onClick={() => setCurrentDate(addDays(currentDate, 7))}
+                  onClick={() => setCurrentDate(addDays(currentDay, 7))}
                 >
                   <PiCaretRight />
                 </Button>
@@ -150,69 +142,90 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
 }
 
 function MobilePostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
+  const searchParams = useSearchParams()
+  const { currentDay } = getCalendarParams(searchParams)
+  const router = useRouter()
+
+  const setCurrentDate = (date: Date) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('day', getIsoDateString(date))
+    router.replace(`/calendar?${params.toString()}`)
+  }
+
   const groupedPosts = useMemo(() => {
-    const byDate = groupBy(props.posts, (post) => getIsoDateString(new Date(post.scheduledAt)))
+    // Filter posts for the current day only
+    const currentDayStr = getIsoDateString(currentDay)
+    const todaysPosts = props.posts.filter(
+      (post) => getIsoDateString(new Date(post.scheduledAt)) === currentDayStr
+    )
 
-    return Object.entries(byDate)
-      .map(([date, posts]) => {
-        const byTime = groupBy(posts, (post) => format(new Date(post.scheduledAt), 'HH:mm'))
+    const byTime = groupBy(todaysPosts, (post) => format(new Date(post.scheduledAt), 'HH:mm'))
 
-        return {
-          date,
-          timeSlots: Object.entries(byTime)
-            .map(([time, postsAtTime]) => {
-              const byPostId = groupBy(postsAtTime, (post) => post.post.id)
-              return { time, posts: Object.values(byPostId) }
-            })
-            .sort((a, b) => a.time.localeCompare(b.time)),
-        }
+    return Object.entries(byTime)
+      .map(([time, postsAtTime]) => {
+        const byPostId = groupBy(postsAtTime, (post) => post.post.id)
+        return { time, posts: Object.values(byPostId) }
       })
-      .sort((a, b) => a.date.localeCompare(b.date))
-  }, [props.posts])
+      .sort((a, b) => a.time.localeCompare(b.time))
+  }, [props.posts, currentDay])
 
   return (
     <div className='flex flex-col gap-6'>
-      {groupedPosts.map(({ date, timeSlots }) => (
-        <div key={date} className='bg-background rounded-lg shadow px-4 pb-4'>
-          <h2 className='text-sm font-bold text-muted-foreground mb-2'>
-            {format(new Date(date), 'EEEE, MMMM d')}
+      <div className='sticky top-0 bg-background p-4 z-10'>
+        <div className='flex items-center justify-between mb-4'>
+          <Button
+            variant='outline'
+            size='icon'
+            onClick={() => setCurrentDate(addDays(currentDay, -1))}
+          >
+            <PiCaretLeft />
+          </Button>
+
+          <h2 className='text-sm font-bold text-muted-foreground'>
+            {format(currentDay, 'EEEE, MMMM d')}
           </h2>
-          <ul className='flex flex-col gap-4'>
-            {timeSlots.map(({ time, posts }, index) => (
-              <Fragment key={time}>
-                <li>
-                  <p className='text-sm font-semibold mb-2'>{time}</p>
-                  <ul className='flex flex-col gap-2'>
-                    {posts.map((postsForId) => {
-                      const postName = postsForId[0]?.post.name || ''
-                      const channels = postsForId.map((p) => p.channel)
 
-                      return (
-                        <Card
-                          key={postsForId[0]?.post.id}
-                          className='p-2 flex flex-row justify-between'
-                        >
-                          <div className='flex flex-col'>
-                            <p className='font-bold'>{postName}</p>
-                            <p className='text-xs text-muted-foreground'>
-                              {channels.length} channel{channels.length > 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <div className='flex flex-col justify-center'>
-                            <ChannelAvatarList channels={channels} />
-                          </div>
-                        </Card>
-                      )
-                    })}
-                  </ul>
-                </li>
-
-                {index !== timeSlots.length - 1 && <Separator />}
-              </Fragment>
-            ))}
-          </ul>
+          <Button
+            variant='outline'
+            size='icon'
+            onClick={() => setCurrentDate(addDays(currentDay, 1))}
+          >
+            <PiCaretRight />
+          </Button>
         </div>
-      ))}
+
+        <Button variant='outline' className='w-full' onClick={() => setCurrentDate(new Date())}>
+          Today
+        </Button>
+      </div>
+
+      <div className='bg-background rounded-lg shadow px-4 pb-4'>
+        {groupedPosts.length > 0 ? (
+          <ul className='flex flex-col gap-4'>{/* ... existing code ... */}</ul>
+        ) : (
+          <div className='flex flex-col items-center justify-center py-12 gap-4'>
+            <LuCalendar className='w-12 h-12 text-muted-foreground' />
+            <p className='text-sm text-muted-foreground'>No posts scheduled for this day</p>
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+function formatWeek(dateFrom: Date, dateTo: Date) {
+  const dateFromFormatter = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    // weekday: 'short',
+    // year: 'numeric',
+  })
+  const dateToFormatter = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    // weekday: 'short',
+    year: 'numeric',
+  })
+
+  return `${dateFromFormatter.format(dateFrom)} - ${dateToFormatter.format(dateTo)}`
 }

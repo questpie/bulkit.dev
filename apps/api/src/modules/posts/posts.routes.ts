@@ -6,6 +6,7 @@ import { injectChannelService } from '@bulkit/api/modules/channels/services/chan
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { postMetricsRoutes } from '@bulkit/api/modules/posts/post-metrics.routes'
 import { scheduledPostsRoutes } from '@bulkit/api/modules/posts/scheduled-post.routes'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
@@ -24,6 +25,7 @@ import { HttpError } from 'elysia-http-error'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
   .use(scheduledPostsRoutes)
+  .use(postMetricsRoutes)
   .use(injectPostService)
   .use(injectChannelService)
   .use(organizationMiddleware)
