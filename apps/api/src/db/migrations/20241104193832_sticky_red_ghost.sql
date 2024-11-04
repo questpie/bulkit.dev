@@ -1,0 +1,1 @@
+ALTER TABLE "scheduled_posts" ADD COLUMN "external_id" text;
