@@ -5,7 +5,6 @@ import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-aut
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
-import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { and } from 'drizzle-orm'
 import type { InferContext } from 'elysia'
 
@@ -24,11 +23,6 @@ export abstract class ChannelAuthenticator {
   ): Promise<ChannelWithIntegration>
 }
 
-export type ChannelPostResult = {
-  externalReferenceId: string
-  externalUrl: string
-}
-
 export type PostMetrics = Omit<
   InsertPostMetricsHistory,
   'id' | 'createdAt' | 'updatedAt' | 'scheduledPostId'
@@ -36,7 +30,7 @@ export type PostMetrics = Omit<
 export abstract class ChannelPublisher {
   constructor(private readonly authenticator: ChannelAuthenticator) {}
 
-  async publishPost(channel: ChannelWithIntegration, post: Post): Promise<ChannelPostResult> {
+  async publishPost(channel: ChannelWithIntegration, post: Post): Promise<string> {
     let refreshedChannel = channel
 
     if (
@@ -47,26 +41,26 @@ export abstract class ChannelPublisher {
       refreshedChannel = await this.authenticator.handleRenewal(db, channel)
     }
 
-    let result: ChannelPostResult
+    let externalId: string
 
     switch (post.type) {
       case 'post':
-        result = await this.postPost(refreshedChannel, post)
+        externalId = await this.postPost(refreshedChannel, post)
         break
       case 'reel':
-        result = await this.postReel(refreshedChannel, post)
+        externalId = await this.postReel(refreshedChannel, post)
         break
       case 'story':
-        result = await this.postStory(refreshedChannel, post)
+        externalId = await this.postStory(refreshedChannel, post)
         break
       case 'thread':
-        result = await this.postThread(refreshedChannel, post)
+        externalId = await this.postThread(refreshedChannel, post)
         break
       default:
         throw new Error(`Unsupported post type: ${(post as any).type}`)
     }
 
-    return result
+    return externalId
   }
 
   async saveMetrics(channel: ChannelWithIntegration, scheduledPostId: string) {
@@ -87,7 +81,7 @@ export abstract class ChannelPublisher {
       throw new Error('Post is not published')
     }
 
-    if (!scheduledPost.externalReferenceId) {
+    if (!scheduledPost.externalId) {
       throw new Error('Post has no external reference id')
     }
 
@@ -97,7 +91,7 @@ export abstract class ChannelPublisher {
       orderBy: (postMetricsHistoryTable, { desc }) => desc(postMetricsHistoryTable.createdAt),
     })
 
-    const metrics = await this.getMetrics(channel, scheduledPost, oldMetrics ?? null)
+    const metrics = await this.getMetrics(channel, scheduledPost.externalId, oldMetrics ?? null)
 
     return db
       .insert(postMetricsHistoryTable)
@@ -111,23 +105,23 @@ export abstract class ChannelPublisher {
   protected abstract postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
-  ): Promise<ChannelPostResult>
+  ): Promise<string>
   protected abstract postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
-  ): Promise<ChannelPostResult>
+  ): Promise<string>
   protected abstract postThread(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'thread' }>
-  ): Promise<ChannelPostResult>
+  ): Promise<string>
   protected abstract postPost(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
-  ): Promise<ChannelPostResult>
+  ): Promise<string>
 
   protected abstract getMetrics(
     channel: ChannelWithIntegration,
-    scheduledPost: ScheduledPostWithExternalReference,
+    externalId: string,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics>
 }

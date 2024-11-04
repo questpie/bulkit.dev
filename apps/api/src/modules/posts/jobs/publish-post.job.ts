@@ -4,11 +4,13 @@ import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
+import { collectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { Type } from '@sinclair/typebox'
 import { and, count, eq, getTableColumns, isNotNull, or } from 'drizzle-orm'
+import ms from 'ms'
 
 // TODO: implement timeout mechanism maybe
 export const publishPostJob = jobFactory.createJob({
@@ -21,7 +23,7 @@ export const publishPostJob = jobFactory.createJob({
     const { postService, db, channelsService } = iocResolve(
       ioc.use(injectDatabase).use(injectPostService).use(injectChannelService)
     )
-    job.log('Getting scheduled post')
+    await job.log('Getting scheduled post')
 
     const scheduledPost = await db
       .select({
@@ -82,32 +84,44 @@ export const publishPostJob = jobFactory.createJob({
 
     const channelManager = resolveChannelManager(channel.platform)
 
-    job.log(
+    await job.log(
       `Publishing ${post.type} to channel ${channel.name} at ${channel.platform} (${channel.url})`
     )
 
-    job.log('Starting publish transaction')
+    await job.log('Starting publish transaction')
     await db.transaction(async (db) => {
-      job.log('Publishing post at provider')
-      const result = await channelManager.publisher.publishPost(channel, post)
+      await job.log('Publishing post at provider')
+      const externalId = await channelManager.publisher.publishPost(channel, post)
 
       await db
         .update(scheduledPostsTable)
         .set({
           status: 'published',
           publishedAt: new Date().toISOString(),
-          externalReferenceId: result.externalReferenceId,
-          externalUrl: result.externalUrl,
+          externalId,
         })
         .where(eq(scheduledPostsTable.id, scheduledPost.id))
     })
-    job.log('Post publish transaction committed')
+    await job.log('Post publish transaction committed')
+
+    await job.log('Invoking metrics collection job')
+    await collectMetricsJob.invoke(
+      { scheduledPostId: scheduledPost.id },
+      {
+        delay: ms('1m'),
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: ms('5m'),
+        },
+      }
+    )
 
     // update details
 
     //  check if all posts are published if yes mark post
     // TODO: we could use other job with limited queue concurrency
-    job.log('Checking whether all other scheduled posts are already published')
+    await job.log('Checking whether all other scheduled posts are already published')
     await db.transaction(async (db) => {
       const publishedPosts = await db
         .select({ count: count() })

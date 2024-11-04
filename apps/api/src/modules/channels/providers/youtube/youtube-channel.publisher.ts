@@ -1,22 +1,18 @@
 import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
-  type ChannelPostResult,
   type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
-import { buildYouTubeClient } from './youtube-api-client'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
-import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { youtube_v3 } from 'googleapis'
-import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
+import { buildYouTubeClient } from './youtube-api-client'
 
 export class YoutubeChannelPublisher extends ChannelPublisher {
   protected async postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     const client = await buildYouTubeClient(
       channel.socialMediaIntegration.accessToken,
       channel.socialMediaIntegration.refreshToken!
@@ -48,7 +44,7 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
       })
 
       appLogger.info(`Successfully uploaded YouTube Short: ${res.data.id}`)
-      return this.getChannelPostResult(res.data.id!, channel)
+      return res.data.id!
     } catch (error) {
       appLogger.error('Error posting YouTube Short:', error)
       throw new Error('Failed to post YouTube Short')
@@ -58,27 +54,27 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
   protected postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     throw new Error('Stories are not supported on YouTube')
   }
 
   protected postThread(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'thread' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     throw new Error('Threads are not supported on YouTube')
   }
 
   protected async postPost(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     throw new Error('Bulletin posts are already deprecated on YouTube')
   }
 
   protected async getMetrics(
     channel: ChannelWithIntegration,
-    scheduledPost: ScheduledPostWithExternalReference,
+    externalId: string,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics> {
     const client = await buildYouTubeClient(
@@ -89,7 +85,7 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
     try {
       const response = await client.videos.list({
         part: ['statistics'],
-        id: [scheduledPost.externalReferenceId],
+        id: [externalId],
       })
 
       const videoStats = response.data.items?.[0]?.statistics
@@ -109,16 +105,6 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
     } catch (error) {
       appLogger.error('Error getting YouTube video metrics:', error)
       throw new Error('Failed to get YouTube video metrics')
-    }
-  }
-
-  private getChannelPostResult(
-    videoId: string,
-    channel: ChannelWithIntegration
-  ): ChannelPostResult {
-    return {
-      externalReferenceId: videoId,
-      externalUrl: `https://www.youtube.com/watch?v=${videoId}`,
     }
   }
 }

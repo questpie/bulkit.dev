@@ -183,8 +183,7 @@ export const scheduledPostsTable = pgTable(
     startedAt: timestamp('started_at', { mode: 'string', withTimezone: true }),
     failureReason: text('failure_reason'),
 
-    externalUrl: text('external_url'),
-    externalReferenceId: text('external_reference_id'),
+    externalId: text('external_id'),
 
     parentPostId: text('parent_post_id'),
     parentPostSettings: jsonb('parent_post_settings').$type<ParentPostSettings>(),
@@ -199,6 +198,8 @@ export const scheduledPostsTable = pgTable(
     parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }),
   })
 )
+
+export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
 
 // New table for metrics history
 export const postMetricsHistoryTable = pgTable(
@@ -236,7 +237,6 @@ export const postMetricsHistoryTable = pgTable(
 )
 
 export type InsertPostMetricsHistory = typeof postMetricsHistoryTable.$inferInsert
-export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
 
 // Add relations for the new table
 export const postMetricsHistoryRelations = relations(postMetricsHistoryTable, ({ one }) => ({

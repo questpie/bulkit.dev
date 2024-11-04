@@ -33,14 +33,3 @@ export const ScheduledPostSchema = Type.Object({
 })
 
 export type ScheduledPost = Static<typeof ScheduledPostSchema>
-
-export const ScheduledPostWithExternalReferenceSchema = Type.Composite([
-  Type.Omit(ScheduledPostSchema, ['channel', 'post']),
-  Type.Object({
-    externalReferenceId: Type.String({}),
-    externalUrl: Nullable(Type.String({})),
-  }),
-])
-export type ScheduledPostWithExternalReference = Static<
-  typeof ScheduledPostWithExternalReferenceSchema
->

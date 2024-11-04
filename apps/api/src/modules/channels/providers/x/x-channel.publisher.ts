@@ -1,15 +1,12 @@
-import type { SelectScheduledPost } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
-  type ChannelPostResult,
   type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { buildXClient } from '@bulkit/api/modules/channels/providers/x/x-api-client'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
-import type { ScheduledPostWithExternalReference } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { Rettiwt } from 'rettiwt-api'
 import type { TwitterApi } from 'twitter-api-v2'
@@ -20,7 +17,7 @@ export class XChannelPublisher extends ChannelPublisher {
   protected async postReel(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'reel' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     const client = buildXClient(
       channel.socialMediaIntegration.accessToken,
       channel.socialMediaIntegration.refreshToken!
@@ -32,7 +29,7 @@ export class XChannelPublisher extends ChannelPublisher {
         media: mediaIds.length ? { media_ids: mediaIds as [string] } : undefined,
       })
 
-      return this.getChannelPostResult(result.data.id, channel)
+      return result.data.id
     } catch (error) {
       console.error('Error posting reel:', error)
       throw new Error('Failed to post reel')
@@ -42,14 +39,14 @@ export class XChannelPublisher extends ChannelPublisher {
   protected postStory(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'story' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     throw new Error('Stories are not supported on Twitter')
   }
 
   protected async postThread(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'thread' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     const client = buildXClient(
       channel.socialMediaIntegration.accessToken,
       channel.socialMediaIntegration.refreshToken!
@@ -78,7 +75,7 @@ export class XChannelPublisher extends ChannelPublisher {
       }
 
       // TODO: handle this
-      return this.getChannelPostResult(firstTweetId! ?? '', channel)
+      return firstTweetId!
     } catch (error) {
       console.error('Error posting thread:', error)
       throw new Error('Failed to post thread')
@@ -88,7 +85,7 @@ export class XChannelPublisher extends ChannelPublisher {
   protected async postPost(
     channel: ChannelWithIntegration,
     post: Extract<Post, { type: 'post' }>
-  ): Promise<ChannelPostResult> {
+  ): Promise<string> {
     const client = buildXClient(
       channel.socialMediaIntegration.accessToken,
       channel.socialMediaIntegration.refreshToken!
@@ -103,7 +100,7 @@ export class XChannelPublisher extends ChannelPublisher {
         media: mediaIds.length ? { media_ids: mediaIds as [string] } : undefined,
       })
 
-      return this.getChannelPostResult(result.data.id, channel)
+      return result.data.id
     } catch (error) {
       appLogger.error('Error posting tweet:')
       appLogger.error(error)
@@ -113,10 +110,10 @@ export class XChannelPublisher extends ChannelPublisher {
 
   protected async getMetrics(
     channel: ChannelWithIntegration,
-    scheduledPost: ScheduledPostWithExternalReference,
+    externalId: string,
     oldMetrics: PostMetrics | null
   ): Promise<PostMetrics> {
-    const tweetData = await this.rettiwt.tweet.details(scheduledPost.externalReferenceId)
+    const tweetData = await this.rettiwt.tweet.details(externalId)
 
     if (!tweetData) {
       throw new Error('Failed to get tweet metrics')
@@ -156,15 +153,5 @@ export class XChannelPublisher extends ChannelPublisher {
     }
 
     return uploadedIds
-  }
-
-  private getChannelPostResult(
-    tweetId: string,
-    channel: ChannelWithIntegration
-  ): ChannelPostResult {
-    return {
-      externalReferenceId: tweetId,
-      externalUrl: `https://x.com/${channel.handle ?? channel.name}/status/${tweetId}`,
-    }
   }
 }
