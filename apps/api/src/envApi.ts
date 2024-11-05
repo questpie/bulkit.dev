@@ -10,6 +10,8 @@ export const envApi = createEnv({
       Type.String({ default: generalEnv.PUBLIC_NODE_ENV === 'development' ? 'debug' : 'info' })
     ),
 
+    APP_URL: Type.String(Type.String()),
+
     API_KEY_ENCRYPTION_SECRET: Type.String({
       minLength: 64,
       maxLength: 64,
@@ -100,6 +102,8 @@ export const envApi = createEnv({
   runtimeEnv: {
     PORT: process.env.PORT,
     LOG_LEVEL: process.env.LOG_LEVEL,
+
+    APP_URL: process.env.APP_URL,
 
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
 

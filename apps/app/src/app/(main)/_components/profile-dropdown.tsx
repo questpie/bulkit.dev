@@ -1,5 +1,6 @@
 import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { ThemeToggle } from '@bulkit/app/app/(main)/_components/theme-toggle'
+import { useSelectedOrganization } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { Avatar, AvatarFallback } from '@bulkit/ui/components/ui/avatar'
 import {
@@ -12,10 +13,11 @@ import {
 } from '@bulkit/ui/components/ui/dropdown-menu'
 import { Spinner } from '@bulkit/ui/components/ui/spinner'
 import Link from 'next/link'
-import { PiDotsThreeVertical, PiGear, PiSignOut } from 'react-icons/pi'
+import { PiBuilding, PiDotsThreeVertical, PiGear, PiSignOut, PiUser, PiUsers } from 'react-icons/pi'
 
 export function ProfileDropdown() {
   const authData = useAuthData()
+  const selectedOrganization = useSelectedOrganization()
   const { logout } = useAuthActions()
 
   if (!authData) {
@@ -37,7 +39,7 @@ export function ProfileDropdown() {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className='max-w-full w-64'>
-        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuLabel className='text-muted-foreground'>Appearance</DropdownMenuLabel>
         <DropdownMenuItem asChild>
           <ThemeToggle
             variant='button'
@@ -45,19 +47,40 @@ export function ProfileDropdown() {
           />
         </DropdownMenuItem>
 
+        {selectedOrganization && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className='text-muted-foreground'>
+              {selectedOrganization.name}
+            </DropdownMenuLabel>
+            <DropdownMenuItem className='flex flex-row gap-2' asChild>
+              <Link href='/organizations'>
+                <PiGear className='size-5' />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem className='flex flex-row gap-2' asChild>
+              <Link href='/organizations/members'>
+                <PiUsers className='size-5' />
+                <span>Members</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
         <DropdownMenuSeparator />
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel className='text-muted-foreground'>My Account</DropdownMenuLabel>
         <DropdownMenuItem className='flex flex-row gap-2' asChild>
           <Link href='/profile'>
-            <PiGear className='size-5' />
-            <span>Settings</span>
+            <PiUser className='size-5' />
+            <span>Profile</span>
           </Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem
           onClick={() => logout.mutate()}
           disabled={logout.isPending}
-          className='flex flex-row gap-2'
+          className='flex flex-row gap-2 text-destructive '
         >
           {logout.isPending ? <Spinner className='size-5' /> : <PiSignOut className='size-5' />}
           <span>Log Out</span>

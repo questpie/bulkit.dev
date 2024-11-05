@@ -15,6 +15,13 @@
       "when": 1730749112147,
       "tag": "20241104193832_sticky_red_ghost",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1730820842959,
+      "tag": "20241105153402_tricky_lilandra",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,6 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { setHours, setMinutes, startOfDay } from 'date-fns'
 import type React from 'react'
 import { useMemo, useState } from 'react'
-import { isMatch } from 'react-day-picker'
 import { LuCalendar, LuX } from 'react-icons/lu'
 
 const datepickerVariants = cva(
@@ -124,6 +123,7 @@ export function DatePicker(props: DatePickerProps) {
               variant='ghost'
               size='icon'
               className='rounded-none'
+              disabled={props.disabled}
               onClick={() => {
                 props.onValueChange(null)
               }}

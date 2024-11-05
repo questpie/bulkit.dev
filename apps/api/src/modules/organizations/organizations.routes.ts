@@ -185,7 +185,7 @@ export const organizationRoutes = new Elysia({
       // Here you would typically send an email with the invite link
       for (const inv of invites) {
         // TODO: this should probably create user ? or at least send him to auth
-        const invUrl = new URL(`/invite/${inv.id}/accept`, envApi.SERVER_URL)
+        const invUrl = new URL(`/invites/${inv.id}`, envApi.APP_URL)
 
         await ctx.mailClient.send({
           subject: `You've been invited to join ${userOrg.organization.name}`,
@@ -221,7 +221,12 @@ export const organizationRoutes = new Elysia({
       const invite = await db
         .select()
         .from(organizationInvitesTable)
-        .where(eq(organizationInvitesTable.id, params.token))
+        .where(
+          and(
+            eq(organizationInvitesTable.id, params.token),
+            eq(organizationInvitesTable.email, auth.user.email)
+          )
+        )
         .then((res) => res[0])
 
       if (!invite || new Date(invite.expiresAt).getTime() < new Date().getTime()) {

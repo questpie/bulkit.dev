@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 import { USER_ROLE } from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol, timestampCols, tokenCol } from './_base.table'
@@ -23,6 +23,7 @@ export const userOrganizationsTable = pgTable(
     userIdIdx: index().on(table.userId),
     orgIdIdx: index().on(table.organizationId),
     roleIdx: index().on(table.role),
+    compoundIdx: uniqueIndex().on(table.userId, table.organizationId),
   })
 )
 

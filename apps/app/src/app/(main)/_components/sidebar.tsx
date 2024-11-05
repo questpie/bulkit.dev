@@ -7,14 +7,14 @@ import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { PiAt, PiBuilding, PiCalendar, PiGear, PiPaperPlane } from 'react-icons/pi'
+import { PiAt, PiBuilding, PiCalendar, PiChartPie, PiGear, PiPaperPlane } from 'react-icons/pi'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
-  // {
-  //   name: 'Dashboard',
-  //   icon: LuPieChart,
-  //   href: '/'
-  // },
+  {
+    name: 'Dashboard',
+    icon: PiChartPie,
+    href: '/',
+  },
   {
     name: 'Calendar',
     icon: PiCalendar,
@@ -30,11 +30,11 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     icon: PiPaperPlane,
     href: '/posts',
   },
-  {
-    name: 'Organization settings',
-    icon: PiBuilding,
-    href: '/organizations',
-  },
+  // {
+  //   name: 'Organization settings',
+  //   icon: PiBuilding,
+  //   href: '/organizations',
+  // },
   // {
   //   name: 'Aministration',
   //   icon: LuSettings,
@@ -52,8 +52,8 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className='w-12 md:w-64 hidden sm:flex bg-background transition-all  flex-col justify-between border-r border-border'>
-        <div className='flex flex-col gap-4'>
+      <aside className='w-12 md:w-64 hidden sm:flex bg-background transition-all flex-col justify-between border-r border-border'>
+        <div className='flex flex-col flex-1  gap-4'>
           <div className='h-20 flex items-center md:px-4 px-0 border-b'>
             <h1 className='hidden md:block  text-2xl font-black bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text'>
               bulkit.dev
@@ -63,10 +63,6 @@ export function Sidebar() {
             </h1>
           </div>
           <nav>
-            <div className='px-1 md:px-2 mb-4'>
-              <OrganizationSelect />
-            </div>
-
             <ul className='flex flex-col gap-2'>
               {items.map((item) => (
                 <li className='w-full' key={item.href}>
@@ -87,6 +83,10 @@ export function Sidebar() {
               ))}
             </ul>
           </nav>
+        </div>
+
+        <div className='px-1 md:px-2 mb-4'>
+          <OrganizationSelect />
         </div>
 
         <ul className='flex gap-4  flex-col  border-t py-2 '>
