@@ -6,7 +6,7 @@ import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils'
 import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
-import { isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
+import { isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import { Button } from '@bulkit/ui/components/ui/button'
 import {
   DropdownMenu,

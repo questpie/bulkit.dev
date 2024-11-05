@@ -5,7 +5,7 @@ import {
   POST_STATUS_TO_COLOR,
   POST_TYPE_ICON,
 } from '@bulkit/app/app/(main)/posts/post.constants'
-import { isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
+import { isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { Badge } from '@bulkit/ui/components/ui/badge'

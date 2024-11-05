@@ -6,6 +6,7 @@ import {
   scheduledPostsTable,
 } from '@bulkit/api/db/db.schema'
 import { iocRegister } from '@bulkit/api/ioc'
+import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import type {
   AggregateMetrics,
   MetricsData,
@@ -244,6 +245,80 @@ class PostMetricsService {
       history,
     }
   }
+
+  async getPopularPosts(
+    db: TransactionLike,
+    opts: {
+      organizationId: string
+      limit?: number
+      period?: MetricsPeriod
+    }
+  ) {
+    const { from, to } = this.getPeriodDateRange(opts.period ?? '7d')
+
+    const popularPosts = await db
+      .select({
+        id: scheduledPostsTable.id,
+        publishedAt: scheduledPostsTable.publishedAt,
+        channel: {
+          id: channelsTable.id,
+          name: channelsTable.name,
+          platform: channelsTable.platform,
+        },
+        post: {
+          id: postsTable.id,
+          name: postsTable.name,
+        },
+        totalLikes: sql`sum(${postMetricsHistoryTable.likes})`.as('total_likes'),
+        totalComments: sql`sum(${postMetricsHistoryTable.comments})`.as('total_comments'),
+        totalShares: sql`sum(${postMetricsHistoryTable.shares})`.as('total_shares'),
+        totalImpressions: sql`sum(${postMetricsHistoryTable.impressions})`.as('total_impressions'),
+        totalReach: sql`sum(${postMetricsHistoryTable.reach})`.as('total_reach'),
+        totalClicks: sql`sum(${postMetricsHistoryTable.clicks})`.as('total_clicks'),
+      })
+      .from(postMetricsHistoryTable)
+      .where(
+        and(
+          eq(channelsTable.organizationId, opts.organizationId),
+          gte(postMetricsHistoryTable.createdAt, from.toISOString()),
+          lte(postMetricsHistoryTable.createdAt, to.toISOString())
+        )
+      )
+      .innerJoin(
+        scheduledPostsTable,
+        eq(scheduledPostsTable.id, postMetricsHistoryTable.scheduledPostId)
+      )
+      .innerJoin(channelsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .innerJoin(postsTable, eq(postsTable.id, scheduledPostsTable.postId))
+      .groupBy(scheduledPostsTable.id, channelsTable.id, postsTable.id)
+      .orderBy(desc(sql`total_impressions`))
+      .limit(opts.limit ?? 5)
+
+    return popularPosts
+  }
+
+  // async getFuturePosts(
+  //   db: TransactionLike,
+  //   opts: {
+  //     organizationId: string
+  //     limit?: number
+  //   }
+  // ) {
+  //   const futurePosts = await db
+  //     .select()
+  //     .from(postsTable)
+  //     .where(
+  //       and(
+  //         eq(postsTable.organizationId, opts.organizationId),
+  //         or(eq(postsTable.status, 'scheduled'), eq(postsTable.status, 'partially-published')),
+  //         gte(postsTable.scheduledAt, new Date().toISOString())
+  //       )
+  //     )
+  //     .orderBy(asc(postsTable.scheduledAt))
+  //     .limit(opts.limit ?? 5)
+
+  //   return futurePosts
+  // }
 
   private async getOverallMetrics(
     db: TransactionLike,

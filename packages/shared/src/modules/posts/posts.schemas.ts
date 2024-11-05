@@ -64,6 +64,11 @@ export const PostDetailsSchema = Type.Object({
 
   scheduledAt: Nullable(Type.String({})),
 
+  totalLikes: Type.Number(),
+  totalImpressions: Type.Number(),
+  totalComments: Type.Number(),
+  totalShares: Type.Number(),
+
   createdAt: Type.String({}),
 })
 

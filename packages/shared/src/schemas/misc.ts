@@ -1,6 +1,7 @@
 import { createEnum } from '@bulkit/shared/utils/misc'
 import {
   type NumberOptions,
+  type SchemaOptions,
   type StaticDecode,
   type StringOptions,
   type TEnum,
@@ -25,15 +26,19 @@ export const StringBoolean = (opts: StringOptions = {}) =>
     .Encode(String)
 
 export function StringLiteralEnum<T extends string[]>(
-  values: readonly [...T]
+  values: readonly [...T],
+  enumOpts?: SchemaOptions
 ): TEnum<Record<T[number], T[number]>> {
-  return Type.Enum(createEnum(values))
+  return Type.Enum(createEnum(values), enumOpts)
 }
 
 export function Nullable<T extends TSchema>(type: T) {
   return Type.Union([type, Type.Null()])
 }
 
+export function MaybeArraySchema<T extends TSchema>(type: T, opts?: SchemaOptions) {
+  return Type.Union([type, Type.Array(type)], opts)
+}
 export const EntityTimestampsSchema = Type.Object({
   createdAt: Type.String(),
   updatedAt: Type.String(),

@@ -60,3 +60,20 @@ export const postMetricsRoutes = new Elysia({
       },
     }
   )
+  .get(
+    '/popular',
+    async (ctx) => {
+      return ctx.postMetricsService.getPopularPosts(ctx.db, {
+        organizationId: ctx.organization!.id,
+        period: ctx.query.period,
+      })
+    },
+    {
+      query: t.Object({
+        period: t.Optional(MetricsPeriodSchema),
+      }),
+      // response: {
+      //   200: OrganizationMetricsResponseSchema,
+      // },
+    }
+  )

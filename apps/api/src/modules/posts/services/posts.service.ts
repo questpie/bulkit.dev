@@ -1,6 +1,7 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
+  postMetricsHistoryTable,
   postsTable,
   reelPostsTable,
   regularPostMediaTable,
@@ -11,7 +12,6 @@ import {
   threadMediaTable,
   threadPostsTable,
   type InsertThreadMedia,
-  type SelectPost,
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
@@ -22,7 +22,7 @@ import {
 } from '@bulkit/api/modules/resources/services/resources.service'
 import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
-import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/post.utils'
+import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import type {
   PostChannel,
   PostSchema,
@@ -31,7 +31,7 @@ import type {
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, asc, eq, getTableColumns, inArray, isNotNull, or } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray, isNotNull, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
 
 export type Post = Static<typeof PostSchema>
@@ -51,6 +51,11 @@ export class PostsService {
         name: postsTable.name,
         createdAt: postsTable.createdAt,
 
+        totalLikes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+        totalImpressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+        totalComments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+        totalShares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+
         scheduledAt: postsTable.scheduledAt,
       })
       .from(postsTable)
@@ -60,6 +65,12 @@ export class PostsService {
           opts.orgId ? eq(postsTable.organizationId, opts.orgId) : undefined
         )
       )
+      .leftJoin(scheduledPostsTable, eq(postsTable.id, scheduledPostsTable.postId))
+      .leftJoin(
+        postMetricsHistoryTable,
+        eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
+      )
+      .groupBy(postsTable.id)
       .then((res) => res[0])
 
     appLogger.debug({ post: tmpPost })
@@ -238,7 +249,14 @@ export class PostsService {
         status: 'draft',
       })
       .returning()
-      .then((res) => res[0] as SelectPost)
+      .then((res) => ({
+        ...res[0]!,
+        channels: [],
+        totalComments: 0,
+        totalImpressions: 0,
+        totalLikes: 0,
+        totalShares: 0,
+      }))
 
     switch (opts.type) {
       case 'reel': {
@@ -254,7 +272,6 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'reel',
-          channels: [],
 
           description: reelPost.description,
           resource: null,
@@ -273,7 +290,6 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'post',
-          channels: [],
 
           text: regularPost.text,
           description: '',
@@ -295,7 +311,6 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'thread',
-          channels: [],
 
           items: [{ order: 1, text: '', media: [], id: threadPost.id }],
         } as Extract<Post, { type: 'thread' }>
@@ -312,7 +327,6 @@ export class PostsService {
         return {
           ...post,
           type: post.type as 'story',
-          channels: [],
 
           resource: null,
         } as Extract<Post, { type: 'story' }>

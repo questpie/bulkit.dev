@@ -1,7 +1,12 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
-import { selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
-import { channelsTable, postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
+import { coalesce, selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
+import {
+  channelsTable,
+  postMetricsHistoryTable,
+  postsTable,
+  scheduledPostsTable,
+} from '@bulkit/api/db/db.schema'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
@@ -10,16 +15,22 @@ import { postMetricsRoutes } from '@bulkit/api/modules/posts/post-metrics.routes
 import { scheduledPostsRoutes } from '@bulkit/api/modules/posts/scheduled-post.routes'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import { ORDER_TYPE } from '@bulkit/shared/constants/misc.constants'
+import {
+  POST_SORTABLE_FIELDS,
+  type PostSortableField,
+} from '@bulkit/shared/modules/posts/posts.constants'
 import {
   PostChannelSchema,
   PostDetailsSchema,
   PostSchema,
   PostValidationResultSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { MaybeArraySchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
+import { unwrapMaybeArray } from '@bulkit/shared/utils/misc'
 import { addSeconds, isBefore, max } from 'date-fns'
-import { and, desc, eq, isNull } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, sql, type SQLWrapper } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -33,6 +44,15 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
     '/',
     async (ctx) => {
       const { limit, cursor } = ctx.query
+
+      const querySort = unwrapMaybeArray(
+        ctx.query.sort ?? [
+          {
+            by: 'createdAt',
+            order: 'desc',
+          },
+        ]
+      )
 
       const posts = await ctx.db
         .select({
@@ -54,24 +74,54 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
             table: channelsTable,
             where: eq(scheduledPostsTable.postId, postsTable.id),
           }),
+
+          totalLikes: coalesce(
+            sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+            sql<number>`0`
+          ),
+          totalImpressions: coalesce(
+            sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+            sql<number>`0`
+          ),
+          totalComments: coalesce(
+            sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+            sql<number>`0`
+          ),
+          totalShares: coalesce(
+            sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+            sql<number>`0`
+          ),
         })
         .from(postsTable)
         .where(
           and(
             eq(postsTable.organizationId, ctx.organization!.id),
             isNull(postsTable.archivedAt),
-            ctx.query.type ? eq(postsTable.type, ctx.query.type) : undefined,
-            ctx.query.status ? eq(postsTable.status, ctx.query.status) : undefined,
-            ctx.query.channelId ? eq(scheduledPostsTable.channelId, ctx.query.channelId) : undefined
+            ctx.query.type ? inArray(postsTable.type, unwrapMaybeArray(ctx.query.type)) : undefined,
+            ctx.query.status
+              ? inArray(postsTable.status, unwrapMaybeArray(ctx.query.status))
+              : undefined,
+            ctx.query.channelId
+              ? inArray(scheduledPostsTable.channelId, unwrapMaybeArray(ctx.query.channelId))
+              : undefined
           )
         )
-        .orderBy(desc(postsTable.createdAt))
         .leftJoin(scheduledPostsTable, eq(scheduledPostsTable.postId, postsTable.id))
+        .leftJoin(
+          postMetricsHistoryTable,
+          eq(scheduledPostsTable.id, postMetricsHistoryTable.scheduledPostId)
+        )
+        .orderBy(
+          ...querySort.map((q) => {
+            const sortBy = POST_SORTABLE_COLUMNS[q.by ?? 'createdAt']
+            const orderFn = q.order === 'asc' ? asc : desc
+
+            return orderFn(sortBy)
+          })
+        )
         .groupBy(postsTable.id)
         .limit(limit + 1)
         .offset(cursor)
-
-      appLogger.info({ posts })
 
       const hasNextPage = posts.length > limit
       const results = posts.slice(0, limit)
@@ -87,12 +137,21 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       query: t.Composite([
         PaginationSchema,
         t.Object({
-          type: t.Optional(StringLiteralEnum(POST_TYPE)),
-          status: t.Optional(StringLiteralEnum(POST_STATUS)),
-          channelId: t.Optional(t.String()),
+          type: t.Optional(MaybeArraySchema(StringLiteralEnum(POST_TYPE))),
+          status: t.Optional(MaybeArraySchema(StringLiteralEnum(POST_STATUS))),
+          channelId: t.Optional(MaybeArraySchema(t.String())),
 
           dateFrom: t.Optional(t.String()),
           dateTo: t.Optional(t.String()),
+
+          sort: t.Optional(
+            MaybeArraySchema(
+              t.Object({
+                order: t.Optional(StringLiteralEnum(ORDER_TYPE, { default: 'desc' })),
+                by: StringLiteralEnum(POST_SORTABLE_FIELDS, { default: 'createdAt' }),
+              })
+            )
+          ),
         }),
       ]),
       response: t.Object({
@@ -390,3 +449,22 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       },
     }
   )
+
+const POST_SORTABLE_COLUMNS: Record<PostSortableField, SQLWrapper> = {
+  likes: coalesce(sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`, sql<number>`0`),
+  impressions: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+    sql<number>`0`
+  ),
+  comments: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+    sql<number>`0`
+  ),
+  shares: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+    sql<number>`0`
+  ),
+  createdAt: postsTable.createdAt,
+  name: postsTable.name,
+  scheduledAt: postsTable.scheduledAt,
+}

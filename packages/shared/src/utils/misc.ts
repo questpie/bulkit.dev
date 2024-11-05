@@ -28,3 +28,7 @@ export function groupBy<T>(
     {} as Record<string, T[]>
   )
 }
+
+export function unwrapMaybeArray<T>(val: T | T[]): T[] {
+  return Array.isArray(val) ? val : [val]
+}
