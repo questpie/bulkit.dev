@@ -15,7 +15,10 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
-import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
+import {
+  getResourcePublicUrl,
+  isMediaTypeAllowed,
+} from '@bulkit/api/modules/resources/resource.utils'
 import {
   injectResourcesService,
   type ResourcesService,
@@ -33,6 +36,7 @@ import { dedupe } from '@bulkit/shared/types/data'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, asc, eq, getTableColumns, inArray, isNotNull, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
+import { coalesce } from '@bulkit/api/db/db-utils'
 
 export type Post = Static<typeof PostSchema>
 
@@ -51,10 +55,22 @@ export class PostsService {
         name: postsTable.name,
         createdAt: postsTable.createdAt,
 
-        totalLikes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
-        totalImpressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
-        totalComments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
-        totalShares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+        totalLikes: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+          sql<number>`0`
+        ),
+        totalImpressions: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+          sql<number>`0`
+        ),
+        totalComments: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+          sql<number>`0`
+        ),
+        totalShares: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+          sql<number>`0`
+        ),
 
         scheduledAt: postsTable.scheduledAt,
       })
@@ -961,9 +977,9 @@ export class PostsService {
         }
         for (let i = 0; i < post.media.length; i++) {
           const media = post.media[i]!
-          if (!settings.mediaAllowedMimeTypes.includes(media.resource.type)) {
+          if (!isMediaTypeAllowed(settings.mediaAllowedMimeTypes, media.resource.type)) {
             errors.push({
-              path: `media.${i}.resource.type`,
+              path: `media.${i}.resource`,
               message: `Unsupported media type: ${media.resource.type}`,
             })
           }
@@ -981,9 +997,12 @@ export class PostsService {
             message: `Reel description exceeds ${settings.maxPostLength} characters limit`,
           })
         }
-        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+        if (
+          post.resource &&
+          !isMediaTypeAllowed(settings.mediaAllowedMimeTypes, post.resource.type)
+        ) {
           errors.push({
-            path: 'resource.type',
+            path: 'resource',
             message: `Unsupported media type for reel: ${post.resource.type}`,
           })
         }
@@ -1017,9 +1036,9 @@ export class PostsService {
 
           for (let j = 0; j < item.media.length; j++) {
             const media = item.media[j]!
-            if (!settings.mediaAllowedMimeTypes.includes(media.resource.type)) {
+            if (!isMediaTypeAllowed(settings.mediaAllowedMimeTypes, media.resource.type)) {
               errors.push({
-                path: `items.${i}.media.${j}.resource.type`,
+                path: `items.${i}.media.${j}.resource`,
                 message: `Unsupported media type in thread: ${media.resource.type}`,
               })
             }
@@ -1076,9 +1095,12 @@ export class PostsService {
       }
 
       case 'story':
-        if (post.resource && !settings.mediaAllowedMimeTypes.includes(post.resource.type)) {
+        if (
+          post.resource &&
+          !isMediaTypeAllowed(settings.mediaAllowedMimeTypes, post.resource.type)
+        ) {
           errors.push({
-            path: 'resource.type',
+            path: 'resource',
             message: `Unsupported media type for story: ${post.resource.type}`,
           })
         }

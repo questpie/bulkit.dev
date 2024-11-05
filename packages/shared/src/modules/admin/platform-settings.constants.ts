@@ -40,7 +40,21 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     maxPostLength: 280,
     minMediaPerPost: 0,
     maxMediaPerPost: 4,
-    mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
+    mediaAllowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'video/mp4',
+      'video/quicktime',
+      'video/x-ms-wmv',
+      'video/x-msvideo',
+      'video/mpeg',
+      'video/webm',
+      'video/3gpp',
+      'video/x-flv',
+    ],
     mediaMaxSizeInBytes: 512 * 1024 * 1024, // 512 MB
     postLimit: 50,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
@@ -51,7 +65,12 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     minMediaPerPost: 0,
     maxPostLength: 63206,
     maxMediaPerPost: 10,
-    mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
+    mediaAllowedMimeTypes: [
+      'image/*',
+      'video/*',
+      'application/x-mpegURL', // HLS streams
+      'application/dash+xml', // DASH streams
+    ],
     mediaMaxSizeInBytes: 4 * 1024 * 1024 * 1024, // 4 GB
     postLimit: 50,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
@@ -65,7 +84,13 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     maxPostLength: 2200,
     minMediaPerPost: 1,
     maxMediaPerPost: 1,
-    mediaAllowedMimeTypes: ['video/mp4'],
+    mediaAllowedMimeTypes: [
+      'video/mp4',
+      'video/quicktime',
+      'video/x-m4v',
+      'video/webm',
+      'video/3gpp',
+    ],
     mediaMaxSizeInBytes: 287 * 1024 * 1024, // 287 MB
     postLimit: 50,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
@@ -75,7 +100,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     maxPostLength: 5000,
     minMediaPerPost: 1,
     maxMediaPerPost: 1,
-    mediaAllowedMimeTypes: ['video/mp4'],
+    mediaAllowedMimeTypes: ['video/*', 'application/x-mpegURL', 'application/dash+xml'],
     mediaMaxSizeInBytes: 256 * 1024 * 1024 * 1024, // 256 GB
     postLimit: 100,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
@@ -85,7 +110,15 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     maxPostLength: 2200,
     minMediaPerPost: 1,
     maxMediaPerPost: 10,
-    mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'video/mp4'],
+    mediaAllowedMimeTypes: [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/webp',
+      'video/mp4',
+      'video/quicktime',
+      'video/webm',
+    ],
     mediaMaxSizeInBytes: 100 * 1024 * 1024, // 100 MB
     postLimit: 100,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
@@ -99,7 +132,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     maxPostLength: 3000,
     minMediaPerPost: 0,
     maxMediaPerPost: 20,
-    mediaAllowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'video/mp4'],
+    mediaAllowedMimeTypes: ['image/*', 'video/*', 'application/x-mpegURL', 'application/dash+xml'],
     mediaMaxSizeInBytes: 200 * 1024 * 1024, // 200 MB
     postLimit: 100,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours

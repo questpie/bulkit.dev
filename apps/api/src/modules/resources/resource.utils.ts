@@ -18,3 +18,23 @@ export async function getResourcePublicUrl(resource: {
         })
       : drive.use().getUrl(resource.location)
 }
+
+export function isMediaTypeAllowed(allowedMediaTypes: string[], mediaType: string): boolean {
+  // Handle cases where mediaType might be null or undefined
+  if (!mediaType) return false
+
+  return allowedMediaTypes.some((allowedType) => {
+    // Convert to lowercase for case-insensitive comparison
+    const normalizedAllowedType = allowedType.toLowerCase()
+    const normalizedMediaType = mediaType.toLowerCase()
+
+    // Handle wildcards, e.g. "image/*" matches "image/png"
+    if (normalizedAllowedType.endsWith('/*')) {
+      const allowedPrefix = normalizedAllowedType.slice(0, -2)
+      return normalizedMediaType.startsWith(allowedPrefix)
+    }
+
+    // Exact match
+    return normalizedAllowedType === normalizedMediaType
+  })
+}
