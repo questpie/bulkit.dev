@@ -76,25 +76,30 @@ export default async function Dashboard() {
             <CardTitle className='text-sm font-medium'>Total Impressions</CardTitle>
             <EyeIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalImpressions ?? 0}</div>
-            {!!metrics.data?.growth.impressions && (
-              <p className='text-xs text-muted-foreground'>
-                {metrics.data?.growth.impressions > 0 ? '+' : ''}
-                {metrics.data?.growth.impressions}% from last month
-              </p>
-            )}
+          <CardContent className='w-full flex-row justify-between items-center  gap-3  flex'>
+            <div>
+              <div className='text-2xl font-bold'>
+                {(metrics.data?.overall.totalImpressions ?? 0).toLocaleString()}
+              </div>
+              {!!metrics.data?.growth.impressions && (
+                <p className='text-xs text-muted-foreground'>
+                  {metrics.data?.growth.impressions > 0 ? '+' : ''}
+                  {metrics.data?.growth.impressions}% from last month
+                </p>
+              )}
+            </div>
 
-            <PieChart
+            {/* <PieChart
               config={pieChartConfig}
               data={platformImpressions}
               dataKey='value'
               nameKey='name'
+              className='w-8 h-8 flex justify-end'
               // innerValue={Intl.NumberFormat('en', { notation: 'compact' }).format(
               //   metrics.data?.overall.totalImpressions ?? 0
               // )}
               // innerLabel='Impressions'
-            />
+            /> */}
           </CardContent>
         </Card>
 
@@ -104,7 +109,9 @@ export default async function Dashboard() {
             <ThumbsUpIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalLikes ?? 0}</div>
+            <div className='text-2xl font-bold'>
+              {(metrics.data?.overall.totalLikes ?? 0).toLocaleString()}
+            </div>
             {!!metrics.data?.growth.likes && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.likes > 0 ? '+' : ''}
@@ -120,7 +127,9 @@ export default async function Dashboard() {
             <MessageSquareIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalComments ?? 0}</div>
+            <div className='text-2xl font-bold'>
+              {(metrics.data?.overall.totalComments ?? 0).toLocaleString()}
+            </div>
             {!!metrics.data?.growth.comments && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.comments > 0 ? '+' : ''}
@@ -135,8 +144,10 @@ export default async function Dashboard() {
             <CardTitle className='text-sm font-medium'>Total Shares</CardTitle>
             <ShareIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalShares ?? 0}</div>
+          <CardContent className=''>
+            <div className='text-2xl font-bold'>
+              {(metrics.data?.overall.totalShares ?? 0).toLocaleString()}
+            </div>
             {!!metrics.data?.growth.shares && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.shares > 0 ? '+' : ''}
