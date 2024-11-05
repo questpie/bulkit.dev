@@ -5,6 +5,7 @@ import { StatCard } from '@bulkit/app/app/(main)/_components/stat-card'
 import { ChannelAvatarList } from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
+import type { MetricsPeriod } from '@bulkit/shared/modules/posts/post-metrics.schemas'
 import { capitalize } from '@bulkit/shared/utils/string'
 import { cn } from '@bulkit/transactional/style-utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
@@ -19,11 +20,13 @@ import { Separator } from '@bulkit/ui/components/ui/separator'
 import { PiChatText, PiEye, PiShare, PiThumbsUp } from 'react-icons/pi'
 
 export default async function Dashboard() {
+  const period: MetricsPeriod = '30d'
+
   // Fetch metrics data for last 30 days
   const [metricsResp, popularPosts] = await Promise.all([
     apiServer.posts.metrics.organization.get({
       query: {
-        period: '7d',
+        period,
         // dateFrom: subDays(new Date(), 30).toISOString(),
         // dateTo: new Date().toISOString(),
       },
@@ -57,7 +60,7 @@ export default async function Dashboard() {
           icon={PiEye}
           value={metricsResp.data?.overall.totalImpressions ?? 0}
           growth={metricsResp.data?.growth.impressions ?? 0}
-          period='30d'
+          period={period}
         />
 
         <StatCard
@@ -65,7 +68,7 @@ export default async function Dashboard() {
           icon={PiThumbsUp}
           value={metricsResp.data?.overall.totalLikes ?? 0}
           growth={metricsResp.data?.growth.likes ?? 0}
-          period='30d'
+          period={period}
         />
 
         <StatCard
@@ -73,7 +76,7 @@ export default async function Dashboard() {
           icon={PiChatText}
           value={metricsResp.data?.overall.totalComments ?? 0}
           growth={metricsResp.data?.growth.comments ?? 0}
-          period='30d'
+          period={period}
         />
 
         <StatCard
@@ -81,7 +84,7 @@ export default async function Dashboard() {
           icon={PiShare}
           value={metricsResp.data?.overall.totalShares ?? 0}
           growth={metricsResp.data?.growth.shares ?? 0}
-          period='30d'
+          period={period}
         />
       </div>
 

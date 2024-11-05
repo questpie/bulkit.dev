@@ -75,7 +75,7 @@ export function SegmentedAreaChart({ data }: SegmentedLineChartProps) {
             >
               <span className='text-xs text-muted-foreground'>{chartConfig[metric].label}</span>
               <span className='text-lg font-bold leading-none sm:text-3xl'>
-                {totals[metric].toLocaleString()}
+                {totals[metric].toLocaleString('en-US')}
               </span>
             </div>
           ))}
