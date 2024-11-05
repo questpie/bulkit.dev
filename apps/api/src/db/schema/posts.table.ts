@@ -32,7 +32,11 @@ export const postsTable = pgTable(
     id: primaryKeyCol('id'),
     name: text('name').notNull(),
     status: text('status', { enum: POST_STATUS }).notNull(),
-    organizationId: text('organization_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     type: text('type', { enum: POST_TYPE }).notNull(),
 
     scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),

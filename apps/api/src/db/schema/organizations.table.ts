@@ -15,7 +15,11 @@ export const userOrganizationsTable = pgTable(
   {
     id: primaryKeyCol(),
     userId: text('user_id').notNull(),
-    organizationId: text('organization_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     role: text('role', { enum: USER_ROLE }).notNull(),
     ...timestampCols(),
   },
@@ -51,7 +55,11 @@ export const selectOrganizationSchema = createSelectSchema(organizationsTable)
 // Add this new table definition
 export const organizationInvitesTable = pgTable('organization_invites', {
   id: tokenCol('id').primaryKey(),
-  organizationId: text('organization_id').notNull(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id, {
+      onDelete: 'cascade',
+    }),
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
   expiresAt: timestamp('expires_at', { mode: 'string', withTimezone: true }).notNull(),

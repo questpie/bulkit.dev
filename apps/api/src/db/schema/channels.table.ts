@@ -24,7 +24,11 @@ export const socialMediaIntegrationsTable = pgTable(
     tokenExpiry: timestamp('token_expiry', { mode: 'string', withTimezone: true }),
     scope: text('scope'),
     additionalData: jsonb('additional_data').default(sql`'{}'::jsonb`),
-    organizationId: text('organization_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     ...timestampCols(),
   },
   (table) => ({
@@ -55,7 +59,11 @@ export const channelsTable = pgTable(
     imageUrl: text('image_url'),
     url: text('url'),
     status: text('status', { enum: CHANNEL_STATUS }).notNull().default('active'),
-    organizationId: text('organization_id').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     socialMediaIntegrationId: text('social_media_integration_id').references(
       () => socialMediaIntegrationsTable.id
     ),

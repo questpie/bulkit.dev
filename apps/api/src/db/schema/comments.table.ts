@@ -19,7 +19,9 @@ export const commentsTable = pgTable(
       .references(() => usersTable.id),
     organizationId: text('organization_id')
       .notNull()
-      .references(() => organizationsTable.id),
+      .references(() => organizationsTable.id, {
+        onDelete: 'cascade',
+      }),
     content: text('content').notNull(),
     ...timestampCols(),
   },

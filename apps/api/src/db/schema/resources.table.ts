@@ -9,7 +9,11 @@ export const resourcesTable = pgTable('resources', {
   location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
   type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
   isPrivate: boolean('is_private').notNull().default(false),
-  organizationId: text('organization_id').notNull(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationsTable.id, {
+      onDelete: 'cascade',
+    }),
 
   /**
    *  if set, the resource will be deleted at this time
