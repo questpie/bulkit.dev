@@ -14,7 +14,7 @@ import type {
   PlatformMetrics,
 } from '@bulkit/shared/modules/posts/post-metrics.schemas'
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
-import type { PgSelect, PgSelectBase, PgSelectQueryBuilderBase } from 'drizzle-orm/pg-core'
+import type { PgSelect } from 'drizzle-orm/pg-core'
 
 class PostMetricsService {
   private async getPeriodHistory(
@@ -29,12 +29,12 @@ class PostMetricsService {
     const history = await opts.query(
       db
         .select({
-          likes: sql<number>`sum(${postMetricsHistoryTable.likes})`,
-          comments: sql<number>`sum(${postMetricsHistoryTable.comments})`,
-          shares: sql<number>`sum(${postMetricsHistoryTable.shares})`,
-          impressions: sql<number>`sum(${postMetricsHistoryTable.impressions})`,
-          reach: sql<number>`sum(${postMetricsHistoryTable.reach})`,
-          clicks: sql<number>`sum(${postMetricsHistoryTable.clicks})`,
+          likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+          comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+          shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+          impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+          reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
+          clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
           date: sql<string>`date_trunc('day', ${postMetricsHistoryTable.createdAt})`,
         })
         .from(postMetricsHistoryTable)
@@ -251,12 +251,12 @@ class PostMetricsService {
   ): Promise<AggregateMetrics> {
     const metrics = await db
       .select({
-        likes: sql<number>`sum(${postMetricsHistoryTable.likes})`,
-        comments: sql<number>`sum(${postMetricsHistoryTable.comments})`,
-        shares: sql<number>`sum(${postMetricsHistoryTable.shares})`,
-        impressions: sql<number>`sum(${postMetricsHistoryTable.impressions})`,
-        reach: sql<number>`sum(${postMetricsHistoryTable.reach})`,
-        clicks: sql<number>`sum(${postMetricsHistoryTable.clicks})`,
+        likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+        comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+        shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+        impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+        reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
+        clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
       })
       .from(postMetricsHistoryTable)
       .innerJoin(
@@ -282,12 +282,12 @@ class PostMetricsService {
     return db
       .select({
         platform: channelsTable.platform,
-        totalLikes: sql<number>`sum(${postMetricsHistoryTable.likes})`,
-        totalComments: sql<number>`sum(${postMetricsHistoryTable.comments})`,
-        totalShares: sql<number>`sum(${postMetricsHistoryTable.shares})`,
-        totalImpressions: sql<number>`sum(${postMetricsHistoryTable.impressions})`,
-        totalReach: sql<number>`sum(${postMetricsHistoryTable.reach})`,
-        totalClicks: sql<number>`sum(${postMetricsHistoryTable.clicks})`,
+        totalLikes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+        totalComments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+        totalShares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+        totalImpressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+        totalReach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
+        totalClicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
       })
       .from(postMetricsHistoryTable)
       .innerJoin(

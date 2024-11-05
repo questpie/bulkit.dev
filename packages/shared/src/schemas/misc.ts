@@ -1,5 +1,6 @@
 import { createEnum } from '@bulkit/shared/utils/misc'
 import {
+  type NumberOptions,
   type StaticDecode,
   type StringOptions,
   type TEnum,
@@ -12,6 +13,11 @@ export const StringInt = (opts: StringOptions = {}) =>
   Type.Transform(Type.String(opts))
     .Decode((v) => Number.parseInt(v, 10))
     .Encode(String)
+
+export const Numeric = (opts: NumberOptions = {}) =>
+  Type.Transform(Type.Union([Type.String(opts), Type.Number(opts)]))
+    .Decode((v) => Number.parseFloat(`${v}`))
+    .Encode(Number)
 
 export const StringBoolean = (opts: StringOptions = {}) =>
   Type.Transform(Type.String(opts))

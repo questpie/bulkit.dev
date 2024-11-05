@@ -11,9 +11,8 @@ import {
   CardTitle,
 } from '@bulkit/ui/components/ui/card'
 import type { ChartConfig } from '@bulkit/ui/components/ui/chart'
-import { EyeIcon, MessageSquareIcon, ShareIcon, ThumbsUpIcon, TrendingUp } from 'lucide-react'
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042']
+import { EyeIcon, MessageSquareIcon, ShareIcon, ThumbsUpIcon } from 'lucide-react'
+import { LuTrendingDown, LuTrendingUp } from 'react-icons/lu'
 
 const pieChartConfig = {
   impressions: {
@@ -68,6 +67,7 @@ export default async function Dashboard() {
   return (
     <div className='flex flex-col w-full'>
       <Header title='Dashboard' />
+      {/* <pre>{JSON.stringify(metrics.data, null, 2)}</pre> */}
 
       <div className='grid gap-4 p-4 md:grid-cols-2 lg:grid-cols-4'>
         {/* Stat Cards */}
@@ -77,13 +77,24 @@ export default async function Dashboard() {
             <EyeIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalImpressions}</div>
+            <div className='text-2xl font-bold'>{metrics.data?.overall.totalImpressions ?? 0}</div>
             {!!metrics.data?.growth.impressions && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.impressions > 0 ? '+' : ''}
                 {metrics.data?.growth.impressions}% from last month
               </p>
             )}
+
+            <PieChart
+              config={pieChartConfig}
+              data={platformImpressions}
+              dataKey='value'
+              nameKey='name'
+              // innerValue={Intl.NumberFormat('en', { notation: 'compact' }).format(
+              //   metrics.data?.overall.totalImpressions ?? 0
+              // )}
+              // innerLabel='Impressions'
+            />
           </CardContent>
         </Card>
 
@@ -93,7 +104,7 @@ export default async function Dashboard() {
             <ThumbsUpIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalLikes}</div>
+            <div className='text-2xl font-bold'>{metrics.data?.overall.totalLikes ?? 0}</div>
             {!!metrics.data?.growth.likes && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.likes > 0 ? '+' : ''}
@@ -109,7 +120,7 @@ export default async function Dashboard() {
             <MessageSquareIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalComments}</div>
+            <div className='text-2xl font-bold'>{metrics.data?.overall.totalComments ?? 0}</div>
             {!!metrics.data?.growth.comments && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.comments > 0 ? '+' : ''}
@@ -125,7 +136,7 @@ export default async function Dashboard() {
             <ShareIcon className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{metrics.data?.overall.totalShares}</div>
+            <div className='text-2xl font-bold'>{metrics.data?.overall.totalShares ?? 0}</div>
             {!!metrics.data?.growth.shares && (
               <p className='text-xs text-muted-foreground'>
                 {metrics.data?.growth.shares > 0 ? '+' : ''}
@@ -136,7 +147,7 @@ export default async function Dashboard() {
         </Card>
 
         {/* Charts */}
-        <Card className='flex flex-col'>
+        {/* <Card className='flex flex-col'>
           <CardHeader className='items-center pb-0'>
             <CardTitle>Total Impressions</CardTitle>
             <CardDescription>Last 7 days</CardDescription>
@@ -147,19 +158,26 @@ export default async function Dashboard() {
               data={platformImpressions}
               dataKey='value'
               nameKey='name'
-              innerValue={metrics.data?.overall.totalImpressions.toLocaleString() ?? ''}
-              innerLabel='Impressions'
+              // innerValue={Intl.NumberFormat('en', { notation: 'compact' }).format(
+              //   metrics.data?.overall.totalImpressions ?? 0
+              // )}
+              // innerLabel='Impressions'
             />
           </CardContent>
           <CardFooter className='flex-col gap-2 text-sm'>
-            <div className='flex items-center gap-2 font-medium leading-none'>
-              Trending up by 5.2% this month <TrendingUp className='h-4 w-4' />
-            </div>
-            <div className='leading-none text-muted-foreground'>
-              Showing total visitors for the last 6 months
-            </div>
+            {!metrics.data?.growth.impressions ? null : metrics.data?.growth.impressions > 0 ? (
+              <div className='flex items-center gap-2 font-medium leading-none'>
+                Trending up by {Math.abs(metrics.data?.growth.impressions ?? 0)}%
+                <LuTrendingUp className='h-4 w-4' />
+              </div>
+            ) : (
+              <div className='flex items-center gap-2 font-medium leading-none'>
+                Trending down by {Math.abs(metrics.data?.growth.impressions ?? 0)}%
+                <LuTrendingDown className='h-4 w-4' />
+              </div>
+            )}
           </CardFooter>
-        </Card>
+        </Card> */}
 
         {/* Engagement Trends Chart */}
         {/* <Card className='col-span-2'>
