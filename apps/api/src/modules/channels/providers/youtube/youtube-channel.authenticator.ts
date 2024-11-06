@@ -20,7 +20,6 @@ export class YoutubeAuthenticator extends OAuth2Authenticator {
         isPKCE: true,
         userInfoEndpoint: 'https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true',
         parseUserInfo: (data) => {
-          console.log('youtube channels', data)
           return {
             id: data.items[0].id,
             name: data.items[0].snippet.title,

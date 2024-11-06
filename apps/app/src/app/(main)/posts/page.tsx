@@ -11,7 +11,7 @@ import { Button } from '@bulkit/ui/components/ui/button'
 import { PiPlus } from 'react-icons/pi'
 
 export default async function PostsPage(props: { searchParams: Promise<Record<string, any>> }) {
-  const pagination = getPagination(await props.searchParams, 50)
+  const pagination = getPagination(await props.searchParams, 25)
   const posts = await apiServer.posts.index.get({
     query: {
       limit: pagination.limit,
@@ -28,7 +28,7 @@ export default async function PostsPage(props: { searchParams: Promise<Record<st
           <Pagination
             canGoNext={!!posts.data?.nextCursor}
             canGoPrev={pagination.page > 1}
-            className='justify-end px-4'
+            className=' px-4'
           />
         </>
       )}

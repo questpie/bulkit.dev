@@ -36,6 +36,7 @@ export function Pagination(props: {
       >
         <PiCaretLeft /> Previous
       </Button>
+
       <Button
         variant='secondary'
         className='min-w-[120px]'

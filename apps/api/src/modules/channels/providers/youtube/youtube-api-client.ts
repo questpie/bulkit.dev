@@ -4,7 +4,6 @@ import { OAuth2Client } from 'google-auth-library'
 import { buildChannelRedirectUri } from '@bulkit/api/modules/channels/channel-utils'
 
 export async function buildYouTubeClient(accessToken: string, refreshToken: string) {
-  console.log(buildChannelRedirectUri('youtube'))
   const oauth2Client = new OAuth2Client(
     envApi.YOUTUBE_CLIENT_ID,
     envApi.YOUTUBE_CLIENT_SECRET,
