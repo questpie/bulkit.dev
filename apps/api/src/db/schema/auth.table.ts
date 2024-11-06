@@ -31,7 +31,7 @@ export const sessionsTable = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id')
     .notNull()
-    .references(() => usersTable.id),
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   expiresAt: timestamp('expires_at', {
     withTimezone: true,
     mode: 'date',
@@ -73,7 +73,7 @@ export const oauthAccountsTable = pgTable('oauth_accounts', {
   id: primaryKeyCol(),
   userId: text('user_id')
     .notNull()
-    .references(() => usersTable.id),
+    .references(() => usersTable.id, { onDelete: 'cascade' }),
   provider: text('provider').notNull(),
   providerAccountId: text('provider_account_id').notNull(),
   ...timestampCols(),

@@ -104,7 +104,9 @@ export const regularPostsTable = pgTable(
   'regular_posts',
   {
     id: primaryKeyCol('id'),
-    postId: text('post_id').notNull(),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id, { onDelete: 'cascade' }),
     text: text('text').notNull(),
 
     ...timestampCols(),
@@ -140,8 +142,10 @@ export const storyPostsTable = pgTable(
   'story_posts',
   {
     id: primaryKeyCol('id'),
-    postId: text('post_id').notNull(),
-    resourceId: text('resource_id'),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id, { onDelete: 'cascade' }),
+    resourceId: text('resource_id').references(() => resourcesTable.id, { onDelete: 'set null' }),
 
     ...timestampCols(),
   },
@@ -155,8 +159,10 @@ export const reelPostsTable = pgTable(
   'reel_posts',
   {
     id: primaryKeyCol(),
-    postId: text('post_id').notNull(),
-    resourceId: text('resource_id'),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id, { onDelete: 'cascade' }),
+    resourceId: text('resource_id').references(() => resourcesTable.id, { onDelete: 'set null' }),
     description: text('description').notNull(),
 
     ...timestampCols(),
@@ -174,9 +180,11 @@ export const scheduledPostsTable = pgTable(
   'scheduled_posts',
   {
     id: primaryKeyCol(),
-    postId: text('post_id').notNull(),
+    postId: text('post_id')
+      .notNull()
+      .references(() => postsTable.id, { onDelete: 'cascade' }),
     channelId: text('channel_id')
-      .references(() => channelsTable.id)
+      .references(() => channelsTable.id, { onDelete: 'cascade' })
       .notNull(),
 
     status: text('status', { enum: SCHEDULED_POST_STATUS }).notNull().default('draft'),
@@ -199,7 +207,9 @@ export const scheduledPostsTable = pgTable(
     postIdIdx: index().on(table.postId),
     channelIdIdx: index().on(table.channelId),
     compountIdx: uniqueIndex().on(table.postId, table.channelId),
-    parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }),
+    parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }).onDelete(
+      'set null'
+    ),
   })
 )
 
@@ -212,7 +222,7 @@ export const postMetricsHistoryTable = pgTable(
     id: primaryKeyCol(),
     scheduledPostId: text('scheduled_post_id')
       .notNull()
-      .references(() => scheduledPostsTable.id),
+      .references(() => scheduledPostsTable.id, { onDelete: 'cascade' }),
 
     /** The number of likes or reactions the post has received */
     likes: integer('likes').notNull(),

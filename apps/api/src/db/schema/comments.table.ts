@@ -13,10 +13,10 @@ export const commentsTable = pgTable(
     id: primaryKeyCol(),
     postId: text('post_id')
       .notNull()
-      .references(() => postsTable.id),
+      .references(() => postsTable.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
-      .references(() => usersTable.id),
+      .references(() => usersTable.id, { onDelete: 'cascade' }),
     organizationId: text('organization_id')
       .notNull()
       .references(() => organizationsTable.id, {

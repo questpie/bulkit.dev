@@ -23,7 +23,7 @@ import { addDays } from 'date-fns'
 export const demo01Seeder = createSeeder({
   name: 'demo-01',
   options: {
-    once: true,
+    once: false,
   },
   async seed(db: TransactionLike) {
     // Create demo user
