@@ -1,5 +1,6 @@
 import type { MetricsPeriod } from '@bulkit/shared/modules/posts/post-metrics.schemas'
 import { Card, CardContent, CardHeader, CardTitle } from '@bulkit/ui/components/ui/card'
+import type { PropsWithChildren } from 'react'
 import type { IconType } from 'react-icons'
 
 export type StatCardProps = {
@@ -26,7 +27,7 @@ const PERIOD_TO_NAME: Record<MetricsPeriod, string> = {
   '90d': 'last 90 days',
 }
 
-export function StatCard(props: StatCardProps) {
+export function StatCard(props: PropsWithChildren<StatCardProps>) {
   return (
     <Card>
       <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
@@ -41,6 +42,8 @@ export function StatCard(props: StatCardProps) {
             {props.growth}% from {PERIOD_TO_NAME[props.period]}
           </p>
         )}
+
+        {props.children}
       </CardContent>
     </Card>
   )

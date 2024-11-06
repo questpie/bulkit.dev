@@ -97,6 +97,12 @@ export abstract class ChannelPublisher {
       .insert(postMetricsHistoryTable)
       .values({
         ...metrics,
+        clicks: metrics.clicks - (oldMetrics?.clicks ?? 0),
+        comments: metrics.comments - (oldMetrics?.comments ?? 0),
+        impressions: metrics.impressions - (oldMetrics?.impressions ?? 0),
+        likes: metrics.likes - (oldMetrics?.likes ?? 0),
+        reach: metrics.reach - (oldMetrics?.reach ?? 0),
+        shares: metrics.shares - (oldMetrics?.shares ?? 0),
         scheduledPostId: scheduledPost.id,
       })
       .returning()

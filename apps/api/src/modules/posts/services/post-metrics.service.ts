@@ -6,12 +6,11 @@ import {
   scheduledPostsTable,
 } from '@bulkit/api/db/db.schema'
 import { iocRegister } from '@bulkit/api/ioc'
-import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import type {
   AggregateMetrics,
   MetricsData,
   MetricsPeriod,
-  PeriodHistory,
+  PeriodHistoryData,
   PlatformMetrics,
 } from '@bulkit/shared/modules/posts/post-metrics.schemas'
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
@@ -26,7 +25,7 @@ class PostMetricsService {
       // TODO: type this better
       query: (builder: PgSelect) => any // Generic query builder type
     }
-  ): Promise<PeriodHistory> {
+  ): Promise<PeriodHistoryData[]> {
     const history = await opts.query(
       db
         .select({
@@ -50,19 +49,7 @@ class PostMetricsService {
         .$dynamic()
     )
 
-    return {
-      data: history,
-      period: this.getPeriodFromDates(opts.dateFrom, opts.dateTo),
-    }
-  }
-
-  private getPeriodFromDates(from: Date, to: Date): MetricsPeriod {
-    const diffHours = (to.getTime() - from.getTime()) / (1000 * 60 * 60)
-
-    if (diffHours <= 24) return '24h'
-    if (diffHours <= 24 * 7) return '7d'
-    if (diffHours <= 24 * 30) return '30d'
-    return '90d'
+    return history
   }
 
   async getPostMetrics(
@@ -73,47 +60,26 @@ class PostMetricsService {
       period?: MetricsPeriod
     }
   ) {
-    const dateRange = this.getPeriodDateRange(opts.period ?? '7d')
+    const dateRange = this.getPeriodDateRangeWithPrevious(opts.period ?? '7d')
 
-    const [metrics, history] = await Promise.all([
-      db
-        .select({
-          id: postMetricsHistoryTable.id,
-          likes: postMetricsHistoryTable.likes,
-          comments: postMetricsHistoryTable.comments,
-          shares: postMetricsHistoryTable.shares,
-          impressions: postMetricsHistoryTable.impressions,
-          reach: postMetricsHistoryTable.reach,
-          clicks: postMetricsHistoryTable.clicks,
-          createdAt: postMetricsHistoryTable.createdAt,
-        })
-        .from(postMetricsHistoryTable)
-        .where(
-          and(
-            eq(postMetricsHistoryTable.scheduledPostId, opts.postId),
-            gte(postMetricsHistoryTable.createdAt, dateRange.from.toISOString()),
-            lte(postMetricsHistoryTable.createdAt, dateRange.to.toISOString())
-          )
-        )
-        .orderBy(desc(postMetricsHistoryTable.createdAt)),
+    const [metrics, previousMetrics] = await Promise.all([
       this.getPeriodHistory(db, {
-        dateFrom: dateRange.from,
-        dateTo: dateRange.to,
+        dateFrom: dateRange.current.from,
+        dateTo: dateRange.current.to,
+        query: (builder) => builder.where(eq(postMetricsHistoryTable.scheduledPostId, opts.postId)),
+      }),
+      this.getPeriodHistory(db, {
+        dateFrom: dateRange.previous.from,
+        dateTo: dateRange.previous.to,
         query: (builder) => builder.where(eq(postMetricsHistoryTable.scheduledPostId, opts.postId)),
       }),
     ])
 
-    const previousMetrics = await this.getPreviousPeriodMetrics(db, {
-      postId: opts.postId,
-      dateRange,
-    })
-
     return {
-      metrics,
       aggregates: this.calculateAggregates(metrics),
       growth: this.calculateGrowth(metrics, previousMetrics),
       period: opts.period ?? '7d',
-      history,
+      history: metrics,
     }
   }
 
@@ -126,46 +92,43 @@ class PostMetricsService {
   ) {
     const dateRanges = this.getPeriodDateRangeWithPrevious(opts.period ?? '7d')
 
-    const [
-      currentOverallMetrics,
-      previousOverallMetrics,
-      currentPlatformMetrics,
-      previousPlatformMetrics,
-      history,
-    ] = await Promise.all([
-      this.getOverallMetrics(db, {
-        organizationId: opts.organizationId,
-        dateFrom: dateRanges.current.from,
-        dateTo: dateRanges.current.to,
-      }),
-      this.getOverallMetrics(db, {
-        organizationId: opts.organizationId,
-        dateFrom: dateRanges.previous.from,
-        dateTo: dateRanges.previous.to,
-      }),
-      this.getPlatformMetrics(db, {
-        organizationId: opts.organizationId,
-        dateFrom: dateRanges.current.from,
-        dateTo: dateRanges.current.to,
-      }),
-      this.getPlatformMetrics(db, {
-        organizationId: opts.organizationId,
-        dateFrom: dateRanges.previous.from,
-        dateTo: dateRanges.previous.to,
-      }),
-      this.getPeriodHistory(db, {
-        dateFrom: dateRanges.current.from,
-        dateTo: dateRanges.current.to,
-        query: (builder) =>
-          builder
-            .innerJoin(
-              scheduledPostsTable,
-              eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
-            )
-            .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
-            .where(eq(postsTable.organizationId, opts.organizationId)),
-      }),
-    ])
+    const [currentPlatformMetrics, previousPlatformMetrics, metrics, previousMetrics] =
+      await Promise.all([
+        this.getPlatformMetrics(db, {
+          organizationId: opts.organizationId,
+          dateFrom: dateRanges.current.from,
+          dateTo: dateRanges.current.to,
+        }),
+        this.getPlatformMetrics(db, {
+          organizationId: opts.organizationId,
+          dateFrom: dateRanges.previous.from,
+          dateTo: dateRanges.previous.to,
+        }),
+        this.getPeriodHistory(db, {
+          dateFrom: dateRanges.current.from,
+          dateTo: dateRanges.current.to,
+          query: (builder) =>
+            builder
+              .innerJoin(
+                scheduledPostsTable,
+                eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
+              )
+              .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
+              .where(eq(postsTable.organizationId, opts.organizationId)),
+        }),
+        this.getPeriodHistory(db, {
+          dateFrom: dateRanges.previous.from,
+          dateTo: dateRanges.previous.to,
+          query: (builder) =>
+            builder
+              .innerJoin(
+                scheduledPostsTable,
+                eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
+              )
+              .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
+              .where(eq(postsTable.organizationId, opts.organizationId)),
+        }),
+      ])
 
     // Get platform-specific histories
     const platformHistories = await Promise.all(
@@ -199,50 +162,22 @@ class PostMetricsService {
         ...current,
         history: platformHistories[index],
         growth: {
-          likes: this.calculatePercentageChange(current.totalLikes, previous.totalLikes),
-          comments: this.calculatePercentageChange(current.totalComments, previous.totalComments),
-          shares: this.calculatePercentageChange(current.totalShares, previous.totalShares),
-          impressions: this.calculatePercentageChange(
-            current.totalImpressions,
-            previous.totalImpressions
-          ),
-          reach: this.calculatePercentageChange(current.totalReach, previous.totalReach),
-          clicks: this.calculatePercentageChange(current.totalClicks, previous.totalClicks),
+          likes: this.calculatePercentageChange(current.likes, previous.likes),
+          comments: this.calculatePercentageChange(current.comments, previous.comments),
+          shares: this.calculatePercentageChange(current.shares, previous.shares),
+          impressions: this.calculatePercentageChange(current.impressions, previous.impressions),
+          reach: this.calculatePercentageChange(current.reach, previous.reach),
+          clicks: this.calculatePercentageChange(current.clicks, previous.clicks),
         },
       }
     })
 
     return {
-      overall: currentOverallMetrics,
-      growth: {
-        likes: this.calculatePercentageChange(
-          currentOverallMetrics.totalLikes,
-          previousOverallMetrics.totalLikes
-        ),
-        comments: this.calculatePercentageChange(
-          currentOverallMetrics.totalComments,
-          previousOverallMetrics.totalComments
-        ),
-        shares: this.calculatePercentageChange(
-          currentOverallMetrics.totalShares,
-          previousOverallMetrics.totalShares
-        ),
-        impressions: this.calculatePercentageChange(
-          currentOverallMetrics.totalImpressions,
-          previousOverallMetrics.totalImpressions
-        ),
-        reach: this.calculatePercentageChange(
-          currentOverallMetrics.totalReach,
-          previousOverallMetrics.totalReach
-        ),
-        clicks: this.calculatePercentageChange(
-          currentOverallMetrics.totalClicks,
-          previousOverallMetrics.totalClicks
-        ),
-      },
+      overall: this.calculateAggregates(metrics),
+      growth: this.calculateGrowth(metrics, previousMetrics),
       platforms: platformsWithGrowth,
       period: opts.period ?? '7d',
-      history,
+      history: metrics,
     }
   }
 
@@ -297,59 +232,6 @@ class PostMetricsService {
     return popularPosts
   }
 
-  // async getFuturePosts(
-  //   db: TransactionLike,
-  //   opts: {
-  //     organizationId: string
-  //     limit?: number
-  //   }
-  // ) {
-  //   const futurePosts = await db
-  //     .select()
-  //     .from(postsTable)
-  //     .where(
-  //       and(
-  //         eq(postsTable.organizationId, opts.organizationId),
-  //         or(eq(postsTable.status, 'scheduled'), eq(postsTable.status, 'partially-published')),
-  //         gte(postsTable.scheduledAt, new Date().toISOString())
-  //       )
-  //     )
-  //     .orderBy(asc(postsTable.scheduledAt))
-  //     .limit(opts.limit ?? 5)
-
-  //   return futurePosts
-  // }
-
-  private async getOverallMetrics(
-    db: TransactionLike,
-    opts: { organizationId: string; dateFrom: Date; dateTo: Date }
-  ): Promise<AggregateMetrics> {
-    const metrics = await db
-      .select({
-        likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
-        comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
-        shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
-        impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
-        reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
-        clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
-      })
-      .from(postMetricsHistoryTable)
-      .innerJoin(
-        scheduledPostsTable,
-        eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
-      )
-      .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
-      .where(
-        and(
-          eq(postsTable.organizationId, opts.organizationId),
-          gte(postMetricsHistoryTable.createdAt, opts.dateFrom.toISOString()),
-          lte(postMetricsHistoryTable.createdAt, opts.dateTo.toISOString())
-        )
-      )
-
-    return this.calculateAggregates(metrics)
-  }
-
   private async getPlatformMetrics(
     db: TransactionLike,
     opts: { organizationId: string; dateFrom: Date; dateTo: Date }
@@ -357,12 +239,12 @@ class PostMetricsService {
     return db
       .select({
         platform: channelsTable.platform,
-        totalLikes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
-        totalComments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
-        totalShares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
-        totalImpressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
-        totalReach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
-        totalClicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
+        likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+        comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+        shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+        impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+        reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
+        clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
       })
       .from(postMetricsHistoryTable)
       .innerJoin(
@@ -384,12 +266,12 @@ class PostMetricsService {
           ...result,
           /** This will be filled later */
           growth: null,
-          engagementRate: this.calculateEngagementRate({
-            comments: result.totalComments,
-            impressions: result.totalImpressions,
-            likes: result.totalLikes,
-            shares: result.totalShares,
-          }),
+          // engagementRate: this.calculateEngagementRate({
+          //   comments: result.totalComments,
+          //   impressions: result.totalImpressions,
+          //   likes: result.totalLikes,
+          //   shares: result.totalShares,
+          // }),
         }))
       )
   }
@@ -428,58 +310,34 @@ class PostMetricsService {
     return { from, to: now }
   }
 
-  private async getPreviousPeriodMetrics(
-    db: TransactionLike,
-    opts: {
-      postId: string
-      dateRange: { from: Date; to: Date }
-    }
-  ) {
-    const periodLength = opts.dateRange.to.getTime() - opts.dateRange.from.getTime()
-    const previousFrom = new Date(opts.dateRange.from.getTime() - periodLength)
-    const previousTo = new Date(opts.dateRange.to.getTime() - periodLength)
-
-    return db
-      .select()
-      .from(postMetricsHistoryTable)
-      .where(
-        and(
-          eq(postMetricsHistoryTable.scheduledPostId, opts.postId),
-          gte(postMetricsHistoryTable.createdAt, previousFrom.toDateString()),
-          lte(postMetricsHistoryTable.createdAt, previousTo.toDateString())
-        )
-      )
-      .orderBy(desc(postMetricsHistoryTable.createdAt))
-  }
-
   private calculateAggregates(metrics: MetricsData[]): AggregateMetrics {
     const totals = metrics.reduce(
       (acc, metric) => ({
-        totalLikes: acc.totalLikes + metric.likes,
-        totalComments: acc.totalComments + metric.comments,
-        totalShares: acc.totalShares + metric.shares,
-        totalImpressions: acc.totalImpressions + metric.impressions,
-        totalReach: acc.totalReach + metric.reach,
-        totalClicks: acc.totalClicks + metric.clicks,
+        likes: acc.likes + metric.likes,
+        comments: acc.comments + metric.comments,
+        shares: acc.shares + metric.shares,
+        impressions: acc.impressions + metric.impressions,
+        reach: acc.reach + metric.reach,
+        clicks: acc.clicks + metric.clicks,
       }),
       {
-        totalLikes: 0,
-        totalComments: 0,
-        totalShares: 0,
-        totalImpressions: 0,
-        totalReach: 0,
-        totalClicks: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        impressions: 0,
+        reach: 0,
+        clicks: 0,
       }
     )
 
     return {
       ...totals,
-      engagementRate: this.calculateEngagementRate({
-        comments: totals.totalComments,
-        impressions: totals.totalImpressions,
-        likes: totals.totalImpressions,
-        shares: totals.totalShares,
-      }),
+      // engagementRate: this.calculateEngagementRate({
+      //   comments: totals.totalComments,
+      //   impressions: totals.totalImpressions,
+      //   likes: totals.totalImpressions,
+      //   shares: totals.totalShares,
+      // }),
     }
   }
 
@@ -488,42 +346,30 @@ class PostMetricsService {
     const previousAggregates = this.calculateAggregates(previous)
 
     return {
-      likes: this.calculatePercentageChange(
-        currentAggregates.totalLikes,
-        previousAggregates.totalLikes
-      ),
+      likes: this.calculatePercentageChange(currentAggregates.likes, previousAggregates.likes),
       comments: this.calculatePercentageChange(
-        currentAggregates.totalComments,
-        previousAggregates.totalComments
+        currentAggregates.comments,
+        previousAggregates.comments
       ),
-      shares: this.calculatePercentageChange(
-        currentAggregates.totalShares,
-        previousAggregates.totalShares
-      ),
+      shares: this.calculatePercentageChange(currentAggregates.shares, previousAggregates.shares),
       impressions: this.calculatePercentageChange(
-        currentAggregates.totalImpressions,
-        previousAggregates.totalImpressions
+        currentAggregates.impressions,
+        previousAggregates.impressions
       ),
-      reach: this.calculatePercentageChange(
-        currentAggregates.totalReach,
-        previousAggregates.totalReach
-      ),
-      clicks: this.calculatePercentageChange(
-        currentAggregates.totalClicks,
-        previousAggregates.totalClicks
-      ),
+      reach: this.calculatePercentageChange(currentAggregates.reach, previousAggregates.reach),
+      clicks: this.calculatePercentageChange(currentAggregates.clicks, previousAggregates.clicks),
     }
   }
 
-  private calculateEngagementRate(metrics: {
-    likes: number
-    comments: number
-    shares: number
-    impressions: number
-  }): number {
-    const totalEngagements = metrics.likes + metrics.comments + metrics.shares
-    return metrics.impressions > 0 ? (totalEngagements / metrics.impressions) * 100 : 0
-  }
+  // private calculateEngagementRate(metrics: {
+  //   likes: number
+  //   comments: number
+  //   shares: number
+  //   impressions: number
+  // }): number {
+  //   const totalEngagements = metrics.likes + metrics.comments + metrics.shares
+  //   return metrics.impressions > 0 ? (totalEngagements / metrics.impressions) * 100 : 0
+  // }
 
   private calculatePercentageChange(current: number, previous: number): number {
     if (previous === 0) return current === 0 ? 0 : 100

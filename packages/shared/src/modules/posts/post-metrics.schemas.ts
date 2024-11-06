@@ -19,13 +19,13 @@ export const MetricsDataSchema = Type.Object({
 })
 
 export const AggregateMetricsSchema = Type.Object({
-  totalLikes: Type.Number(),
-  totalComments: Type.Number(),
-  totalShares: Type.Number(),
-  totalImpressions: Type.Number(),
-  totalReach: Type.Number(),
-  totalClicks: Type.Number(),
-  engagementRate: Type.Number(),
+  likes: Type.Number(),
+  comments: Type.Number(),
+  shares: Type.Number(),
+  impressions: Type.Number(),
+  reach: Type.Number(),
+  clicks: Type.Number(),
+  // engagementRate: Type.Number(),
 })
 
 export const MetricsGrowthSchema = Type.Object({
@@ -44,34 +44,20 @@ export const PeriodHistoryDataSchema = Type.Composite([
   }),
 ])
 
-export const PeriodHistorySchema = Type.Object({
-  data: Type.Array(PeriodHistoryDataSchema),
-  period: MetricsPeriodSchema,
-})
-
 export const PlatformMetricsSchema = Type.Composite([
   AggregateMetricsSchema,
   Type.Object({
     platform: StringLiteralEnum(PLATFORMS),
     growth: Type.Union([Type.Null(), MetricsGrowthSchema]),
-    history: Type.Optional(PeriodHistorySchema),
+    history: Type.Optional(Type.Array(PeriodHistoryDataSchema)),
   }),
 ])
 
 export const PostMetricsResponseSchema = Type.Object({
-  metrics: Type.Array(
-    Type.Composite([
-      MetricsDataSchema,
-      Type.Object({
-        id: Type.String(),
-        createdAt: Type.String(),
-      }),
-    ])
-  ),
   aggregates: AggregateMetricsSchema,
   growth: MetricsGrowthSchema,
   period: MetricsPeriodSchema,
-  history: PeriodHistorySchema,
+  history: Type.Array(PeriodHistoryDataSchema),
 })
 
 export const OrganizationMetricsResponseSchema = Type.Object({
@@ -79,7 +65,7 @@ export const OrganizationMetricsResponseSchema = Type.Object({
   growth: MetricsGrowthSchema,
   platforms: Type.Array(PlatformMetricsSchema),
   period: MetricsPeriodSchema,
-  history: PeriodHistorySchema,
+  history: Type.Array(PeriodHistoryDataSchema),
 })
 
 export type MetricsPeriod = Static<typeof MetricsPeriodSchema>
@@ -91,4 +77,3 @@ export type PostMetricsResponse = Static<typeof PostMetricsResponseSchema>
 export type OrganizationMetricsResponse = Static<typeof OrganizationMetricsResponseSchema>
 
 export type PeriodHistoryData = Static<typeof PeriodHistoryDataSchema>
-export type PeriodHistory = Static<typeof PeriodHistorySchema>

@@ -6,16 +6,7 @@ import { ChannelAvatarList } from '@bulkit/app/app/(main)/channels/_components/c
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
 import type { MetricsPeriod } from '@bulkit/shared/modules/posts/post-metrics.schemas'
-import { capitalize } from '@bulkit/shared/utils/string'
-import { cn } from '@bulkit/transactional/style-utils'
-import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@bulkit/ui/components/ui/card'
+import { Card, CardDescription, CardTitle } from '@bulkit/ui/components/ui/card'
 import { Separator } from '@bulkit/ui/components/ui/separator'
 import { PiChatText, PiEye, PiShare, PiThumbsUp } from 'react-icons/pi'
 
@@ -49,6 +40,8 @@ export default async function Dashboard() {
     notation: 'compact',
   })
 
+  // console.log(metricsResp.data?.platforms)
+
   return (
     <div className='flex flex-col gap-4 w-full'>
       <Header title='Dashboard' />
@@ -58,15 +51,22 @@ export default async function Dashboard() {
         <StatCard
           title='Total Impressions'
           icon={PiEye}
-          value={metricsResp.data?.overall.totalImpressions ?? 0}
+          value={metricsResp.data?.overall.impressions ?? 0}
           growth={metricsResp.data?.growth.impressions ?? 0}
           period={period}
-        />
+        >
+          {/* <PieChart
+            data={metricsResp.data?.platforms ?? []}
+            // config={chartConfig}
+            dataKey='impressions'
+            nameKey='platform'
+          /> */}
+        </StatCard>
 
         <StatCard
           title='Total Likes'
           icon={PiThumbsUp}
-          value={metricsResp.data?.overall.totalLikes ?? 0}
+          value={metricsResp.data?.overall.likes ?? 0}
           growth={metricsResp.data?.growth.likes ?? 0}
           period={period}
         />
@@ -74,7 +74,7 @@ export default async function Dashboard() {
         <StatCard
           title='Total Comments'
           icon={PiChatText}
-          value={metricsResp.data?.overall.totalComments ?? 0}
+          value={metricsResp.data?.overall.comments ?? 0}
           growth={metricsResp.data?.growth.comments ?? 0}
           period={period}
         />
@@ -82,14 +82,14 @@ export default async function Dashboard() {
         <StatCard
           title='Total Shares'
           icon={PiShare}
-          value={metricsResp.data?.overall.totalShares ?? 0}
+          value={metricsResp.data?.overall.shares ?? 0}
           growth={metricsResp.data?.growth.shares ?? 0}
           period={period}
         />
       </div>
 
       <div className='px-4 w-full'>
-        <SegmentedAreaChart data={metricsResp.data?.history.data ?? []} />
+        <SegmentedAreaChart data={metricsResp.data?.history ?? []} />
       </div>
 
       {!!popularPosts.data?.data.length && (

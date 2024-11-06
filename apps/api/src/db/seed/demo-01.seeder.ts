@@ -230,12 +230,12 @@ export const demo01Seeder = createSeeder({
 
           for (let day = 0; day <= days; day++) {
             const date = addDays(publishedAt, day)
-            metrics.impressions += Math.floor(Math.random() * 1000)
-            metrics.likes += Math.floor(Math.random() * 100)
-            metrics.comments += Math.floor(Math.random() * 20)
-            metrics.shares += Math.floor(Math.random() * 10)
-            metrics.clicks += Math.floor(Math.random() * 10)
-            metrics.reach += Math.floor(Math.random() * 2000)
+            metrics.impressions = Math.floor(Math.random() * 1000)
+            metrics.likes = Math.floor(Math.random() * 100)
+            metrics.comments = Math.floor(Math.random() * 20)
+            metrics.shares = Math.floor(Math.random() * 10)
+            metrics.clicks = Math.floor(Math.random() * 10)
+            metrics.reach = Math.floor(Math.random() * 2000)
 
             await db.insert(postMetricsHistoryTable).values({
               id: `metrics_${scheduledPost.id}_${getIsoDateString(date)}`,
