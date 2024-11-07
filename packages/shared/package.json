@@ -10,6 +10,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@sinclair/typebox": "0.32.34"
+    "@sinclair/typebox": "0.32.34",
+    "ms": "^2.1.3"
   }
 }

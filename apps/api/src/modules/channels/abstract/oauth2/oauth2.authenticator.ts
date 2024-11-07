@@ -45,8 +45,6 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
 
       const url = (await this.oAuth2Provider.createAuthorizationURL(state, codeVerifier)).toString()
 
-      appLogger.debug(`Authorization URL: ${url}`)
-
       return url
     })
   }

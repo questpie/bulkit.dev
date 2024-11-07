@@ -1,11 +1,13 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
+  organizationsTable,
   postMetricsHistoryTable,
   postsTable,
   scheduledPostsTable,
 } from '@bulkit/api/db/db.schema'
 import { iocRegister } from '@bulkit/api/ioc'
+import type { Platform } from '@bulkit/shared/constants/db.constants'
 import type {
   AggregateMetrics,
   MetricsData,
@@ -13,8 +15,8 @@ import type {
   PeriodHistoryData,
   PlatformMetrics,
 } from '@bulkit/shared/modules/posts/post-metrics.schemas'
+import { addDays, addHours, addMonths, addYears } from 'date-fns'
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
-import type { PgSelect } from 'drizzle-orm/pg-core'
 
 class PostMetricsService {
   private async getPeriodHistory(
@@ -22,32 +24,44 @@ class PostMetricsService {
     opts: {
       dateFrom: Date
       dateTo: Date
+      postId?: string
+      scheduledPostId?: string
+      organizationId?: string
+      channelId?: string
+      platform?: Platform
       // TODO: type this better
-      query: (builder: PgSelect) => any // Generic query builder type
     }
   ): Promise<PeriodHistoryData[]> {
-    const history = await opts.query(
-      db
-        .select({
-          likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
-          comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
-          shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
-          impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
-          reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
-          clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
-          date: sql<string>`date_trunc('day', ${postMetricsHistoryTable.createdAt})`,
-        })
-        .from(postMetricsHistoryTable)
-        .where(
-          and(
-            gte(postMetricsHistoryTable.createdAt, opts.dateFrom.toISOString()),
-            lte(postMetricsHistoryTable.createdAt, opts.dateTo.toISOString())
-          )
+    const history = await db
+      .select({
+        likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+        comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+        shares: sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+        impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+        reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
+        clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
+        date: sql<string>`date_trunc('day', ${postMetricsHistoryTable.createdAt})`,
+      })
+      .from(postMetricsHistoryTable)
+      .where(
+        and(
+          gte(postMetricsHistoryTable.createdAt, opts.dateFrom.toISOString()),
+          lte(postMetricsHistoryTable.createdAt, opts.dateTo.toISOString()),
+          opts.organizationId ? eq(organizationsTable.id, opts.organizationId) : undefined,
+          opts.postId ? eq(postsTable.id, opts.postId) : undefined,
+          opts.scheduledPostId ? eq(scheduledPostsTable.id, opts.scheduledPostId) : undefined,
+          opts.channelId ? eq(channelsTable.id, opts.channelId) : undefined,
+          opts.platform ? eq(channelsTable.platform, opts.platform) : undefined
         )
-        .groupBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
-        .orderBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
-        .$dynamic()
-    )
+      )
+      .innerJoin(
+        scheduledPostsTable,
+        eq(scheduledPostsTable.id, postMetricsHistoryTable.scheduledPostId)
+      )
+      .innerJoin(postsTable, eq(postsTable.id, scheduledPostsTable.postId))
+      .innerJoin(organizationsTable, eq(organizationsTable.id, postsTable.organizationId))
+      .groupBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
+      .orderBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
 
     return history
   }
@@ -60,18 +74,19 @@ class PostMetricsService {
       period?: MetricsPeriod
     }
   ) {
-    const dateRange = this.getPeriodDateRangeWithPrevious(opts.period ?? '7d')
+    const period = opts.period ?? '30d'
+    const dateRange = this.getPeriodDateRangeWithPrevious(period)
 
     const [metrics, previousMetrics] = await Promise.all([
       this.getPeriodHistory(db, {
         dateFrom: dateRange.current.from,
         dateTo: dateRange.current.to,
-        query: (builder) => builder.where(eq(postMetricsHistoryTable.scheduledPostId, opts.postId)),
+        postId: opts.postId,
       }),
       this.getPeriodHistory(db, {
         dateFrom: dateRange.previous.from,
         dateTo: dateRange.previous.to,
-        query: (builder) => builder.where(eq(postMetricsHistoryTable.scheduledPostId, opts.postId)),
+        postId: opts.postId,
       }),
     ])
 
@@ -90,7 +105,8 @@ class PostMetricsService {
       period?: MetricsPeriod
     }
   ) {
-    const dateRanges = this.getPeriodDateRangeWithPrevious(opts.period ?? '7d')
+    const period = opts.period ?? '30d'
+    const dateRanges = this.getPeriodDateRangeWithPrevious(period)
 
     const [currentPlatformMetrics, previousPlatformMetrics, metrics, previousMetrics] =
       await Promise.all([
@@ -107,26 +123,12 @@ class PostMetricsService {
         this.getPeriodHistory(db, {
           dateFrom: dateRanges.current.from,
           dateTo: dateRanges.current.to,
-          query: (builder) =>
-            builder
-              .innerJoin(
-                scheduledPostsTable,
-                eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
-              )
-              .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
-              .where(eq(postsTable.organizationId, opts.organizationId)),
+          organizationId: opts.organizationId,
         }),
         this.getPeriodHistory(db, {
           dateFrom: dateRanges.previous.from,
           dateTo: dateRanges.previous.to,
-          query: (builder) =>
-            builder
-              .innerJoin(
-                scheduledPostsTable,
-                eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
-              )
-              .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
-              .where(eq(postsTable.organizationId, opts.organizationId)),
+          organizationId: opts.organizationId,
         }),
       ])
 
@@ -136,20 +138,7 @@ class PostMetricsService {
         this.getPeriodHistory(db, {
           dateFrom: dateRanges.current.from,
           dateTo: dateRanges.current.to,
-          query: (builder) =>
-            builder
-              .innerJoin(
-                scheduledPostsTable,
-                eq(postMetricsHistoryTable.scheduledPostId, scheduledPostsTable.id)
-              )
-              .innerJoin(postsTable, eq(scheduledPostsTable.postId, postsTable.id))
-              .innerJoin(channelsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
-              .where(
-                and(
-                  eq(postsTable.organizationId, opts.organizationId),
-                  eq(channelsTable.platform, platform.platform)
-                )
-              ),
+          platform: platform.platform,
         })
       )
     )
@@ -289,25 +278,28 @@ class PostMetricsService {
   }
 
   private getPeriodDateRange(period: MetricsPeriod) {
-    const now = new Date()
-    const from = new Date()
+    const to = new Date()
+    let from = new Date()
 
     switch (period) {
       case '24h':
-        from.setHours(from.getHours() - 24)
+        from = addHours(to, -24)
         break
       case '7d':
-        from.setDate(from.getDate() - 7)
+        from = addDays(to, -7)
         break
       case '30d':
-        from.setDate(from.getDate() - 30)
+        from = addMonths(to, -1)
         break
       case '90d':
-        from.setDate(from.getDate() - 90)
+        from = addMonths(to, -3)
+        break
+      case '1y':
+        from = addYears(to, -1)
         break
     }
 
-    return { from, to: now }
+    return { from, to }
   }
 
   private calculateAggregates(metrics: MetricsData[]): AggregateMetrics {

@@ -1,3 +1,5 @@
+import { Value } from '@sinclair/typebox/value'
+
 export const $do = <T>(fn: () => T): T => fn()
 
 export function createEnum<const T extends string[]>(values: readonly [...T]) {
@@ -31,4 +33,16 @@ export function groupBy<T>(
 
 export function unwrapMaybeArray<T>(val: T | T[]): T[] {
   return Array.isArray(val) ? val : [val]
+}
+
+export function ensureEnum<const T>(
+  enumArr: ReadonlyArray<T> | T[],
+  value: unknown,
+  fallback: T
+): T {
+  if (value && enumArr.includes(value as any)) {
+    return value as T
+  }
+
+  return fallback
 }

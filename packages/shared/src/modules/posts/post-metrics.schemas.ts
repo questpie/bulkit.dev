@@ -1,13 +1,9 @@
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
+import { METRICS_PERIODS } from '@bulkit/shared/modules/posts/posts.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
-export const MetricsPeriodSchema = Type.Union([
-  Type.Literal('24h'),
-  Type.Literal('7d'),
-  Type.Literal('30d'),
-  Type.Literal('90d'),
-])
+export const MetricsPeriodSchema = StringLiteralEnum(METRICS_PERIODS)
 
 export const MetricsDataSchema = Type.Object({
   likes: Type.Number(),

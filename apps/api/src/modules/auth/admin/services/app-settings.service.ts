@@ -10,7 +10,11 @@ export class AppSettingsService {
       },
     })
 
-    return appSettings
+    if (!appSettings) {
+      throw new Error('App is configuration is wrong. Missing App Settings')
+    }
+
+    return appSettings!
   }
 }
 

@@ -16,7 +16,7 @@ export const postMetricsRoutes = new Elysia({
   .use(organizationMiddleware)
   .use(injectPostMetricsService)
   .get(
-    '/post/:id',
+    '/:id',
     async (ctx) => {
       const metrics = await ctx.postMetricsService.getPostMetrics(ctx.db, {
         postId: ctx.params.id,

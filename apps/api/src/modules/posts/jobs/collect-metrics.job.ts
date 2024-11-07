@@ -1,5 +1,5 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { scheduledPostsTable } from '@bulkit/api/db/db.schema'
+import { scheduledPostsTable, type TimeInterval } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
@@ -10,37 +10,26 @@ import { and, eq } from 'drizzle-orm'
 
 import ms from 'ms'
 
+import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
 import { roundTo } from '@bulkit/shared/utils/math'
 import { differenceInMilliseconds, isAfter } from 'date-fns'
 
-interface TimeInterval {
-  maxAge: number
-  delay: number
-}
-
-// TODO: maybe rework this to some log function, but this should suffice for now to prevent hitting rate limits
-const INTERVALS: TimeInterval[] = [
-  { maxAge: ms('1h'), delay: ms('10m') },
-  { maxAge: ms('4h'), delay: ms('30m') },
-  { maxAge: ms('8h'), delay: ms('1h') },
-  { maxAge: ms('1d'), delay: ms('2h') },
-  { maxAge: ms('2d'), delay: ms('4h') },
-  { maxAge: ms('3d'), delay: ms('8h') },
-  { maxAge: ms('4d'), delay: ms('12h') },
-  { maxAge: ms('6d'), delay: ms('1d') },
-  { maxAge: ms('60d'), delay: ms('2d') },
-  { maxAge: ms('180d'), delay: ms('4d') },
-  { maxAge: ms('1y'), delay: ms('7d') },
-]
-
-function getNextMetricsDelay(publishedAt: Date): number | null {
+function getNextMetricsDelay(intervals: TimeInterval[], publishedAt: Date): number | null {
   if (isAfter(new Date(), publishedAt)) {
     throw new UnrecoverableError('Published post cannot be in the future')
   }
   const diff = differenceInMilliseconds(new Date(), publishedAt)
 
-  const interval = INTERVALS.find((interval) => diff <= interval.maxAge)
-  return interval?.delay ?? null
+  const interval = intervals.find(
+    (interval) =>
+      diff <= (typeof interval.maxAge === 'number' ? interval.maxAge : ms(interval.maxAge))
+  )
+  return interval?.delay
+    ? Math.max(
+        typeof interval.delay === 'number' ? interval.delay : ms(interval.delay),
+        1000 * 60 //min must be at least  a minute
+      )
+    : null
 }
 
 export const collectMetricsJob = jobFactory.createJob({
@@ -50,7 +39,9 @@ export const collectMetricsJob = jobFactory.createJob({
   }),
 
   handler: async (job) => {
-    const { db, channelsService } = iocResolve(ioc.use(injectDatabase).use(injectChannelService))
+    const { appSettingsService, db, channelsService } = iocResolve(
+      ioc.use(injectAppSettingsService).use(injectDatabase).use(injectChannelService)
+    )
 
     await job.log('Starting metrics collection job')
     await job.log(`Post ID: ${job.data.scheduledPostId}`)
@@ -99,8 +90,10 @@ export const collectMetricsJob = jobFactory.createJob({
     await job.log('Metrics collected:')
     await job.log(JSON.stringify(metrics, null, 2))
 
+    const intervals = await appSettingsService.get(db).then((a) => a.collectMetricsIntervals)
+
     // Schedule next collection if we haven't reached the maximum age
-    const nextDelay = getNextMetricsDelay(new Date(scheduledPost.publishedAt))
+    const nextDelay = getNextMetricsDelay(intervals, new Date(scheduledPost.publishedAt))
     if (!nextDelay) {
       await job.log('Metrics collection complete, no further metrics collection scheduled')
       return

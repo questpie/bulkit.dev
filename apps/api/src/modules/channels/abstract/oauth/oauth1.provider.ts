@@ -101,12 +101,6 @@ export class OAuth1Provider {
       parameters,
       oauthTokenSecret
     )
-    appLogger.debug({
-      meesage: 'Access token signature',
-      signature,
-      parameters,
-      authHeader: this.generateAuthorizationHeader(parameters, signature),
-    })
 
     const response = await fetch(this.accessTokenURL, {
       method: 'POST',

@@ -71,10 +71,7 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
         ctx.query.oauth_verifier!
       )
 
-      appLogger.debug({ accessToken, accessTokenSecret, cookieData })
-
       const userInfo = await this.oAuth1Provider.getUserInfo(accessToken, accessTokenSecret)
-      appLogger.debug({ userInfo })
 
       const entities = await ctx.db.transaction(async (trx) => {
         const integration = await this.upsertIntegration(trx, {
@@ -98,8 +95,6 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
 
         return { channel, integration }
       })
-
-      appLogger.debug({ entities })
 
       // Clear the OAuth cookie
       this.clearOAuthCookie(ctx, platform)

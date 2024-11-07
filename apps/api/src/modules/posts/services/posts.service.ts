@@ -89,8 +89,6 @@ export class PostsService {
       .groupBy(postsTable.id)
       .then((res) => res[0])
 
-    appLogger.debug({ post: tmpPost })
-
     if (!tmpPost) {
       return null
     }
@@ -358,7 +356,6 @@ export class PostsService {
       post: Post
     }
   ): Promise<Post | null> {
-    appLogger.debug('Updating post', { post: opts.post })
     const existingPost = await this.getById(db, { orgId: opts.orgId, postId: opts.post.id })
 
     if (!existingPost) {
@@ -437,8 +434,6 @@ export class PostsService {
       newChannels: PostChannel[]
     }
   ): Promise<PostChannel[]> {
-    appLogger.debug(opts)
-
     const existingChannelMap = new Map(opts.existingChannels.map((c) => [c.id, c]))
     const channelsToAdd: PostChannel[] = []
     const channelsToUpdate: PostChannel[] = []
@@ -457,9 +452,6 @@ export class PostsService {
     }
 
     const channelsToRemove = Array.from(existingChannelMap.values())
-
-    appLogger.debug('channelsToAdd', channelsToAdd)
-    appLogger.debug('channelsToRemove', channelsToRemove)
 
     const promises: Promise<any>[] = []
     if (channelsToRemove.length > 0) {

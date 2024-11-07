@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm'
 import { boolean, integer, jsonb, pgEnum, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
+import ms from 'ms'
 import { PLATFORMS } from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { usersTable } from './auth.table'
@@ -31,6 +32,31 @@ export const platformSettingsTable = pgTable(
   })
 )
 
+export interface TimeInterval {
+  /**
+   * If number, it is in ms
+   * IF string it is in ms() package format
+   */
+  maxAge: number | string
+  /**
+   * If number, it is in ms
+   * IF string it is in ms() package format
+   */
+  delay: number | string
+}
+
+const DEFAULT_INTERVALS: TimeInterval[] = [
+  { maxAge: ms('1h'), delay: ms('10m') },
+  { maxAge: ms('4h'), delay: ms('30m') },
+  { maxAge: ms('8h'), delay: ms('1h') },
+  { maxAge: ms('1d'), delay: ms('2h') },
+  { maxAge: ms('2d'), delay: ms('4h') },
+  { maxAge: ms('3d'), delay: ms('8h') },
+  { maxAge: ms('7d'), delay: ms('12h') },
+  { maxAge: ms('1y'), delay: ms('1d') },
+  { maxAge: ms('2y'), delay: ms('2yd') },
+]
+
 /**
  * We are keeping it like this so the SuperAdmin stuff is completely transparent to fe.
  * We don't want the users on fe to see isSuperAdmin:false in the network tab
@@ -48,6 +74,11 @@ export const appSettingsIdEnum = pgEnum('app_settings_id', ['app-settings'])
 export const appSettingsTable = pgTable('app_settings', {
   id: appSettingsIdEnum('id').primaryKey().default('app-settings'),
   textAiProviderId: text('global_ai_provider_id').references(() => aiTextProvidersTable.id),
+
+  collectMetricsIntervals: jsonb('collect_metrics_intervals')
+    .$type<TimeInterval[]>()
+    .notNull()
+    .default(DEFAULT_INTERVALS),
 })
 
 export const AI_TEXT_PROVIDER_TYPES = ['anthropic', 'openai', 'mistral'] as const

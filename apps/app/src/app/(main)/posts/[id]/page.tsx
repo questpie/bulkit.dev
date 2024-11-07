@@ -29,7 +29,9 @@ export default async function PostDetail(props: {
 
   // const Icon = POST_TYPE_ICON[postResp.data.type]
 
-  const selectedTab = Object.values(PostDetailTab).includes((await props.searchParams).tab as PostDetailTab)
+  const selectedTab = Object.values(PostDetailTab).includes(
+    (await props.searchParams).tab as PostDetailTab
+  )
     ? ((await props.searchParams).tab as PostDetailTab)
     : PostDetailTab.Content
 
@@ -69,9 +71,7 @@ export default async function PostDetail(props: {
           Comments
         </Button>
       </div> */}
-
       {/* <Separator /> */}
-
       <div className='flex flex-row w-full flex-1 h-full -mt-4 overflow-auto'>
         <div className='py-4 flex flex-col gap-4 flex-1 mb-12 overflow-auto'>
           <PostCommonFields />

@@ -3,6 +3,11 @@ import { PostDetailTab } from '@bulkit/app/app/(main)/posts/post.constants'
 import { TabsList, TabsTrigger } from '@bulkit/ui/components/ui/tabs'
 import { useRouter } from 'next/navigation'
 
+const TAB_LABEL: Record<PostDetailTab, string> = {
+  [PostDetailTab.Content]: 'Content',
+  [PostDetailTab.Publish]: 'Publish settings',
+}
+
 export function PostDetailTablist() {
   const router = useRouter()
 
@@ -15,7 +20,7 @@ export function PostDetailTablist() {
           router.push(`?tab=${PostDetailTab.Content}`)
         }}
       >
-        Content
+        {TAB_LABEL[PostDetailTab.Content]}
       </TabsTrigger>
       <TabsTrigger
         value={PostDetailTab.Publish}
@@ -24,7 +29,7 @@ export function PostDetailTablist() {
           router.push(`?tab=${PostDetailTab.Publish}`)
         }}
       >
-        Publish Settings
+        {TAB_LABEL[PostDetailTab.Publish]}
       </TabsTrigger>
     </TabsList>
   )

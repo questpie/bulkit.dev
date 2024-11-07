@@ -7,8 +7,13 @@ export type StatCardProps = {
   title: string
   icon: IconType
   value: number
-  growth: number
-  period: MetricsPeriod
+
+  // TODO: group this
+  growth?: {
+    value: number
+    period: MetricsPeriod
+  }
+
   className?: {
     wrapper?: string
     header?: string
@@ -25,6 +30,7 @@ const PERIOD_TO_NAME: Record<MetricsPeriod, string> = {
   '30d': 'last month',
   '7d': 'last week',
   '90d': 'last 90 days',
+  '1y': 'last year',
 }
 
 export function StatCard(props: PropsWithChildren<StatCardProps>) {
@@ -38,8 +44,8 @@ export function StatCard(props: PropsWithChildren<StatCardProps>) {
         <div className='text-2xl font-bold'>{props.value.toLocaleString()}</div>
         {!!props.growth && (
           <p className='text-xs text-muted-foreground'>
-            {props.growth > 0 ? '+' : ''}
-            {props.growth}% from {PERIOD_TO_NAME[props.period]}
+            {props.growth.value > 0 ? '+' : ''}
+            {props.growth.value}% from {PERIOD_TO_NAME[props.growth.period]}
           </p>
         )}
 

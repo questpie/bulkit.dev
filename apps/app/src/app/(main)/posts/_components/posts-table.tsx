@@ -34,6 +34,7 @@ import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LuEye, LuMoreVertical, LuTrash } from 'react-icons/lu'
+import { PiChartBar, PiPencil } from 'react-icons/pi'
 
 export type Post = RouteOutput<typeof apiClient.posts.index.get>['data'][number]
 
@@ -128,12 +129,21 @@ export function PostTableRow(props: PostTableRowProps) {
       </TableCell>
       <TableCell>
         <div className='flex justify-start items-center gap-2'>
-          <Button variant='secondary' asChild>
-            <Link href={`/posts/${props.post.id}`}>
-              <LuEye className='h-4 w-4' />
-              View
-            </Link>
-          </Button>
+          {props.post.status === 'draft' ? (
+            <Button variant='secondary' asChild>
+              <Link href={`/posts/${props.post.id}`}>
+                <PiPencil className='h-4 w-4' />
+                Edit
+              </Link>
+            </Button>
+          ) : (
+            <Button variant='secondary' asChild>
+              <Link href={`/posts/${props.post.id}/results`}>
+                <PiChartBar className='h-4 w-4' />
+                Results
+              </Link>
+            </Button>
+          )}
           {isPostDeletable(props.post) && (
             <ResponsiveConfirmDialog
               title='Delete Post'

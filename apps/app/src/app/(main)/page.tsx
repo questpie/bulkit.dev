@@ -52,8 +52,7 @@ export default async function Dashboard() {
           title='Total Impressions'
           icon={PiEye}
           value={metricsResp.data?.overall.impressions ?? 0}
-          growth={metricsResp.data?.growth.impressions ?? 0}
-          period={period}
+          growth={{ value: metricsResp.data?.growth.impressions ?? 0, period }}
         >
           {/* <PieChart
             data={metricsResp.data?.platforms ?? []}
@@ -67,24 +66,21 @@ export default async function Dashboard() {
           title='Total Likes'
           icon={PiThumbsUp}
           value={metricsResp.data?.overall.likes ?? 0}
-          growth={metricsResp.data?.growth.likes ?? 0}
-          period={period}
+          growth={{ value: metricsResp.data?.growth.likes ?? 0, period }}
         />
 
         <StatCard
           title='Total Comments'
           icon={PiChatText}
           value={metricsResp.data?.overall.comments ?? 0}
-          growth={metricsResp.data?.growth.comments ?? 0}
-          period={period}
+          growth={{ period, value: metricsResp.data?.growth.comments ?? 0 }}
         />
 
         <StatCard
           title='Total Shares'
           icon={PiShare}
           value={metricsResp.data?.overall.shares ?? 0}
-          growth={metricsResp.data?.growth.shares ?? 0}
-          period={period}
+          growth={{ period, value: metricsResp.data?.growth.shares ?? 0 }}
         />
       </div>
 
