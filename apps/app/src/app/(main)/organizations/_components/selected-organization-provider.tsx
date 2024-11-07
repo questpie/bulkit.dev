@@ -1,6 +1,6 @@
 'use client'
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
-import { AtomsHydrator } from '@bulkit/app/app/_atoms/atoms-provider'
+import { AtomsHydrator } from '@bulkit/ui/components/atoms-provider'
 import { getRootStore } from '@bulkit/app/app/_atoms/root-store'
 import { setOrganization } from '@bulkit/app/app/(main)/organizations/organization.actions'
 import { atom, useAtomValue } from 'jotai'

@@ -1,5 +1,13 @@
 import { Button } from '@bulkit/ui/components/ui/button'
-import { Calendar, type CalendarProps } from '@bulkit/ui/components/ui/calendar'
+import { Calendar, type CalendarProps } from '@bulkit/ui/components/ui/calendar/calendar'
+import {
+  CalendarControlNextTrigger,
+  CalendarControlPrevTrigger,
+  CalendarControlTodayTrigger,
+} from '@bulkit/ui/components/ui/calendar/calendar-controls'
+import { CalendarMonth } from '@bulkit/ui/components/ui/calendar/calendar-month'
+import { CalendarMonthLabel } from '@bulkit/ui/components/ui/calendar/calendar-month-label'
+import { CalendarWeekdays } from '@bulkit/ui/components/ui/calendar/calendar-weekdays'
 import {
   ResponsivePopover,
   ResponsivePopoverContent,
@@ -14,10 +22,10 @@ import {
 } from '@bulkit/ui/components/ui/select'
 import { Separator } from '@bulkit/ui/components/ui/separator'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { setHours, setMinutes, startOfDay } from 'date-fns'
+import { addYears, setHours, setMinutes, startOfDay } from 'date-fns'
 import type React from 'react'
 import { useMemo, useState } from 'react'
-import { LuCalendar, LuX } from 'react-icons/lu'
+import { LuCalendar, LuChevronLast, LuChevronLeft, LuChevronRight, LuX } from 'react-icons/lu'
 
 const datepickerVariants = cva(
   'flex h-9 w-full relative rounded-md overflow-hidden text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-within:outline-none focus-within:ring-1 focus-within:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
@@ -135,14 +143,13 @@ export function DatePicker(props: DatePickerProps) {
       </div>
       <ResponsivePopoverContent className='w-auto p-0 bg-popover'>
         <Calendar
-          captionLayout='dropdown-buttons'
-          fromYear={new Date().getFullYear()}
-          toYear={new Date().getFullYear() + 10}
+          // captionLayout='dropdown-buttons'
+          minDate={new Date()}
+          maxDate={addYears(new Date(), 5)}
           mode='single'
           selected={values?.date ? new Date(values.date) : undefined}
-          month={month}
-          className='w-full'
-          // @ts-expect-error
+          currentDate={new Date()}
+          className={{ wrapper: 'w-full p-2' }}
           onSelect={(selectedDate) => {
             if (selectedDate) {
               return props.onValueChange(
@@ -155,10 +162,34 @@ export function DatePicker(props: DatePickerProps) {
 
             props.onValueChange(null)
           }}
-          onMonthChange={(newMonth: Date) => setMonth(newMonth)}
-          initialFocus
+          // onMonthChange={(newMonth: Date) => setMonth(newMonth)}
           {...props.calendarProps}
-        />
+        >
+          <div className='flex justify-between items-center'>
+            <CalendarControlPrevTrigger asChild>
+              <Button size={'icon'} variant='ghost'>
+                <LuChevronLeft />
+              </Button>
+            </CalendarControlPrevTrigger>
+            <div className='flex items-center flex-col gap-0'>
+              <CalendarMonthLabel />
+              <CalendarControlTodayTrigger
+                className='text-xs text-muted-foreground hover:text-primary cursor-pointer underline'
+                asChild
+              >
+                <span>Today</span>
+              </CalendarControlTodayTrigger>
+            </div>
+
+            <CalendarControlNextTrigger asChild>
+              <Button size={'icon'} variant='ghost'>
+                <LuChevronRight />
+              </Button>
+            </CalendarControlNextTrigger>
+          </div>
+          <CalendarWeekdays />
+          <CalendarMonth />
+        </Calendar>
         {props.showTime && (
           <div className='p-3 border-t flex justify-between items-center'>
             <p className='text-sm'>{currentTimezone}</p>

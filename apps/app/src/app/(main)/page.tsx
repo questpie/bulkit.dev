@@ -1,17 +1,28 @@
 import { apiServer } from '@bulkit/app/api/api.server'
 import { SegmentedAreaChart } from '@bulkit/app/app/(main)/_components/charts/segmented-area-chart'
 import { Header } from '@bulkit/app/app/(main)/_components/header'
+import { PeriodSelect } from '@bulkit/app/app/(main)/_components/period/period-select'
+import { PeriodToggle } from '@bulkit/app/app/(main)/_components/period/period-toggle'
 import { StatCard } from '@bulkit/app/app/(main)/_components/stat-card'
 import { ChannelAvatarList } from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
 import type { MetricsPeriod } from '@bulkit/shared/modules/posts/post-metrics.schemas'
+import { METRICS_PERIODS } from '@bulkit/shared/modules/posts/posts.constants'
+import { ensureEnum } from '@bulkit/shared/utils/misc'
+import { Calendar } from '@bulkit/ui/components/ui/calendar/calendar'
+import { CalendarHeader } from '@bulkit/ui/src/components/ui/calendar/calendar-month-label'
+import { CalendarMonth } from '@bulkit/ui/components/ui/calendar/calendar-month'
 import { Card, CardDescription, CardTitle } from '@bulkit/ui/components/ui/card'
 import { Separator } from '@bulkit/ui/components/ui/separator'
+import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
+import Link from 'next/link'
+import { Suspense } from 'react'
 import { PiChatText, PiEye, PiShare, PiThumbsUp } from 'react-icons/pi'
 
-export default async function Dashboard() {
-  const period: MetricsPeriod = '30d'
+export default async function Dashboard(props: { searchParams: Promise<Record<string, string>> }) {
+  const awaitedSearchParams = await props.searchParams
+  const period = ensureEnum(METRICS_PERIODS, awaitedSearchParams.period, '30d')
 
   // Fetch metrics data for last 30 days
   const [metricsResp, popularPosts] = await Promise.all([
@@ -44,7 +55,18 @@ export default async function Dashboard() {
 
   return (
     <div className='flex flex-col gap-4 w-full'>
-      <Header title='Dashboard' />
+      <Header title='Dashboard'>
+        <div className='block md:hidden'>
+          <Suspense fallback={<Skeleton className='w-[100px] h-11' />}>
+            <PeriodSelect defaultValue={'30d'} />
+          </Suspense>
+        </div>
+        <div className='hidden md:block'>
+          <Suspense fallback={<Skeleton className='w-[200px] h-11' />}>
+            <PeriodToggle defaultValue={'30d'} />
+          </Suspense>
+        </div>
+      </Header>
 
       <div className='grid gap-4 px-4 md:grid-cols-2 lg:grid-cols-4'>
         {/* Stat Cards */}
@@ -95,53 +117,55 @@ export default async function Dashboard() {
             {popularPosts.data.data.map((post) => {
               const PostTypeIcon = POST_TYPE_ICON[post.type]
               return (
-                <Card className='w-full flex flex-col gap-4 p-3' key={post.id}>
-                  <div className='flex flex-row items-center justify-between'>
-                    <div className='flex flex-col'>
-                      <div className='flex flex-row items-center gap-2'>
-                        <PostTypeIcon className='text-muted-foreground size-4' />
-                        <CardDescription className='text-muted-foreground test-xs'>
-                          {POST_TYPE_NAME[post.type]}
-                        </CardDescription>
+                <Link key={post.id} className='h-full' href={`/posts/${post.id}/results`}>
+                  <Card className='w-full flex flex-col h-full justify-between gap-4 p-3'>
+                    <div className='flex flex-row items-center gap-2 justify-between'>
+                      <div className='flex flex-col'>
+                        <div className='flex flex-row items-center gap-2'>
+                          <PostTypeIcon className='text-muted-foreground size-4' />
+                          <CardDescription className='text-muted-foreground test-xs line-clamp-1'>
+                            {POST_TYPE_NAME[post.type]}
+                          </CardDescription>
+                        </div>
+                        <CardTitle className='line-clamp-2 text-ellipsis'>{post.name}</CardTitle>
                       </div>
-                      <CardTitle>{post.name}</CardTitle>
+
+                      <ChannelAvatarList channels={post.channels} size='sm' />
                     </div>
 
-                    <ChannelAvatarList channels={post.channels} size='sm' />
-                  </div>
+                    <div className='flex flex-row gap-2'>
+                      <div className='flex flex-row items-center gap-1'>
+                        <PiEye className='text-muted-foreground' />
+                        <span className='text-xs font-bold'>
+                          {numFormatter.format(post.totalImpressions)}
+                        </span>
+                      </div>
+                      <Separator orientation='vertical' />
 
-                  <div className='flex flex-row gap-2'>
-                    <div className='flex flex-row items-center gap-1'>
-                      <PiEye className='text-muted-foreground' />
-                      <span className='text-xs font-bold'>
-                        {numFormatter.format(post.totalImpressions)}
-                      </span>
-                    </div>
-                    <Separator orientation='vertical' />
+                      <div className='flex flex-row items-center gap-2'>
+                        <PiThumbsUp className='text-muted-foreground' />
+                        <span className='text-xs font-bold'>
+                          {numFormatter.format(post.totalLikes)}
+                        </span>
+                      </div>
+                      <Separator orientation='vertical' />
+                      <div className='flex flex-row items-center gap-2'>
+                        <PiChatText className='text-muted-foreground' />
+                        <span className='text-xs font-bold'>
+                          {numFormatter.format(post.totalComments)}
+                        </span>
+                      </div>
 
-                    <div className='flex flex-row items-center gap-2'>
-                      <PiThumbsUp className='text-muted-foreground' />
-                      <span className='text-xs font-bold'>
-                        {numFormatter.format(post.totalLikes)}
-                      </span>
+                      <Separator orientation='vertical' />
+                      <div className='flex flex-row items-center gap-2'>
+                        <PiShare className='text-muted-foreground' />
+                        <span className='text-xs font-bold'>
+                          {numFormatter.format(post.totalShares)}
+                        </span>
+                      </div>
                     </div>
-                    <Separator orientation='vertical' />
-                    <div className='flex flex-row items-center gap-2'>
-                      <PiChatText className='text-muted-foreground' />
-                      <span className='text-xs font-bold'>
-                        {numFormatter.format(post.totalComments)}
-                      </span>
-                    </div>
-
-                    <Separator orientation='vertical' />
-                    <div className='flex flex-row items-center gap-2'>
-                      <PiShare className='text-muted-foreground' />
-                      <span className='text-xs font-bold'>
-                        {numFormatter.format(post.totalShares)}
-                      </span>
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </Link>
               )
             })}
           </div>

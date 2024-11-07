@@ -37,7 +37,7 @@ export function PeriodSelect(props: PeriodSelectProps) {
 
   return (
     <Select value={period} onValueChange={setPeriod}>
-      <SelectTrigger className='w-[200px]'>
+      <SelectTrigger className='w-[100px]'>
         <SelectValue />
       </SelectTrigger>
 

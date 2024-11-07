@@ -123,6 +123,7 @@ export function SegmentedAreaChart({ data }: SegmentedLineChartProps) {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
+                      hour: 'numeric',
                     })
                   }}
                 />

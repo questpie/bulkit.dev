@@ -46,10 +46,7 @@ export const postsTable = pgTable(
     // workflowId: text('workflow_id').references(() => workflowsTable.id),
     ...timestampCols(),
   },
-  (table) => ({
-    orgIdIdx: index().on(table.organizationId),
-    typeIdx: index().on(table.type),
-  })
+  (table) => [index().on(table.organizationId), index().on(table.type)]
 )
 
 export type SelectPost = typeof postsTable.$inferSelect
@@ -68,10 +65,7 @@ export const threadPostsTable = pgTable(
     text: text('text').notNull(),
     ...timestampCols(),
   },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-    orderIdx: uniqueIndex().on(table.order, table.postId),
-  })
+  (table) => [index().on(table.postId), uniqueIndex().on(table.order, table.postId)]
 )
 
 // New table for thread media
@@ -91,10 +85,7 @@ export const threadMediaTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    treadPostIdIdx: index().on(table.threadPostId),
-    orderIdx: uniqueIndex().on(table.threadPostId, table.order),
-  })
+  (table) => [index().on(table.threadPostId), uniqueIndex().on(table.threadPostId, table.order)]
 )
 
 export type InsertThreadMedia = typeof threadMediaTable.$inferInsert
@@ -111,9 +102,7 @@ export const regularPostsTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-  })
+  (table) => [index().on(table.postId)]
 )
 
 // New table for regular post media
@@ -131,10 +120,7 @@ export const regularPostMediaTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    regularPostIdIdx: index().on(table.regularPostId),
-    orderIdx: uniqueIndex().on(table.regularPostId, table.order),
-  })
+  (table) => [index().on(table.regularPostId), uniqueIndex().on(table.regularPostId, table.order)]
 )
 
 // New table for story posts
@@ -149,9 +135,7 @@ export const storyPostsTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-  })
+  (table) => [index().on(table.postId)]
 )
 
 // New table for reel posts
@@ -167,10 +151,7 @@ export const reelPostsTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-    resourceIdIdx: index().on(table.resourceId),
-  })
+  (table) => [index().on(table.postId), index().on(table.resourceId)]
 )
 
 export type RepostSettings = Static<typeof RepostSettingsSchema>
@@ -203,14 +184,12 @@ export const scheduledPostsTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    postIdIdx: index().on(table.postId),
-    channelIdIdx: index().on(table.channelId),
-    compountIdx: uniqueIndex().on(table.postId, table.channelId),
-    parentFk: foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }).onDelete(
-      'set null'
-    ),
-  })
+  (table) => [
+    index().on(table.postId),
+    index().on(table.channelId),
+    uniqueIndex().on(table.postId, table.channelId),
+    foreignKey({ columns: [table.parentPostId], foreignColumns: [table.id] }).onDelete('set null'),
+  ]
 )
 
 export type SelectScheduledPost = typeof scheduledPostsTable.$inferSelect
@@ -244,10 +223,7 @@ export const postMetricsHistoryTable = pgTable(
 
     ...timestampCols(),
   },
-  (table) => ({
-    scheduledPostIdIdx: index().on(table.scheduledPostId),
-    craetedAtIdx: index().on(table.createdAt),
-  })
+  (table) => [index().on(table.scheduledPostId), index().on(table.createdAt)]
 )
 
 export type InsertPostMetricsHistory = typeof postMetricsHistoryTable.$inferInsert

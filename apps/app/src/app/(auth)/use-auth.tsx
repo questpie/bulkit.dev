@@ -2,7 +2,7 @@
 
 import { apiClient } from '@bulkit/app/api/api.client'
 import { setSession as setSessionAction } from '@bulkit/app/app/(auth)/auth.actions'
-import { AtomsHydrator } from '@bulkit/app/app/_atoms/atoms-provider'
+import { AtomsHydrator } from '@bulkit/ui/components/atoms-provider'
 import { getRootStore } from '@bulkit/app/app/_atoms/root-store'
 import { useMutation } from '@tanstack/react-query'
 import { atom, useAtomValue, useSetAtom } from 'jotai'

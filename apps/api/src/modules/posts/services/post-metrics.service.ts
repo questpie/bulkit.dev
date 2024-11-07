@@ -15,8 +15,41 @@ import type {
   PeriodHistoryData,
   PlatformMetrics,
 } from '@bulkit/shared/modules/posts/post-metrics.schemas'
+import { METRICS_PERIOD_WINDOW_SIZE_HOURS } from '@bulkit/shared/modules/posts/posts.constants'
 import { addDays, addHours, addMonths, addYears } from 'date-fns'
 import { and, desc, eq, gte, lte, sql } from 'drizzle-orm'
+;[
+  {
+    likes: 100,
+    impressions: 100,
+    date: '2024-11-11 15:00',
+  },
+  {
+    likes: 20,
+    impressions: 30,
+    date: '2024-11-11 19:00',
+  },
+  {
+    likes: 20,
+    impressions: 30,
+    date: '2024-11-11 19:00',
+  },
+  {
+    likes: 100,
+    impressions: 100,
+    date: '2024-11-12 0:50',
+  },
+  {
+    likes: 100,
+    impressions: 100,
+    date: '2024-11-13 11:50',
+  },
+  {
+    likes: 100,
+    impressions: 100,
+    date: '2024-11-11 11:55',
+  },
+]
 
 class PostMetricsService {
   private async getPeriodHistory(
@@ -29,10 +62,17 @@ class PostMetricsService {
       organizationId?: string
       channelId?: string
       platform?: Platform
-      // TODO: type this better
+      windowHours?: number
     }
   ): Promise<PeriodHistoryData[]> {
-    const history = await db
+    const windowHours = opts.windowHours || 24
+
+    const timeWindowExpression = sql<string>`
+      date_trunc('hour', ${postMetricsHistoryTable.createdAt})
+      - (EXTRACT(HOUR FROM ${postMetricsHistoryTable.createdAt})::INTEGER % ${windowHours}) * INTERVAL '1 hour'
+    `.as('date')
+
+    const history = db
       .select({
         likes: sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
         comments: sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
@@ -40,7 +80,7 @@ class PostMetricsService {
         impressions: sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
         reach: sql<number>`cast(sum(${postMetricsHistoryTable.reach}) as int)`,
         clicks: sql<number>`cast(sum(${postMetricsHistoryTable.clicks}) as int)`,
-        date: sql<string>`date_trunc('day', ${postMetricsHistoryTable.createdAt})`,
+        date: timeWindowExpression,
       })
       .from(postMetricsHistoryTable)
       .where(
@@ -60,10 +100,11 @@ class PostMetricsService {
       )
       .innerJoin(postsTable, eq(postsTable.id, scheduledPostsTable.postId))
       .innerJoin(organizationsTable, eq(organizationsTable.id, postsTable.organizationId))
-      .groupBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
-      .orderBy(sql`date_trunc('day', ${postMetricsHistoryTable.createdAt})`)
+      .innerJoin(channelsTable, eq(channelsTable.id, scheduledPostsTable.channelId))
+      .groupBy(timeWindowExpression)
+      .orderBy(timeWindowExpression)
 
-    return history
+    return await history
   }
 
   async getPostMetrics(
@@ -76,17 +117,20 @@ class PostMetricsService {
   ) {
     const period = opts.period ?? '30d'
     const dateRange = this.getPeriodDateRangeWithPrevious(period)
+    const windowHours = METRICS_PERIOD_WINDOW_SIZE_HOURS[period]
 
     const [metrics, previousMetrics] = await Promise.all([
       this.getPeriodHistory(db, {
         dateFrom: dateRange.current.from,
         dateTo: dateRange.current.to,
         postId: opts.postId,
+        windowHours,
       }),
       this.getPeriodHistory(db, {
         dateFrom: dateRange.previous.from,
         dateTo: dateRange.previous.to,
         postId: opts.postId,
+        windowHours,
       }),
     ])
 
@@ -107,6 +151,7 @@ class PostMetricsService {
   ) {
     const period = opts.period ?? '30d'
     const dateRanges = this.getPeriodDateRangeWithPrevious(period)
+    const windowHours = METRICS_PERIOD_WINDOW_SIZE_HOURS[period]
 
     const [currentPlatformMetrics, previousPlatformMetrics, metrics, previousMetrics] =
       await Promise.all([
@@ -124,11 +169,13 @@ class PostMetricsService {
           dateFrom: dateRanges.current.from,
           dateTo: dateRanges.current.to,
           organizationId: opts.organizationId,
+          windowHours,
         }),
         this.getPeriodHistory(db, {
           dateFrom: dateRanges.previous.from,
           dateTo: dateRanges.previous.to,
           organizationId: opts.organizationId,
+          windowHours,
         }),
       ])
 

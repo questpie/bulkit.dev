@@ -57,7 +57,7 @@ export default async function PostResultsPage(props: {
         <div className='flex flex-row justify-between items-center'>
           <h4 className='text-lg font-bold'>Stats over period</h4>
           <div className='block md:hidden'>
-            <Suspense fallback={<Skeleton className='w-[200px] h-11' />}>
+            <Suspense fallback={<Skeleton className='w-[100px] h-11' />}>
               <PeriodSelect defaultValue={'30d'} />
             </Suspense>
           </div>
