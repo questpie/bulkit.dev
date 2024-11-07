@@ -49,6 +49,7 @@ export const scheduledPostsRoutes = new Elysia({
             id: postsTable.id,
             name: postsTable.name,
             status: postsTable.status,
+            type: postsTable.type,
           },
         })
         .from(scheduledPostsTable)

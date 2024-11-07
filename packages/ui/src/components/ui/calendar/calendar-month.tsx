@@ -12,11 +12,12 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
-import { useAtomValue } from 'jotai'
+import { atom, useAtomValue } from 'jotai'
 import * as React from 'react'
 import { CalendarContext } from './calendar'
 import {
   currentDateAtom,
+  eventsAtom,
   excludeAtom,
   maxDateAtom,
   minDateAtom,
@@ -24,21 +25,72 @@ import {
   selectedAtom,
 } from './calendar-atoms'
 import { isDateDisabled, isDateSelected } from './calendar-utils'
+
+type CalendarDayClassNames = {
+  override?: string
+  selected?: string
+  disabled?: string
+  today?: string
+  outside?: string
+  rangeFrom?: string
+  rangeTo?: string
+  rangeMiddle?: string
+  text?: string
+}
+
+export type CalendarDayRenderProps = {
+  isSelected: boolean
+  isDisabled: boolean
+  isToday: boolean
+  isOutsideMonth: boolean
+  isRangeStart: boolean
+  isRangeEnd: boolean
+  isRangeMiddle: boolean
+}
+
 export interface CalendarMonthProps {
-  className?: string
-  classNames?: {
-    day?: string
-    selected?: string
-    disabled?: string
-    today?: string
-    outside?: string
-    rangeFrom?: string
-    rangeTo?: string
-    rangeMiddle?: string
+  className?: {
+    wrapper?: string
+    day?: CalendarDayClassNames | ((props: CalendarDayRenderProps) => CalendarDayClassNames)
   }
 }
 
-export function CalendarMonth({ className, classNames }: CalendarMonthProps) {
+export const createMonthEventsAtom = (date: Date) =>
+  atom((get) => {
+    const events = get(eventsAtom)
+    const monthStart = startOfMonth(date)
+    const monthEnd = endOfMonth(date)
+
+    // Get all events that overlap with this month
+    const monthEvents = events.filter((event) => {
+      return !(event.dateTo < monthStart || event.dateFrom > monthEnd)
+    })
+
+    return monthEvents.reduce<Record<string, typeof events>>((acc, event) => {
+      // For range events, get all dates in the range within this month
+      const rangeStart = event.dateFrom < monthStart ? monthStart : event.dateFrom
+      const rangeEnd = event.dateTo > monthEnd ? monthEnd : event.dateTo
+
+      // Get all dates in the range
+      const datesInRange = eachDayOfInterval({
+        start: rangeStart,
+        end: rangeEnd,
+      })
+
+      // Add event to each date in range
+      for (const rangeDate of datesInRange) {
+        const dateKey = getIsoDateString(new Date(rangeDate))
+        if (!acc[dateKey]) {
+          acc[dateKey] = []
+        }
+        acc[dateKey].push(event)
+      }
+
+      return acc
+    }, {})
+  })
+
+export function CalendarMonth({ className }: CalendarMonthProps) {
   const baseDate = useAtomValue(currentDateAtom)
   const selected = useAtomValue(selectedAtom)
   const exclude = useAtomValue(excludeAtom)
@@ -50,7 +102,11 @@ export function CalendarMonth({ className, classNames }: CalendarMonthProps) {
     () => addMonths(baseDate, monthOffset),
     [monthOffset, getIsoDateString(baseDate)]
   )
-  const { onSelect } = React.useContext(CalendarContext)
+  const { onSelect, renderEvent } = React.useContext(CalendarContext)
+
+  const monthEvents = useAtomValue(
+    React.useMemo(() => createMonthEventsAtom(currentDate), [currentDate])
+  )
 
   const days = React.useMemo(() => {
     const start = startOfWeek(startOfMonth(currentDate))
@@ -157,12 +213,26 @@ export function CalendarMonth({ className, classNames }: CalendarMonthProps) {
   }
 
   return (
-    <div className={cn('grid grid-cols-7 gap-1', className)} data-month={monthOffset}>
+    <div className={cn('grid grid-cols-7 gap-1', className?.wrapper)} data-month={monthOffset}>
       {days.map((day, index) => {
         const isOutside = !isSameMonth(day, currentDate)
         const isToday = isSameDay(day, new Date())
         const isDisabled = isDateDisabled(day, { minDate, maxDate, exclude })
         const isSelected = isDateSelected(day, selected)
+        const eventsInADay = monthEvents[getIsoDateString(day)] ?? []
+
+        const renderProps = {
+          isSelected,
+          isDisabled,
+          isToday,
+          isOutsideMonth: isOutside,
+          isRangeStart: isRangeStart(day),
+          isRangeEnd: isRangeEnd(day),
+          isRangeMiddle: isRangeMiddle(day),
+        }
+
+        const resolvedClassNames =
+          typeof className?.day === 'function' ? className.day(renderProps) : className?.day
 
         return (
           <button
@@ -176,18 +246,21 @@ export function CalendarMonth({ className, classNames }: CalendarMonthProps) {
             className={cn(
               'h-10 w-10 rounded-md relative',
               'hover:bg-accent hover:text-accent-foreground',
-              'focus:outline-ring ',
-              isOutside && cn('text-muted-foreground', classNames?.outside),
-              isToday && cn('bg-accent text-accent-foreground', classNames?.today),
-              isSelected && cn('bg-primary text-primary-foreground', classNames?.selected),
-              isDisabled && cn('opacity-50 cursor-not-allowed', classNames?.disabled),
-              isRangeStart(day) && classNames?.rangeFrom,
-              isRangeEnd(day) && classNames?.rangeTo,
-              isRangeMiddle(day) && classNames?.rangeMiddle,
-              classNames?.day
+              'focus:outline-ring',
+              isOutside && cn('text-muted-foreground', resolvedClassNames?.outside),
+              isToday && cn('bg-accent text-accent-foreground', resolvedClassNames?.today),
+              isSelected && cn('bg-primary text-primary-foreground', resolvedClassNames?.selected),
+              isDisabled && cn('opacity-50 cursor-not-allowed', resolvedClassNames?.disabled),
+              renderProps.isRangeStart && resolvedClassNames?.rangeFrom,
+              renderProps.isRangeEnd && resolvedClassNames?.rangeTo,
+              renderProps.isRangeMiddle && resolvedClassNames?.rangeMiddle,
+              resolvedClassNames?.override
             )}
           >
-            <time dateTime={day.toISOString()}>{day.getDate()}</time>
+            <time dateTime={day.toISOString()} className={resolvedClassNames?.text}>
+              {day.getDate()}
+            </time>
+            {renderEvent && eventsInADay.map(renderEvent)}
           </button>
         )
       })}

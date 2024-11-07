@@ -1,35 +1,45 @@
 'use client'
 
-import {
-  CalendarDates,
-  CalendarHeader,
-  WeekCalendar,
-} from '@bulkit/app/app/(main)/calendar/_components/week-calendar'
-import type { ScheduledPostSchema } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
+import type {
+  ScheduledPost,
+  ScheduledPostSchema,
+} from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
-import { Card } from '@bulkit/ui/components/ui/card'
 import type { Static } from '@sinclair/typebox'
-import { addDays, format, isAfter, isBefore } from 'date-fns'
-import { Fragment, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { getCalendarParams } from '@bulkit/app/app/(main)/calendar/calendar-utils'
 import { ChannelAvatarList } from '@bulkit/app/app/(main)/channels/_components/channel-avatar'
-import { groupBy } from '@bulkit/shared/utils/misc'
+import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
+import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
+import { dedupe } from '@bulkit/shared/types/data'
 import { Button } from '@bulkit/ui/components/ui/button'
+import { Calendar } from '@bulkit/ui/components/ui/calendar/calendar'
+import type { CalendarEvent } from '@bulkit/ui/components/ui/calendar/calendar-atoms'
+import {
+  CalendarControlNextTrigger,
+  CalendarControlPrevTrigger,
+  CalendarControlTodayTrigger,
+} from '@bulkit/ui/components/ui/calendar/calendar-controls'
+import { CalendarMonth } from '@bulkit/ui/components/ui/calendar/calendar-month'
+import { CalendarMonthLabel } from '@bulkit/ui/components/ui/calendar/calendar-month-label'
+import { CalendarWeekdays } from '@bulkit/ui/components/ui/calendar/calendar-weekdays'
+import { Card, CardDescription, CardTitle } from '@bulkit/ui/components/ui/card'
 import { Separator } from '@bulkit/ui/components/ui/separator'
-import { useBreakpoint } from '@bulkit/ui/hooks/use-breakpoint'
+import { cn } from '@bulkit/ui/lib'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { LuAlarmClockOff } from 'react-icons/lu'
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
-import { LuCalendar } from 'react-icons/lu'
-
-function getDayKey(date: Date) {
-  return getIsoDateString(date)
-}
+import { useBreakpoint } from '@bulkit/ui/hooks/use-breakpoint'
+import { Drawer, DrawerContent } from '@bulkit/ui/components/ui/drawer'
 
 export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
   const searchParams = useSearchParams()
   const { currentDay, dateFrom, dateTo } = getCalendarParams(searchParams)
   const router = useRouter()
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   const setCurrentDate = (date: Date) => {
     const params = new URLSearchParams(searchParams)
@@ -37,120 +47,261 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
     router.replace(`/calendar?${params.toString()}`)
   }
 
-  const isDesktop = useBreakpoint('sm')
+  const isLg = useBreakpoint('lg')
 
   // we will little optimize it by bucketing posts by date
-  const postMap = useMemo(() => {
-    const map = new Map<string, Static<typeof ScheduledPostSchema>[]>()
+  const { postMap, postEvents } = useMemo(() => {
+    const scheduledPostsMap = new Map<string, Static<typeof ScheduledPostSchema>[]>()
+    const scheduledPostsEvents: CalendarEvent[] = []
     for (const post of props.posts) {
-      const key = getDayKey(new Date(post.scheduledAt))
-      const posts = map.get(key) || []
+      const key = getIsoDateString(new Date(post.scheduledAt))
+
+      if (!scheduledPostsMap.has(key)) {
+        scheduledPostsEvents.push({
+          dateFrom: new Date(post.scheduledAt),
+          dateTo: new Date(post.scheduledAt),
+          identifier: key,
+        })
+      }
+
+      const posts = scheduledPostsMap.get(key) || []
       posts.push(post)
-      map.set(key, posts)
+      scheduledPostsMap.set(key, posts)
     }
-    return map
+    return { postMap: scheduledPostsMap, postEvents: scheduledPostsEvents }
   }, [props.posts])
 
-  return (
-    <div className='w-full flex-1 h-full  relative flex flex-col overflow-auto'>
-      <WeekCalendar currentDate={currentDay}>
-        <div className='bg-background top-0 sticky z-10'>
-          <div className='w-full justify-between flex items-center px-6'>
-            <div className='flex-col items-center gap-2'>
-              <p className='text-sm font-bold text-center'>{formatWeek(dateFrom, dateTo)}</p>
-            </div>
-            <div className='gap-4 flex'>
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setCurrentDate(addDays(currentDay, -7))}
-              >
-                <PiCaretLeft />
-              </Button>
+  const renderEvent = useCallback(
+    (event: CalendarEvent) => {
+      const scheduledPosts = postMap.get(event.identifier)
 
-              <Button variant='outline' onClick={() => setCurrentDate(new Date())}>
-                Today
-              </Button>
+      if (!scheduledPosts?.length) return null
+      const postRendered = new Set()
 
-              <Button
-                variant='outline'
-                size='icon'
-                onClick={() => setCurrentDate(addDays(currentDay, 7))}
-              >
-                <PiCaretRight />
-              </Button>
-            </div>
-          </div>
-          <CalendarHeader />
-        </div>
-        <CalendarDates
-          renderSlot={({ slotStart, slotEnd }) => {
-            const postsInSlot = (postMap.get(getDayKey(slotStart)) || []).filter((p) => {
-              const scheduledAt = new Date(p.scheduledAt)
-              return (
-                (isAfter(scheduledAt, slotStart) && isBefore(scheduledAt, slotEnd)) ||
-                scheduledAt.getTime() === slotEnd.getTime()
-              )
-            })
-
-            if (!postsInSlot.length) {
+      return (
+        <div className='flex flex-col gap-1 flex-1 overflow-auto'>
+          {scheduledPosts.map((scheduledPost) => {
+            if (postRendered.has(scheduledPost.post.id)) {
               return null
             }
-
-            const postsByPostId = postsInSlot.reduce(
-              (acc, post) => {
-                const id = post.post.id
-                const posts = acc[id] || []
-                posts.push(post)
-                acc[id] = posts
-                return acc
-              },
-              {} as Record<string, Static<typeof ScheduledPostSchema>[]>
-            )
-
+            postRendered.add(scheduledPost.post.id)
+            const ICON = scheduledPost
             return (
-              <Card className='gap-2 p-0.5 w-full md:p-1 h-full flex flex-col'>
-                {Object.keys(postsByPostId).map((id, i) => {
-                  const posts = postsByPostId[id]!
-                  const channels = posts.map((p) => p.channel)
-                  const name = posts[0]!.post.name
-
-                  return (
-                    <Fragment key={id}>
-                      <div className='flex flex-col w-full gap-2'>
-                        <span className='text-muted-foreground  text-[8px] font-bold md:text-xs text-ellipsis line-clamp-1'>
-                          {name}
-                        </span>
-                        <div className='hidden md:flex'>
-                          <ChannelAvatarList size='sm' channels={channels} />
-                        </div>
-                      </div>
-                      {i !== Object.keys(postsByPostId).length - 1 && <Separator />}
-                    </Fragment>
-                  )
-                })}
-              </Card>
+              <div
+                key={scheduledPost.id}
+                className='bg-background rounded-sm p-0.5 border-border border'
+              >
+                <span className='text-[10px] line-clamp-1 text-ellipsis'>
+                  {scheduledPost.post.name}
+                </span>
+              </div>
             )
-          }}
-        />
-      </WeekCalendar>
+          })}
+        </div>
+      )
+    },
+    [postMap]
+  )
+
+  const selectedPosts = selectedDate ? postMap.get(getIsoDateString(selectedDate)) : []
+
+  const { futurePosts, pastPosts } = useMemo(() => {
+    const now = new Date()
+    const future: Static<typeof ScheduledPostSchema>[] = []
+    const past: Static<typeof ScheduledPostSchema>[] = []
+
+    for (const post of props.posts) {
+      const postDate = new Date(post.scheduledAt)
+      if (postDate > now) {
+        future.push(post)
+      } else {
+        past.push(post)
+      }
+    }
+
+    future.sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
+    past.sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())
+
+    return { futurePosts: future, pastPosts: past }
+  }, [props.posts])
+
+  const postListContent = (
+    <>
+      {!!selectedDate && selectedPosts?.length ? (
+        <div className='flex flex-col gap-2'>
+          <h4 className='font-bold'>
+            Posts for{' '}
+            {selectedDate?.toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </h4>
+
+          <PostsList scheduledPosts={selectedPosts} />
+        </div>
+      ) : selectedDate ? (
+        <div className='flex flex-col items-center gap-4'>
+          <p className='text-sm text-center text-muted-foreground'>
+            No posts scheduled for{' '}
+            {selectedDate?.toLocaleDateString(undefined, {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </p>
+          <LuAlarmClockOff className='size-10 text-muted-foreground' />
+        </div>
+      ) : null}
+
+      {!!futurePosts.length && (
+        <>
+          {selectedDate && <Separator />}
+          <h4 className='font-bold'>Future posts</h4>
+          <PostsList scheduledPosts={futurePosts} />
+        </>
+      )}
+
+      {!!pastPosts.length && (
+        <>
+          {(futurePosts.length || selectedDate) && <Separator />}
+          <h4 className='font-bold opacity-80'>Past posts</h4>
+          <PostsList className='opacity-80' scheduledPosts={pastPosts} />
+        </>
+      )}
+    </>
+  )
+
+  return (
+    <div className='flex flex-row h-full w-full flex-1'>
+      <div className='flex-1 h-full border-r border-border pb-4'>
+        <Calendar events={postEvents} renderEvent={renderEvent} onSelect={setSelectedDate}>
+          <div className='w-full flex justify-between px-4'>
+            <CalendarMonthLabel />
+
+            <div className='flex flex-row gap-2'>
+              <CalendarControlPrevTrigger asChild>
+                <Button size={'icon'} variant='outline'>
+                  <PiCaretLeft />
+                </Button>
+              </CalendarControlPrevTrigger>
+              <CalendarControlTodayTrigger />
+              <CalendarControlNextTrigger asChild>
+                <Button size={'icon'} variant='outline'>
+                  <PiCaretRight />
+                </Button>
+              </CalendarControlNextTrigger>
+            </div>
+          </div>
+          <CalendarWeekdays className={{ wrapper: 'px-4' }} />
+          <CalendarMonth
+            className={{
+              wrapper: 'px-4',
+              day: (props) => ({
+                override: cn(
+                  'flex flex-col h-20  sm:h-28 md:h-32 border transition-all border-transparent overflow-hidden w-auto flex-1 items-start justify-start bg-card hover:bg-accent/40',
+                  props.isSelected &&
+                    'border-primary border bg-primary/10 hover:text-primary text-primary hover:bg-primary/5'
+                ),
+                text: cn(
+                  'w-full text-center text-xs text-muted-foreground  py-1',
+                  props.isSelected && 'border-primary'
+                ),
+                today: 'border-primary/50 border',
+              }),
+            }}
+          />
+        </Calendar>
+      </div>
+
+      <div className='w-96 hidden lg:flex flex-col gap-4 h-full px-4 overflow-auto'>
+        {postListContent}
+      </div>
+
+      {!isLg && (
+        <div className='block  lg:hidden'>
+          <Drawer
+            open={!!selectedDate}
+            onOpenChange={(newOpen) => {
+              if (!newOpen) setSelectedDate(null)
+            }}
+            dismissible
+          >
+            <DrawerContent className='h-[80%] lg:h-[320px]'>
+              <div className='flex-1 overflow-auto px-4 mt-6 py-4 flex flex-col gap-4'>
+                {postListContent}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      )}
     </div>
   )
 }
 
-function formatWeek(dateFrom: Date, dateTo: Date) {
-  const dateFromFormatter = new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    // weekday: 'short',
-    // year: 'numeric',
-  })
-  const dateToFormatter = new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    // weekday: 'short',
-    year: 'numeric',
-  })
+export function PostsList(props: { scheduledPosts: ScheduledPost[]; className?: string }) {
+  const scheduledPostsByPostId = useMemo(() => {
+    const result: Record<string, ScheduledPost[]> = {}
 
-  return `${dateFromFormatter.format(dateFrom)} - ${dateToFormatter.format(dateTo)}`
+    for (const scheduledPost of props.scheduledPosts) {
+      if (!result[scheduledPost.post.id]) {
+        result[scheduledPost.post.id] = []
+      }
+
+      result[scheduledPost.post.id]?.push(scheduledPost)
+    }
+
+    return result
+  }, [props.scheduledPosts])
+
+  return (
+    <div className={cn('flex flex-col gap-2', props.className)}>
+      {Object.keys(scheduledPostsByPostId).map((postId) => {
+        const scheduledPosts = scheduledPostsByPostId[postId]
+        if (!scheduledPosts?.length) return null
+        const post = scheduledPosts[0]!.post
+        const PostTypeIcon = POST_TYPE_ICON[post.type]
+
+        const differentTimes = dedupe(
+          scheduledPosts.map((scheduledPost) =>
+            new Date(scheduledPost.scheduledAt).toLocaleTimeString(undefined, {
+              day: 'numeric',
+              month: 'numeric',
+              weekday: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          ),
+          (item) => item
+        )
+
+        return (
+          <Link key={postId} className='h-full' href={`/posts/${post.id}/results`}>
+            <Card className='w-full flex flex-col h-full justify-between gap-4 p-3'>
+              <div className='flex flex-row items-center gap-2 justify-between'>
+                <div className='flex flex-col'>
+                  <div className='flex flex-row items-center gap-2'>
+                    <PostTypeIcon className='text-muted-foreground size-4' />
+                    <CardDescription className='text-muted-foreground test-xs line-clamp-1'>
+                      {POST_TYPE_NAME[post.type]}
+                    </CardDescription>
+                  </div>
+                  <CardTitle className='line-clamp-2 text-ellipsis'>{post.name}</CardTitle>
+                </div>
+
+                <ChannelAvatarList channels={scheduledPosts.map((p) => p.channel)} size='sm' />
+              </div>
+
+              <div className='flex flex-row gap-2 items-center text-sm text-muted-foreground'>
+                {differentTimes.map((time) => (
+                  <div key={time}>{time}</div>
+                ))}
+              </div>
+            </Card>
+          </Link>
+        )
+      })}
+    </div>
+  )
 }

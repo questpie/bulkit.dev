@@ -7,7 +7,7 @@ import { isSameDay } from 'date-fns'
 import { useSetAtom } from 'jotai'
 import * as React from 'react'
 import type { DateRange } from 'react-day-picker'
-import type { CalendarState, DateSelection } from './calendar-atoms'
+import type { CalendarEvent, DateSelection } from './calendar-atoms'
 import {
   currentDateAtom,
   eventsAtom,
@@ -22,7 +22,8 @@ export type CalendarSelectionMode = 'single' | 'multiple' | 'range'
 export type CalendarProps<TMode extends CalendarSelectionMode = 'single'> = {
   currentDate?: Date
   selected?: TMode extends 'multiple' ? Date[] : TMode extends 'single' ? Date : DateRange
-  events?: CalendarState['events']
+  events?: CalendarEvent[]
+  renderEvent?: (event: CalendarEvent) => React.ReactNode
   exclude?: DateSelection | DateSelection[]
   minDate?: Date
   maxDate?: Date
@@ -41,6 +42,7 @@ export type CalendarProps<TMode extends CalendarSelectionMode = 'single'> = {
 export const CalendarContext = React.createContext<{
   mode: CalendarSelectionMode
   onSelect?: (selected: Date) => void
+  renderEvent?: CalendarProps['renderEvent']
 }>({
   mode: 'single',
 })
@@ -56,7 +58,7 @@ export function Calendar<TMode extends CalendarSelectionMode = 'single'>({
   onSelect,
   className,
   children,
-  ...props
+  renderEvent,
 }: React.PropsWithChildren<CalendarProps<TMode>>) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   const atomValues = React.useMemo(
@@ -75,11 +77,13 @@ export function Calendar<TMode extends CalendarSelectionMode = 'single'>({
 
   return (
     <AtomsProvider atomValues={atomValues}>
-      <CalendarManager mode={mode} onSelect={onSelect} selected={selected}>
-        <div
-          className={cn('flex w-full flex-col space-y-4', className?.wrapper, className)}
-          {...props}
-        >
+      <CalendarManager
+        mode={mode}
+        onSelect={onSelect}
+        selected={selected}
+        renderEvent={renderEvent}
+      >
+        <div className={cn('flex w-full flex-col space-y-4', className?.wrapper, className)}>
           <div className={cn('space-y-4', className?.container)}>{children}</div>
         </div>
       </CalendarManager>
@@ -92,14 +96,9 @@ function CalendarManager<TMode extends CalendarSelectionMode = 'single'>({
   children,
   selected,
   onSelect,
-}: {
+  renderEvent,
+}: Pick<CalendarProps<TMode>, 'selected' | 'onSelect' | 'renderEvent'> & {
   mode: TMode
-  selected?: TMode extends 'multiple' ? Date[] : TMode extends 'single' ? Date : DateRange
-  onSelect?: TMode extends 'multiple'
-    ? (selection: Date[]) => void
-    : TMode extends 'single'
-      ? (selection: Date) => void
-      : (selection: DateRange) => void
   children: React.ReactNode
 }) {
   const setAtomSelected = useSetAtom(selectedAtom)
@@ -163,6 +162,7 @@ function CalendarManager<TMode extends CalendarSelectionMode = 'single'>({
       value={{
         mode,
         onSelect: handleSelect,
+        renderEvent,
       }}
     >
       {children}

@@ -162,7 +162,6 @@ export function DatePicker(props: DatePickerProps) {
 
             props.onValueChange(null)
           }}
-          // onMonthChange={(newMonth: Date) => setMonth(newMonth)}
           {...props.calendarProps}
         >
           <div className='flex justify-between items-center'>
