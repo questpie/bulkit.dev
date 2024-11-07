@@ -21,10 +21,10 @@
     "db:migrate": "bun drizzle-kit migrate"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.53",
-    "@ai-sdk/openai": "^0.0.70",
-    "@aws-sdk/client-s3": "^3.679.0",
-    "@aws-sdk/s3-request-presigner": "^3.679.0",
+    "@ai-sdk/anthropic": "^0.0.56",
+    "@ai-sdk/openai": "^0.0.72",
+    "@aws-sdk/client-s3": "^3.686.0",
+    "@aws-sdk/s3-request-presigner": "^3.686.0",
     "@bogeychan/elysia-logger": "^0.1.4",
     "@bulkit/jobs": "workspace:*",
     "@bulkit/mail": "workspace:*",
@@ -35,13 +35,13 @@
     "@elysiajs/swagger": "^1.1.5",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@paralleldrive/cuid2": "paralleldrive/cuid2",
-    "@react-email/render": "^1.0.1",
+    "@react-email/render": "^1.0.2",
     "@sinclair/typebox": "0.32.34",
-    "ai": "^3.4.25",
-    "arctic": "^2.0.1",
-    "drizzle-orm": "^0.35.3",
+    "ai": "^3.4.33",
+    "arctic": "^2.2.1",
+    "drizzle-orm": "^0.36.1",
     "drizzle-typebox": "^0.1.1",
-    "elysia": "^1.1.23",
+    "elysia": "^1.1.24",
     "elysia-http-error": "^1.3.0",
     "elysia-ip": "^1.0.7",
     "flydrive": "^1.1.0",
@@ -69,7 +69,7 @@
     "@types/geoip-lite": "^1.4.4",
     "@types/ua-parser-js": "^0.7.39",
     "dotenv": "^16.4.5",
-    "drizzle-kit": "^0.26.2"
+    "drizzle-kit": "^0.28.0"
   },
   "module": "src/index.js"
 }

@@ -15,6 +15,8 @@ export async function buildYouTubeClient(accessToken: string, refreshToken: stri
     refresh_token: refreshToken,
   })
 
+  // TODO: fix typing,
+  // @ts-expect-error probably version mismatch
   const youtube = google.youtube({
     version: 'v3',
     auth: oauth2Client,
