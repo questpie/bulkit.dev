@@ -4,7 +4,7 @@ import type * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { useAtom } from 'jotai'
-import { currentDateAtom } from './calendar-atoms'
+import { currentDateAtom } from './calendar.atoms'
 import { addMonths, setMonth } from 'date-fns'
 
 interface CalendarControlProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

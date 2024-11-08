@@ -7,7 +7,7 @@ import { isSameDay } from 'date-fns'
 import { useSetAtom } from 'jotai'
 import * as React from 'react'
 import type { DateRange } from 'react-day-picker'
-import type { CalendarEvent, DateSelection } from './calendar-atoms'
+import type { CalendarEvent, DateSelection } from './calendar.atoms'
 import {
   currentDateAtom,
   eventsAtom,
@@ -16,7 +16,7 @@ import {
   minDateAtom,
   monthOffsetAtom,
   selectedAtom,
-} from './calendar-atoms'
+} from './calendar.atoms'
 
 export type CalendarSelectionMode = 'single' | 'multiple' | 'range'
 export type CalendarProps<TMode extends CalendarSelectionMode = 'single'> = {

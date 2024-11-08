@@ -15,7 +15,7 @@ import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
 import { dedupe } from '@bulkit/shared/types/data'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Calendar } from '@bulkit/ui/components/ui/calendar/calendar'
-import type { CalendarEvent } from '@bulkit/ui/components/ui/calendar/calendar-atoms'
+import type { CalendarEvent } from '@bulkit/ui/src/components/ui/calendar/calendar.atoms'
 import {
   CalendarControlNextTrigger,
   CalendarControlPrevTrigger,

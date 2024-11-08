@@ -1,6 +1,7 @@
 import { createEnv } from '@bulkit/shared/env/create-env'
 import { generalEnv } from '@bulkit/shared/env/general.env'
-import { StringBoolean, StringInt } from '@bulkit/shared/schemas/misc'
+import { DEPLOYMENT_TYPES, type DeploymentType } from '@bulkit/shared/modules/app/app-constants'
+import { StringBoolean, StringInt, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type } from '@sinclair/typebox'
 
 export const envApi = createEnv({
@@ -30,7 +31,9 @@ export const envApi = createEnv({
     // server
     SERVER_URL: Type.String(),
 
-    IS_CLOUD: Type.Optional(StringBoolean({ default: 'false' })),
+    DEPLOYMENT_TYPE: StringLiteralEnum(DEPLOYMENT_TYPES, {
+      default: 'self-hosted' satisfies DeploymentType,
+    }),
 
     // storage
     DEFAULT_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
@@ -108,6 +111,8 @@ export const envApi = createEnv({
     APP_URL: process.env.APP_URL,
 
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
+
+    DEPLOYMENT_TYPE: process.env.DEPLOYMENT_TYPE,
 
     DB_HOST: process.env.DB_HOST,
     DB_PORT: process.env.DB_PORT,

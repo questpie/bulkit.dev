@@ -1,6 +1,6 @@
-import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
 import { envApi } from '@bulkit/api/envApi'
-import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
+import { DEPLOYMENT_TYPES } from '@bulkit/shared/modules/app/app-constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import Elysia, { t } from 'elysia'
 
@@ -13,7 +13,7 @@ export const appRoutes = new Elysia({
   .get('/healthy', () => 'ok', {
     detail: { description: 'Health check' },
   })
-  .use(protectedMiddleware)
+  // .use(protectedMiddleware)
   .get(
     '/settings',
     async (ctx) => {
@@ -28,12 +28,14 @@ export const appRoutes = new Elysia({
 
       return {
         platforms,
+        deploymentType: envApi.DEPLOYMENT_TYPE,
       }
     },
     {
       response: {
         200: t.Object({
           platforms: t.Record(StringLiteralEnum(PLATFORMS), t.Boolean()),
+          deploymentType: StringLiteralEnum(DEPLOYMENT_TYPES),
         }),
       },
     }

@@ -2,7 +2,7 @@
 
 import type * as React from 'react'
 import { useSetAtom } from 'jotai'
-import { monthOffsetAtom } from './calendar-atoms'
+import { monthOffsetAtom } from './calendar.atoms'
 import { AtomsProvider } from '@bulkit/ui/components/atoms-provider'
 
 export interface CalendarOffsetProviderProps {

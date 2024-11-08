@@ -1,4 +1,4 @@
-import type { DateSelection } from './calendar-atoms'
+import type { DateSelection } from './calendar.atoms'
 import { isWithinInterval, isSameDay, parseISO, isValid } from 'date-fns'
 
 export function isDateSelected(

@@ -2,6 +2,7 @@ import { apiServer } from '@bulkit/app/api/api.server'
 import { Sidebar } from '@bulkit/app/app/(main)/_components/sidebar'
 import { OrganizationProvider } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
 import { ORGANIZATION_COOKIE_NAME } from '@bulkit/app/app/(main)/organizations/organizations.constants'
+import { AppSettingsProvider } from '@bulkit/app/app/_components/app-settings-provider'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
@@ -14,13 +15,14 @@ export default async function MainLayout(props: PropsWithChildren) {
   }
 
   const selectedOrganizationId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
-  const [orgsResp, selectedOrganizationResp] = await Promise.all([
+  const [orgsResp, appSettingsResp, selectedOrganizationResp] = await Promise.all([
     apiServer.organizations.index.get({
       query: {
         limit: 1,
         cursor: 0,
       },
     }),
+    apiServer.app.settings.get(),
     selectedOrganizationId ? apiServer.organizations({ id: selectedOrganizationId }).get() : null,
   ])
 
