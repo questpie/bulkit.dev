@@ -1,3 +1,4 @@
+import { organizationPlansTable } from '@bulkit/api/db/schema/plans.table'
 import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
 import { index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
@@ -77,8 +78,9 @@ export const organizationsRelations = relations(organizationsTable, ({ many }) =
   socialMediaIntegrations: many(socialMediaIntegrationsTable),
   // scheduledPosts: many(scheduledPostsTable),
   resources: many(resourcesTable),
-  channels: many(channelsTable), // Add this line
+  channels: many(channelsTable),
   invites: many(organizationInvitesTable),
+  plans: many(organizationPlansTable),
 }))
 
 export const userOrganizationsRelations = relations(userOrganizationsTable, ({ one }) => ({

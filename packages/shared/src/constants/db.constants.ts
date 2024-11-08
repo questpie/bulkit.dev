@@ -77,3 +77,10 @@ export type ChannelStatus = (typeof CHANNEL_STATUS)[number]
 // export const WORKFLOW_STEP_TYPES = ['publish', 'wait', 'repost', 'condition'] as const
 
 // export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]
+
+/**
+ * Plans
+ */
+
+export const PLAN_SUBSCRIPTION_TYPES = ['monthly', 'annual', 'life-time'] as const
+export type PlanSubscriptionType = (typeof PLAN_SUBSCRIPTION_TYPES)[number]

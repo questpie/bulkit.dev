@@ -30,6 +30,8 @@ export const envApi = createEnv({
     // server
     SERVER_URL: Type.String(),
 
+    IS_CLOUD: Type.Optional(StringBoolean({ default: 'false' })),
+
     // storage
     DEFAULT_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
       default: 's3',
