@@ -3,7 +3,8 @@ import { creditTransactionsTable } from '@bulkit/api/db/schema/credits.table'
 import { subscriptionsTable } from '@bulkit/api/db/schema/plans.table'
 import { envApi } from '@bulkit/api/envApi'
 import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
-import { eq } from 'drizzle-orm'
+import type { SubscriptionStatus } from '@bulkit/api/modules/plans/plans.constants'
+import { and, eq } from 'drizzle-orm'
 import Elysia from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -30,30 +31,46 @@ export const lemonSqueezyWebhookRoutes =
             throw HttpError.BadRequest('Missing signature header')
           }
 
-          const body = ctx.lemonSqueezy.verifyWebhook(ctx.body as Buffer, signature)
+          const body = ctx.lemonSqueezy.verifyWebhook<{
+            organizationId: string
+            planId?: string
+            creditTransactionId?: string
+          }>(ctx.body as Buffer, signature)
 
           switch (body.event_name) {
             case 'subscription_created':
             case 'subscription_updated': {
-              const subscription = body.data.attributes
+              const subscription = body.data
+              const customData = body.meta.custom_data
+
+              if (!customData.planId) {
+                throw HttpError.Internal('Plan id not provided')
+              }
+
+              const newStatus: SubscriptionStatus =
+                subscription.attributes.status === 'active'
+                  ? 'active'
+                  : subscription.attributes.status === 'expired'
+                    ? 'expired'
+                    : 'cancelled'
 
               await ctx.db
                 .insert(subscriptionsTable)
                 .values({
-                  organizationId: subscription.custom_data.organizationId,
-                  planId: subscription.custom_data.planId,
+                  organizationId: customData.organizationId,
+                  planId: customData.planId,
                   externalSubscriptionId: subscription.id,
-                  externalVariantId: subscription.variant_id,
-                  status: subscription.status === 'active' ? 'active' : 'cancelled',
-                  currentPeriodStart: subscription.renews_at,
-                  currentPeriodEnd: subscription.ends_at,
+                  externalVariantId: String(subscription.attributes.variant_id),
+                  status: newStatus,
+                  currentPeriodStart: subscription.attributes.renews_at,
+                  currentPeriodEnd: subscription.attributes.ends_at,
                 })
                 .onConflictDoUpdate({
                   target: [subscriptionsTable.organizationId],
                   set: {
-                    status: subscription.status === 'active' ? 'active' : 'cancelled',
-                    currentPeriodStart: subscription.renews_at,
-                    currentPeriodEnd: subscription.ends_at,
+                    status: newStatus,
+                    currentPeriodStart: subscription.attributes.renews_at,
+                    currentPeriodEnd: subscription.attributes.ends_at,
                   },
                 })
               break
@@ -61,28 +78,50 @@ export const lemonSqueezyWebhookRoutes =
 
             case 'order_created': {
               const order = body.data.attributes
+              const customData = body.meta.custom_data
 
               // Handle credit purchase
-              if (order.custom_data.type === 'credits') {
-                await ctx.db.insert(creditTransactionsTable).values({
-                  organizationId: order.custom_data.organizationId,
-                  type: 'purchase',
-                  status: 'completed',
-                  amount: order.custom_data.credits,
-                  description: `Purchased ${order.custom_data.credits} credits`,
-                })
+              if (!customData.creditTransactionId) {
+                break
               }
+
+              const transaction = await ctx.db
+                .select()
+                .from(creditTransactionsTable)
+                .where(
+                  and(
+                    eq(creditTransactionsTable.organizationId, customData.organizationId),
+                    eq(creditTransactionsTable.id, customData.creditTransactionId)
+                  )
+                )
+                .then((r) => r[0])
+
+              if (!transaction) {
+                throw HttpError.BadRequest(
+                  `Transaction with id ${customData.creditTransactionId} for org ${customData.organizationId} does not exists`
+                )
+              }
+
+              await ctx.db
+                .update(creditTransactionsTable)
+                .set({
+                  status: 'completed',
+                })
+                .where(eq(creditTransactionsTable.id, transaction.id))
+                .returning()
+                .then((r) => r[0])
+
               break
             }
 
             case 'subscription_cancelled': {
-              const subscription = body.data.attributes
+              const subscription = body.data
 
               await ctx.db
                 .update(subscriptionsTable)
                 .set({
                   status: 'cancelled',
-                  currentPeriodEnd: subscription.ends_at,
+                  currentPeriodEnd: subscription.attributes.ends_at,
                 })
                 .where(eq(subscriptionsTable.externalSubscriptionId, subscription.id))
               break

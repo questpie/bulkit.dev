@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm'
 import { boolean, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { primaryKeyCol, timestampCols } from '@bulkit/api/db/schema/_base.table'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
+import { PLAN_STATUSES, SUBSCRIPTION_STATUSES } from '@bulkit/api/modules/plans/plans.constants'
 
 export const organizationsTable = pgTable('organizations', {
   id: text('id').primaryKey(),
@@ -13,9 +14,6 @@ export const organizationsTable = pgTable('organizations', {
   ...timestampCols(),
 })
 
-export const PLAN_STATUS = ['private', 'active'] as const
-export type PlanStatus = (typeof PLAN_STATUS)[number]
-
 export const plansTable = pgTable('plans', {
   id: text('id').primaryKey(),
 
@@ -25,7 +23,7 @@ export const plansTable = pgTable('plans', {
   displayName: text('display_name').notNull(),
   isDefault: boolean('is_default').default(false),
 
-  status: text('status', { enum: PLAN_STATUS }).notNull().default('active'),
+  status: text('status', { enum: PLAN_STATUSES }).notNull().default('active'),
 
   // Plan features
   maxPosts: integer('max_posts').notNull(),
@@ -56,7 +54,7 @@ export const subscriptionsTable = pgTable(
     externalVariantId: text('external_variant_id'),
 
     status: text('status', {
-      enum: ['active', 'expired', 'cancelled', 'lifetime'],
+      enum: SUBSCRIPTION_STATUSES,
     }).notNull(),
 
     // Optional - only for time-based subscriptions

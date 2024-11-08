@@ -1,5 +1,6 @@
 import { envApi } from '@bulkit/api/envApi'
 import { iocRegister } from '@bulkit/api/ioc'
+import type { DiscriminatedWebhookPayload } from '@bulkit/api/lemon-squeezy/lemon-squeezy.types'
 import * as LemonSqueezy from '@lemonsqueezy/lemonsqueezy.js'
 import { HttpError } from 'elysia-http-error'
 
@@ -21,7 +22,7 @@ export class LemonSqueezyService {
     this.client = LemonSqueezy
   }
 
-  verifyWebhook(payload: Buffer, signature: string) {
+  verifyWebhook<TCustomData = unknown>(payload: Buffer, signature: string) {
     const secret = 'SIGNING_SECRET'
     const hmac = crypto.createHmac('sha256', secret)
     const digest = Buffer.from(hmac.update(payload).digest('hex'), 'utf8')
@@ -32,7 +33,7 @@ export class LemonSqueezyService {
     }
 
     // TODO: type this
-    return JSON.parse(payload.toString())
+    return JSON.parse(payload.toString()) as DiscriminatedWebhookPayload<TCustomData>
   }
 }
 /**
