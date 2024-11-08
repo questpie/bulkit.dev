@@ -1,3 +1,4 @@
+import { lemonSqueezyWebhookRoutes } from '@bulkit/api/lemon-squeezy/lemon-squeezy-webhook.routes'
 import { appRoutes } from '@bulkit/api/modules/app/app.routes'
 import { adminRoutes } from '@bulkit/api/modules/auth/admin/admin.routes'
 import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
@@ -20,3 +21,4 @@ export const rootRoutes = new Elysia()
   .use(postsRoutes)
   .use(resourceRoutes)
   .use(openGraphRoutes)
+  .use(lemonSqueezyWebhookRoutes)

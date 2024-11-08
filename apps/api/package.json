@@ -33,6 +33,7 @@
     "@bulkit/shared": "workspace:*",
     "@elysiajs/cors": "^1.1.1",
     "@elysiajs/swagger": "^1.1.5",
+    "@lemonsqueezy/lemonsqueezy.js": "^4.0.0",
     "@lucia-auth/adapter-drizzle": "^1.1.0",
     "@paralleldrive/cuid2": "paralleldrive/cuid2",
     "@react-email/render": "^1.0.2",

@@ -2,7 +2,11 @@ import { createEnv } from '@bulkit/shared/env/create-env'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DEPLOYMENT_TYPES, type DeploymentType } from '@bulkit/shared/modules/app/app-constants'
 import { StringBoolean, StringInt, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import { Type } from '@sinclair/typebox'
+import { Type, type TSchema } from '@sinclair/typebox'
+
+function cloudEnv<Schema extends TSchema>(schema: Schema) {
+  return process.env.DEPLOYMENT_TYPE !== 'cloud' ? Type.Optional(schema) : schema
+}
 
 export const envApi = createEnv({
   server: {
@@ -31,10 +35,18 @@ export const envApi = createEnv({
     // server
     SERVER_URL: Type.String(),
 
+    // maybe we should add an external ip validation for cloud instances if app is misused
     DEPLOYMENT_TYPE: StringLiteralEnum(DEPLOYMENT_TYPES, {
       default: 'self-hosted' satisfies DeploymentType,
     }),
 
+    // Lemon Squeezy
+    // this have no reason being specified on self-hosted
+    LEMON_SQUEEZY_API_KEY: cloudEnv(Type.String()),
+    LEMON_SQUEEZY_WEBHOOK_SECRET: cloudEnv(Type.String()),
+    LEMON_SQUEEZE_STORE_SLUG: cloudEnv(Type.String({ default: 'bulkit' })),
+
+    // TODO: support for local drive
     // storage
     DEFAULT_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
       default: 's3',
@@ -113,6 +125,10 @@ export const envApi = createEnv({
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
 
     DEPLOYMENT_TYPE: process.env.DEPLOYMENT_TYPE,
+
+    LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
+    LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
+    LEMON_SQUEEZE_STORE_SLUG: process.env.LEMON_SQUEEZE_STORE_SLUG,
 
     DB_HOST: process.env.DB_HOST,
     DB_PORT: process.env.DB_PORT,
