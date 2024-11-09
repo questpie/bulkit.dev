@@ -22,9 +22,6 @@ export const lemonSqueezyWebhookRoutes =
           }
         })
         .post('/webhook', async (ctx) => {
-          // Verify webhook signature
-          // TODO: Implement webhook signature verification using lemonSqueezy.client.verifyWebhook
-
           const signature = ctx.headers['x-Signature']
 
           if (!signature) {
