@@ -16,6 +16,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
+import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import {
   getResourcePublicUrl,
   isMediaTypeAllowed,
@@ -36,6 +37,8 @@ import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/pos
 import { dedupe } from '@bulkit/shared/types/data'
 import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
+import { max, addSeconds, isBefore } from 'date-fns'
+import { HttpError } from 'elysia-http-error'
 
 export type Post = Static<typeof PostSchema>
 
@@ -345,7 +348,7 @@ export class PostsService {
         } as Extract<Post, { type: 'story' }>
       }
       default:
-        throw new Error(`Unsupported post type: ${opts.type}`)
+        throw HttpError.Internal(`Unsupported post type: ${opts.type}`)
     }
   }
   async update(
@@ -394,7 +397,7 @@ export class PostsService {
       case 'story':
         return await this.updateStoryPost(db, { ...opts } as any)
       default:
-        throw new Error(`Unsupported post type: ${(opts.post as any).type}`)
+        throw HttpError.Internal(`Unsupported post type: ${(opts.post as any).type}`)
     }
   }
 
@@ -1019,7 +1022,7 @@ export class PostsService {
         const threadItems = post.items ?? []
         const threadSettings = settings.threadSettings
         if (!threadSettings) {
-          throw new Error('Thread settings not found')
+          throw HttpError.Internal('Thread settings not found')
         }
 
         if (threadItems.length > threadSettings.limit) {
@@ -1146,6 +1149,11 @@ export class PostsService {
       return null
     }
 
+    // Get all scheduled post IDs that might have running jobs
+    const scheduledPostIds = post.channels
+      .filter((channel) => channel.scheduledPost?.status === 'scheduled')
+      .map((channel) => channel.scheduledPost!.id)
+
     const updatedPost = await db
       .update(postsTable)
       .set({
@@ -1166,6 +1174,12 @@ export class PostsService {
       })
       .where(eq(scheduledPostsTable.postId, opts.postId))
       .execute()
+
+    await Promise.all(
+      scheduledPostIds.map(
+        (id) => publishPostJob.remove(id).catch(() => null) // Ignore errors if job doesn't exist
+      )
+    )
 
     return {
       ...post,
@@ -1200,6 +1214,104 @@ export class PostsService {
     return {
       ...post,
       name: opts.name,
+    }
+  }
+
+  async publish(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+    }
+  ): Promise<Post> {
+    const post = await this.getById(db, {
+      orgId: opts.orgId,
+      postId: opts.postId,
+    })
+
+    if (!post) {
+      throw HttpError.NotFound('Post not found')
+    }
+
+    // validate
+    const errors = await this.validate(post)
+    if (errors) {
+      throw HttpError.BadGateway('Post validation failed', {
+        errors: errors,
+      })
+    }
+
+    const areAllScheduledPostsDraft = post.channels.every(
+      (channel) => channel.scheduledPost?.status === 'draft'
+    )
+
+    if (post.status !== 'draft' || !areAllScheduledPostsDraft) {
+      throw HttpError.BadGateway(
+        'Cannot publish post already scheduled post. Please bring post back to draft and schedule again'
+      )
+    }
+
+    const scheduledPosts = await db.transaction(async (trx) => {
+      const scheduledPosts: { scheduledPostId: string; delay: number }[] = []
+      let earliestScheduledAt: Date | null = null
+
+      for (const channel of post.channels) {
+        if (!channel.scheduledPost) continue
+
+        const userDefinedScheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
+        const scheduledAtClamped = userDefinedScheduledAt
+          ? max([new Date(userDefinedScheduledAt), addSeconds(new Date(), 1)])
+          : new Date()
+
+        if (earliestScheduledAt === null || isBefore(scheduledAtClamped, earliestScheduledAt)) {
+          earliestScheduledAt = scheduledAtClamped
+        }
+
+        const delay = Math.max(new Date(scheduledAtClamped).getTime() - new Date().getTime(), 1000)
+
+        await trx
+          .update(scheduledPostsTable)
+          .set({
+            status: 'scheduled',
+            ...(channel.scheduledPost.scheduledAt
+              ? { scheduledAt: scheduledAtClamped.toISOString() }
+              : {}),
+          })
+          .where(eq(scheduledPostsTable.id, channel.scheduledPost!.id))
+
+        scheduledPosts.push({ scheduledPostId: channel.scheduledPost!.id, delay })
+      }
+
+      await trx
+        .update(postsTable)
+        .set({
+          status: post.status === 'draft' ? 'scheduled' : post.status,
+          scheduledAt: post.scheduledAt ?? earliestScheduledAt?.toISOString(),
+        })
+        .where(eq(postsTable.id, post.id))
+
+      return scheduledPosts
+    })
+
+    // Schedule the jobs
+    for (const { scheduledPostId, delay } of scheduledPosts) {
+      await publishPostJob.invoke(
+        { scheduledPostId },
+        {
+          jobId: scheduledPostId,
+          delay,
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        }
+      )
+    }
+
+    return {
+      ...post,
+      status: 'scheduled',
     }
   }
 }
