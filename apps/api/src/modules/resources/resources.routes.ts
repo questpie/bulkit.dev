@@ -2,6 +2,7 @@ import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
+import { resourceStockRoutes } from '@bulkit/api/modules/resources/routes/resources-stock.routes'
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
@@ -13,6 +14,7 @@ export const resourceRoutes = new Elysia({
   .use(injectDatabase)
   .use(injectResourcesService)
   .use(organizationMiddleware)
+  .use(resourceStockRoutes)
   .get(
     '/',
     async (ctx) => {
@@ -55,6 +57,7 @@ export const resourceRoutes = new Elysia({
           return ctx.resourcesService.create(trx, {
             organizationId: ctx.organization!.id,
             files: ctx.body.files,
+            isPrivate: ctx.body.isPrivate,
           })
         })
         .catch((err) => {
@@ -73,6 +76,11 @@ export const resourceRoutes = new Elysia({
           maxItems: 10, // 10 files
           types: ['image/*', 'video/*', 'audio/*'],
         }),
+        isPrivate: t.Optional(
+          t.Boolean({
+            default: true,
+          })
+        ),
       }),
     }
   )

@@ -233,9 +233,7 @@ export function RegularPostFields() {
               <div className='flex w-full'>
                 {mediaArray.fields.length < 10 && !isPostLocked && (
                   <ResourceButtonUpload
-                    buttonProps={{
-                      disabled: isPostLocked,
-                    }}
+                    disabled={isPostLocked}
                     maxFiles={10 - mediaArray.fields.length}
                     onUploaded={(resources) => {
                       if (isPostLocked) return

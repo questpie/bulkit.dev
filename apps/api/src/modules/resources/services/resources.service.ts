@@ -10,6 +10,7 @@ import { extractPathExt } from '@bulkit/shared/utils/string'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import type { Static } from 'elysia'
 import { Readable } from 'node:stream'
+import fetch from 'node-fetch'
 
 export type Resource = Static<typeof ResourceSchema>
 
@@ -106,7 +107,7 @@ export class ResourcesService {
 
   async create(
     db: TransactionLike,
-    opts: { organizationId: string; files: File[] }
+    opts: { organizationId: string; files: File[]; isPrivate?: boolean }
   ): Promise<Resource[]> {
     return db.transaction(async (trx) => {
       const payload = opts.files.map((file) => ({
@@ -123,6 +124,7 @@ export class ResourcesService {
             location: item.fileName,
             isExternal: false,
             cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
+            isPrivate: opts.isPrivate,
           }))
         )
         .returning({
@@ -196,6 +198,61 @@ export class ResourcesService {
         id: resourcesTable.id,
       })
       .then((data) => data.map((r) => r.id))
+  }
+
+  async createFromUrl(
+    db: TransactionLike,
+    opts: {
+      organizationId: string
+      url: string
+      caption: string
+      isPrivate?: boolean
+    }
+  ): Promise<Resource> {
+    return db.transaction(async (trx) => {
+      // Download the image and get its type
+      const response = await fetch(opts.url)
+      if (!response.ok) {
+        throw new Error('Failed to fetch external resource')
+      }
+
+      const contentType = response.headers.get('content-type') || 'image/jpeg'
+      const buffer = await response.arrayBuffer()
+
+      const fileName = `${opts.organizationId}/${Date.now()}-${cuid2.createId()}.${
+        contentType.split('/')[1]
+      }`
+
+      // Upload to storage
+      await drive.use().put(fileName, Buffer.from(buffer), {
+        contentType,
+      })
+
+      // Create resource record
+      const resource = await trx
+        .insert(resourcesTable)
+        .values({
+          organizationId: opts.organizationId,
+          type: contentType,
+          location: fileName,
+          isPrivate: opts.isPrivate,
+          isExternal: false,
+          caption: opts.caption,
+        })
+        .returning({
+          id: resourcesTable.id,
+          type: resourcesTable.type,
+          location: resourcesTable.location,
+          isExternal: resourcesTable.isExternal,
+          createdAt: resourcesTable.createdAt,
+        })
+        .then((r) => r[0]!)
+
+      return {
+        ...resource,
+        url: await getResourcePublicUrl(resource),
+      }
+    })
   }
 }
 

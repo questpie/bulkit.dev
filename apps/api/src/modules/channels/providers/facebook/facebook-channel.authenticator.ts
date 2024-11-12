@@ -7,24 +7,24 @@ import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { addDays } from 'date-fns'
 import type { InferContext } from 'elysia'
 
-class InstagramChannelAuthenticator extends OAuth2Authenticator {
+class FacebookChannelAuthenticator extends OAuth2Authenticator {
   constructor() {
     super(
-      // TODO: we should make completely another provider as the callback is totally different here
       new OAuth2Provider({
-        clientId: envApi.INSTAGRAM_APP_ID!,
-        clientSecret: envApi.INSTAGRAM_APP_SECRET!,
-        redirectUri: buildChannelRedirectUri('instagram'),
+        clientId: envApi.FACEBOOK_APP_ID!,
+        clientSecret: envApi.FACEBOOK_APP_SECRET!,
+        redirectUri: buildChannelRedirectUri('facebook'),
         authorizationEndpoint: 'https://www.facebook.com/v20.0/dialog/oauth',
         tokenEndpoint: 'https://graph.facebook.com/v20.0/oauth/access_token',
         scopes: [
-          'instagram_basic',
           'pages_show_list',
+          'pages_manage_engagement',
           'pages_read_engagement',
+          'pages_manage_posts',
+          'pages_read_engagement',
+          //   'pages_read_user_engagement',
           'business_management',
-          'instagram_content_publish',
-          'instagram_manage_comments',
-          'instagram_manage_insights',
+          'publish_video',
         ],
         isPKCE: true,
         userInfoEndpoint: 'https://graph.facebook.com/v20.0/me?fields=id,name,picture',
@@ -33,25 +33,13 @@ class InstagramChannelAuthenticator extends OAuth2Authenticator {
             id: data.id,
             name: data.name,
             picture: data.picture.data.url,
-            // email:
-            url: `https://www.instagram.com/${data.id}`,
+            url: `https://facebook.com/${data.id}`,
           }
-        },
-        additionalAuthParams: {
-          // display: 'page',
-          // extras: JSON.stringify({ setup: { channel: 'IG_API_ONBOARDING' } }),
-          // response_type: 'token',
-          // force_authentication: '1',
-          // enable_fb_login: '0',
         },
       })
     )
   }
 
-  /**
-   * There is no organizationId in ctx, it is in state here
-   * TODO: check if all permissions needed for publishing are granted
-   */
   async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
     const { organizationId, redirectToOnSuccess, redirectToOnDeny } = this.parseState(
       ctx.query.state!
@@ -70,36 +58,32 @@ class InstagramChannelAuthenticator extends OAuth2Authenticator {
       platform
     )
 
-    const tokenExchange = await await fetch(
-      `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${envApi.INSTAGRAM_APP_ID}&client_secret=${envApi.INSTAGRAM_APP_SECRET}&fb_exchange_token=${shortLivedToken}`
+    // Exchange short-lived token for long-lived token
+    const tokenExchange = await fetch(
+      `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${envApi.FACEBOOK_APP_ID}&client_secret=${envApi.FACEBOOK_APP_SECRET}&fb_exchange_token=${shortLivedToken}`
     ).then((r) => r.json())
 
-    const connectedAccounts = await fetch(
-      `https://graph.facebook.com/v20.0/me/accounts?fields=id,instagram_business_account,username,access_token,name,picture.type(large)&access_token=${tokenExchange.access_token}&limit=500`
+    // Get all pages that the user manages
+    const pages = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?fields=id,name,access_token,picture.type(large)&access_token=${tokenExchange.access_token}&limit=500`
     )
       .then((r) => r.json())
-      .then((r) => r.data.filter((f: any) => f.instagram_business_account))
+      .then((r) => r.data)
 
     let channelId: string | undefined = undefined
 
-    for (const connectedAccount of connectedAccounts) {
-      const instagramAccount = await (
-        await fetch(
-          `https://graph.facebook.com/v20.0/${connectedAccount.instagram_business_account.id}?fields=name,username,profile_picture_url&access_token=${tokenExchange.access_token}&limit=100`
-        )
-      ).json()
-
+    for (const page of pages) {
       const entities = await this.upsertEntities(ctx.db, {
         platform,
         organizationId,
-        accessToken: connectedAccount.access_token,
+        accessToken: page.access_token,
         accessTokenExpiresAt: addDays(new Date(), 60),
         refreshToken: undefined,
         userInfo: {
-          id: instagramAccount.id,
-          name: instagramAccount.name,
-          picture: instagramAccount.profile_picture_url,
-          url: `https://www.instagram.com/${instagramAccount.username}`,
+          id: page.id,
+          name: page.name,
+          picture: page.picture.data.url,
+          url: `https://facebook.com/${page.id}`,
         },
       })
 
@@ -116,4 +100,4 @@ class InstagramChannelAuthenticator extends OAuth2Authenticator {
   }
 }
 
-export { InstagramChannelAuthenticator }
+export { FacebookChannelAuthenticator }

@@ -237,7 +237,7 @@ export function CalendarMonth({ className }: CalendarMonthProps) {
         return (
           <button
             type='button'
-            key={getIsoDateString(day)}
+            key={`${getIsoDateString(day)}-${index}`}
             data-date={getIsoDateString(day)}
             onClick={() => !isDisabled && onSelect?.(day)}
             onKeyDown={(e) => handleKeyDown(e, day)}
@@ -260,7 +260,12 @@ export function CalendarMonth({ className }: CalendarMonthProps) {
             <time dateTime={day.toISOString()} className={resolvedClassNames?.text}>
               {day.getDate()}
             </time>
-            {renderEvent && eventsInADay.map(renderEvent)}
+            {renderEvent &&
+              eventsInADay.map((event, eventIndex) => (
+                <React.Fragment key={`${getIsoDateString(day)}-event-${eventIndex}`}>
+                  {renderEvent(event)}
+                </React.Fragment>
+              ))}
           </button>
         )
       })}

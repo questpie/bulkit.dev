@@ -12,15 +12,24 @@ import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@bulkit/ui/components/ui/dialog'
+import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@bulkit/ui/components/ui/dropdown-menu'
+import { Input } from '@bulkit/ui/components/ui/input'
 import {
   ResponsiveConfirmDialog,
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
+import { toast } from '@bulkit/ui/components/ui/sonner'
 import {
   Table,
   TableBody,
@@ -33,7 +42,8 @@ import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LuEye, LuMoreVertical, LuTrash } from 'react-icons/lu'
+import { useState } from 'react'
+import { LuArchive, LuMoreVertical, LuTrash } from 'react-icons/lu'
 import { PiChartBar, PiPencil } from 'react-icons/pi'
 
 export type Post = RouteOutput<typeof apiClient.posts.index.get>['data'][number]
@@ -74,6 +84,25 @@ type PostTableRowProps = {
 }
 
 export function PostTableRow(props: PostTableRowProps) {
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState<string>(props.post.name)
+
+  const updateMutation = useMutation({
+    mutationFn: (data: { name: string }) =>
+      apiClient.posts({ id: props.post.id }).rename.patch(data),
+    onSuccess: (res) => {
+      if (!res.error) {
+        toast.success('Post renamed')
+        setIsRenaming(false)
+        router.refresh()
+        return
+      }
+      toast.error('Failed to rename post', {
+        description: res.error.value.message,
+      })
+    },
+  })
+
   const Icon = POST_TYPE_ICON[props.post.type]
   const router = useRouter()
 
@@ -81,6 +110,20 @@ export function PostTableRow(props: PostTableRowProps) {
     mutationFn: apiClient.posts({ id: props.post.id }).delete,
     onSuccess: () => {
       router.refresh()
+    },
+  })
+
+  const archiveMutation = useMutation({
+    mutationFn: () => apiClient.posts({ id: props.post.id }).archive.patch(),
+    onSuccess: (res) => {
+      if (!res.error) {
+        toast.success('Post archived')
+        router.refresh()
+        return
+      }
+      toast.error('Failed to archive post', {
+        description: res.error.value.message,
+      })
     },
   })
 
@@ -130,48 +173,80 @@ export function PostTableRow(props: PostTableRowProps) {
       <TableCell>
         <div className='flex justify-start items-center gap-2'>
           {props.post.status === 'draft' ? (
-            <Button variant='secondary' asChild>
+            <Button variant='secondary' className='flex-1 max-w-32' asChild>
               <Link href={`/posts/${props.post.id}`}>
                 <PiPencil className='h-4 w-4' />
                 Edit
               </Link>
             </Button>
           ) : (
-            <Button variant='secondary' asChild>
+            <Button variant='secondary' className='flex-1 max-w-32' asChild>
               <Link href={`/posts/${props.post.id}/results`}>
                 <PiChartBar className='h-4 w-4' />
                 Results
               </Link>
             </Button>
           )}
-          {isPostDeletable(props.post) && (
-            <ResponsiveConfirmDialog
-              title='Delete Post'
-              confirmLabel='Delete'
-              cancelLabel='Cancel'
-              content='Are you sure you want to delete this post?'
-              onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
-            >
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant='outline' className='h-8 w-8 p-0'>
-                    <LuMoreVertical className='h-4 w-4' />
-                    <span className='sr-only'>Open menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align='end'>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' className='h-8 w-8 p-0'>
+                <LuMoreVertical className='h-4 w-4' />
+                <span className='sr-only'>Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={() => setIsRenaming(true)}>
+                <PiPencil className='mr-2 h-4 w-4' />
+                Rename
+              </DropdownMenuItem>
+              {isPostDeletable(props.post) ? (
+                <ResponsiveConfirmDialog
+                  title='Delete Post'
+                  confirmLabel='Delete'
+                  cancelLabel='Cancel'
+                  content='Are you sure you want to delete this post?'
+                  onConfirm={() => deleteMutation.mutateAsync(undefined).then((res) => !!res.data)}
+                >
                   <ResponsiveDialogTrigger className='w-full text-left' asChild>
                     <DropdownMenuItem className='text-destructive'>
                       <LuTrash className='mr-2 h-4 w-4' />
                       <span>Delete</span>
                     </DropdownMenuItem>
                   </ResponsiveDialogTrigger>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </ResponsiveConfirmDialog>
-          )}
+                </ResponsiveConfirmDialog>
+              ) : (
+                <DropdownMenuItem onClick={() => archiveMutation.mutate()}>
+                  <LuArchive className='mr-2 h-4 w-4' />
+                  Archive
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </TableCell>
+      <Dialog open={isRenaming} onOpenChange={setIsRenaming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Post</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder='Enter new name'
+          />
+          <DialogFooter>
+            <Button variant='outline' onClick={() => setIsRenaming(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updateMutation.mutate({ name: newName })}
+              disabled={!newName || newName === props.post.name}
+            >
+              Rename
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TableRow>
   )
 }

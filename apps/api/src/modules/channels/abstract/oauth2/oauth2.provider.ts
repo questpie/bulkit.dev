@@ -32,10 +32,11 @@ export type Tokens = {
   accessToken: string
   refreshToken?: string
   accessTokenExpiresAt?: Date
+  idToken?: string // Add this field
 }
 
 export class OAuth2Provider {
-  private client: OAuth2Client
+  protected client: OAuth2Client
   private opts: {
     clientId: string
     clientSecret: string
@@ -102,6 +103,7 @@ export class OAuth2Provider {
       accessTokenExpiresAt: res.expires_in
         ? new Date(Date.now() + res.expires_in * 1000)
         : undefined,
+      idToken: (res as any).id_token,
     }
   }
   async refreshAccessToken(refreshToken: string): Promise<Tokens> {

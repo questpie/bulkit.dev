@@ -219,23 +219,21 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
         {postListContent}
       </div>
 
-      {!isLg && (
-        <div className='block  lg:hidden'>
-          <Drawer
-            open={!!selectedDate}
-            onOpenChange={(newOpen) => {
-              if (!newOpen) setSelectedDate(null)
-            }}
-            dismissible
-          >
-            <DrawerContent className='h-[80%] lg:h-[320px]'>
-              <div className='flex-1 overflow-auto px-4 mt-6 py-4 flex flex-col gap-4'>
-                {postListContent}
-              </div>
-            </DrawerContent>
-          </Drawer>
-        </div>
-      )}
+      <div className='block lg:hidden'>
+        <Drawer
+          open={!!selectedDate}
+          onOpenChange={(newOpen) => {
+            if (!newOpen) setSelectedDate(null)
+          }}
+          dismissible
+        >
+          <DrawerContent className='h-[80%] lg:h-[320px]'>
+            <div className='flex-1 overflow-auto px-4 mt-6 py-4 flex flex-col gap-4'>
+              {postListContent}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </div>
     </div>
   )
 }

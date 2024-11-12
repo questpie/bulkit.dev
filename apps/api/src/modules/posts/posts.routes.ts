@@ -29,7 +29,6 @@ import {
 import { MaybeArraySchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { unwrapMaybeArray } from '@bulkit/shared/utils/misc'
-import { addSeconds, isBefore, max } from 'date-fns'
 import { and, asc, desc, eq, inArray, isNull, sql, type SQLWrapper } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
@@ -245,106 +244,10 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .patch(
     '/:id/publish',
     async (ctx) => {
-      const post = await ctx.postService.getById(ctx.db, {
+      return ctx.postService.publish(ctx.db, {
         orgId: ctx.organization!.id,
         postId: ctx.params.id,
       })
-
-      if (!post) {
-        throw HttpError.NotFound('Post not found')
-      }
-
-      // validate
-      const errors = await ctx.postService.validate(post)
-      if (errors) {
-        throw HttpError.BadGateway('Post validation failed', { errors })
-      }
-
-      const areAllScheduledPostsDraft = post.channels.every(
-        (channel) => channel.scheduledPost?.status === 'draft'
-      )
-
-      if (post.status !== 'draft' || !areAllScheduledPostsDraft) {
-        // TODO: implement the reschedule and unschedule functionality
-        throw HttpError.BadGateway(
-          "Cannot publish post already scheduled post. Please use the 'reschedule' functionality instead"
-        )
-      }
-
-      const scheduledPosts = await ctx.db.transaction(async (trx) => {
-        const scheduledPosts: { scheduledPostId: string; delay: number }[] = []
-        let earliestScheduledAt: Date | null = null
-
-        for (const channel of post.channels) {
-          if (!channel.scheduledPost) continue
-          // if user didn't schedule the channel manually, use the post's scheduledAt
-          const userDefinedScheduledAt = channel.scheduledPost.scheduledAt ?? post.scheduledAt
-
-          // clamp scheduledAt to now if is set before now
-          const scheduledAtClamped = userDefinedScheduledAt
-            ? max([new Date(userDefinedScheduledAt), addSeconds(new Date(), 1)])
-            : new Date()
-
-          // we are keeping track of the earliest scheduledAt to use it as the post's scheduledAt
-          if (earliestScheduledAt === null || isBefore(scheduledAtClamped, earliestScheduledAt)) {
-            earliestScheduledAt = scheduledAtClamped
-          }
-
-          const delay = Math.max(
-            new Date(scheduledAtClamped).getTime() - new Date().getTime(),
-            1000
-          )
-
-          await trx
-            .update(scheduledPostsTable)
-            .set({
-              status: 'scheduled',
-              // if the channel had defined a scheduledAt before we just have to make sure we keep the clamped value
-              ...(channel.scheduledPost.scheduledAt
-                ? { scheduledAt: scheduledAtClamped.toISOString() }
-                : {}),
-            })
-            .where(eq(scheduledPostsTable.id, channel.scheduledPost!.id))
-
-          scheduledPosts.push({ scheduledPostId: channel.scheduledPost!.id, delay })
-        }
-
-        await trx
-          .update(postsTable)
-          .set({
-            // if we added another channel to a scheduled post and again published it,
-            //  we want to keep existing status
-            status: post.status === 'draft' ? 'scheduled' : post.status,
-            // by setting this we are making sure, that we are always able to display the scheduled post on timeline
-            // even if the user didn't schedule it manually
-            // the earliestScheduledAt will never be sooner than 1 second from now
-            scheduledAt: post.scheduledAt ?? earliestScheduledAt?.toISOString(),
-          })
-          .where(eq(postsTable.id, post.id))
-
-        return scheduledPosts
-      })
-
-      // we sucessfully published the post, so we can now schedule the jobs
-      for (const { scheduledPostId, delay } of scheduledPosts) {
-        await publishPostJob.invoke(
-          { scheduledPostId },
-          {
-            jobId: scheduledPostId,
-            delay,
-            attempts: 3,
-            backoff: {
-              type: 'exponential',
-              delay: 1000,
-            },
-          }
-        )
-      }
-
-      return {
-        ...post,
-        status: 'scheduled',
-      }
     },
     {
       response: {
@@ -445,6 +348,58 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       }),
       response: {
         200: t.Object({ success: t.Boolean() }),
+        404: HttpErrorSchema(),
+      },
+    }
+  )
+  .patch(
+    '/:id/return-to-draft',
+    async (ctx) => {
+      const post = await ctx.postService.returnToDraft(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
+
+      if (!post) {
+        throw HttpError.NotFound('Post not found')
+      }
+
+      return post
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        200: PostSchema,
+        404: HttpErrorSchema(),
+      },
+    }
+  )
+  .patch(
+    '/:id/rename',
+    async (ctx) => {
+      const post = await ctx.postService.rename(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+        name: ctx.body.name,
+      })
+
+      if (!post) {
+        throw HttpError.NotFound('Post not found')
+      }
+
+      return post
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        name: t.String(),
+      }),
+      response: {
+        200: PostSchema,
         404: HttpErrorSchema(),
       },
     }

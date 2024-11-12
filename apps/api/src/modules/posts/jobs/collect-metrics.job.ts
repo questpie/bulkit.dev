@@ -4,7 +4,6 @@ import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { jobFactory } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
-import { UnrecoverableError } from '@bulkit/jobs/job-factory'
 import { Type } from '@sinclair/typebox'
 import { and, eq } from 'drizzle-orm'
 
@@ -12,12 +11,9 @@ import ms from 'ms'
 
 import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
 import { roundTo } from '@bulkit/shared/utils/math'
-import { differenceInMilliseconds, isAfter } from 'date-fns'
+import { differenceInMilliseconds } from 'date-fns'
 
 function getNextMetricsDelay(intervals: TimeInterval[], publishedAt: Date): number | null {
-  if (isAfter(new Date(), publishedAt)) {
-    throw new UnrecoverableError('Published post cannot be in the future')
-  }
   const diff = differenceInMilliseconds(new Date(), publishedAt)
 
   const interval = intervals.find(

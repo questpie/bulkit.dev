@@ -100,6 +100,8 @@ export const envApi = createEnv({
     LINKEDIN_CLIENT_SECRET: Type.Optional(Type.String()),
     LINKEDIN_ENABLED: StringBoolean({ default: false }),
 
+    PIXABAY_API_KEY: Type.Optional(Type.String()),
+
     // Pusher/Soketi -> if no ws needed, remove this
     PUSHER_APP_ID: Type.String(),
     PUSHER_KEY: Type.String(),
@@ -161,6 +163,8 @@ export const envApi = createEnv({
     FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
     FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
     FACEBOOK_ENABLED: process.env.FACEBOOK_ENABLED,
+
+    PIXABAY_API_KEY: process.env.PIXABAY_API_KEY,
 
     // X_CLIENT_ID: process.env.X_CLIENT_ID,
     // X_CLIENT_SECRET: process.env.X_CLIENT_SECRET,
