@@ -35,6 +35,15 @@ type PlatformSettings = {
    * - 'images-only': Only allow multiple images, single video posts
    */
   mediaCombineType: 'no-restriction' | 'images-only'
+
+  /** Optional aspect ratio constraints for images
+   * - minRatio: Minimum width/height ratio allowed
+   * - maxRatio: Maximum width/height ratio allowed
+   */
+  imageAspectRatio?: {
+    minRatio: number // width/height
+    maxRatio: number // width/height
+  }
 }
 
 /**
@@ -137,6 +146,10 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
       limit: 10,
     },
     mediaCombineType: 'images-only',
+    imageAspectRatio: {
+      minRatio: 4 / 5, // 0.8
+      maxRatio: 1.91 / 1, // 1.91
+    },
   },
   linkedin: {
     allowedPostTypes: ['post', 'reel', 'thread'],
@@ -152,5 +165,9 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
       limit: 10,
     },
     mediaCombineType: 'images-only',
+    imageAspectRatio: {
+      minRatio: 1 / 3, // 0.33
+      maxRatio: 2.5 / 1, // 2.5
+    },
   },
 }

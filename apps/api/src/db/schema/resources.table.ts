@@ -19,6 +19,8 @@ export const resourcesTable = pgTable('resources', {
    *  if set, the resource will be deleted at this time
    */
   cleanupAt: timestamp('cleanup_at', { mode: 'string', withTimezone: true }),
+
+  caption: text('caption'),
   ...timestampCols(),
 })
 

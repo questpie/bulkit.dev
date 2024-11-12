@@ -1,6 +1,7 @@
-import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
 import { envApi } from '@bulkit/api/envApi'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { injectStockImageService } from '@bulkit/api/modules/resources/stock-image/stock-image.service'
+import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
 import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import Elysia, { t } from 'elysia'
 
@@ -14,6 +15,7 @@ export const appRoutes = new Elysia({
     detail: { description: 'Health check' },
   })
   .use(protectedMiddleware)
+  .use(injectStockImageService)
   .get(
     '/settings',
     async (ctx) => {
@@ -28,6 +30,7 @@ export const appRoutes = new Elysia({
 
       return {
         platforms,
+        stockImageProviders: ctx.stockImageService.getAvailableProviders(),
       }
     },
     {
