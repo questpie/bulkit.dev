@@ -8,7 +8,10 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
-import type { OAuth2Provider } from '@bulkit/api/modules/channels/abstract/oauth2/oauth2.provider'
+import type {
+  OAuth2Provider,
+  Tokens,
+} from '@bulkit/api/modules/channels/abstract/oauth2/oauth2.provider'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
@@ -23,7 +26,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
 
   protected readonly apiKeyService: ApiKeyManager
 
-  constructor(private readonly oAuth2Provider: OAuth2Provider) {
+  constructor(protected readonly oAuth2Provider: OAuth2Provider) {
     super()
     const container = iocResolve(ioc.use(injectApiKeyManager))
     this.apiKeyService = container.apiKeyManager
@@ -153,7 +156,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
     cookie: Record<string, Cookie<string | undefined>>,
     organizationId: string,
     platform: Platform
-  ) {
+  ): Promise<Tokens> {
     let codeVerifier: string | undefined
     if (this.oAuth2Provider.isPKCE) {
       codeVerifier = cookie[this.getCodeVerifierCookieName(platform, organizationId)]!.value
