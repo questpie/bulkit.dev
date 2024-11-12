@@ -29,6 +29,12 @@ type PlatformSettings = {
     /** Maximum number of posts in a thread. */
     limit: number
   }
+
+  /** Media combination rules for multi-media posts.
+   * - 'no-restriction': Allow mixing different media types (images, videos, etc)
+   * - 'images-only': Only allow multiple images, single video posts
+   */
+  mediaCombineType: 'no-restriction' | 'images-only'
 }
 
 /**
@@ -59,6 +65,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     postLimit: 50,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
     threadSettings: { handlingStrategy: 'separate', limit: 25 },
+    mediaCombineType: 'no-restriction',
   },
   facebook: {
     allowedPostTypes: ['post', 'thread', 'reel', 'story'],
@@ -78,6 +85,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
       handlingStrategy: 'concat',
       limit: 50,
     },
+    mediaCombineType: 'images-only',
   },
   tiktok: {
     allowedPostTypes: ['post', 'reel'],
@@ -94,6 +102,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     mediaMaxSizeInBytes: 287 * 1024 * 1024, // 287 MB
     postLimit: 50,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
+    mediaCombineType: 'no-restriction',
   },
   youtube: {
     allowedPostTypes: ['post', 'reel'],
@@ -104,6 +113,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
     mediaMaxSizeInBytes: 256 * 1024 * 1024 * 1024, // 256 GB
     postLimit: 100,
     postLimitWindowInSeconds: 24 * 60 * 60, // 24 hours
+    mediaCombineType: 'no-restriction',
   },
   instagram: {
     allowedPostTypes: ['post', 'reel', 'story', 'thread'],
@@ -126,6 +136,7 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
       handlingStrategy: 'concat',
       limit: 10,
     },
+    mediaCombineType: 'images-only',
   },
   linkedin: {
     allowedPostTypes: ['post', 'reel', 'thread'],
@@ -140,5 +151,6 @@ export const DEFAULT_PLATFORM_SETTINGS: Record<Platform, PlatformSettings> = {
       handlingStrategy: 'concat',
       limit: 10,
     },
+    mediaCombineType: 'images-only',
   },
 }

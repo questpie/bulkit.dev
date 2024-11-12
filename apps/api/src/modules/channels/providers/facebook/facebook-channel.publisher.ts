@@ -129,10 +129,8 @@ export class FacebookChannelPublisher extends ChannelPublisher {
       const params = new URLSearchParams({
         message: mergedText,
         access_token: accessToken,
+        attached_media: JSON.stringify(mediaIds.map((mediaId) => ({ media_fbid: mediaId }))),
       })
-      for (const mediaId of mediaIds) {
-        params.append('attached_media', JSON.stringify({ media_fbid: mediaId }))
-      }
 
       const response = await fetch(`${this.baseUrl}/${pageId}/feed?${params}`, {
         method: 'POST',
@@ -207,10 +205,8 @@ export class FacebookChannelPublisher extends ChannelPublisher {
       const params = new URLSearchParams({
         message: post.text,
         access_token: accessToken,
+        attached_media: JSON.stringify(mediaIds.map((mediaId) => ({ media_fbid: mediaId }))),
       })
-      for (const mediaId of mediaIds) {
-        params.append('attached_media', JSON.stringify({ media_fbid: mediaId }))
-      }
 
       const response = await fetch(`${this.baseUrl}/${pageId}/feed?${params}`, {
         method: 'POST',

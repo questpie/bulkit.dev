@@ -53,8 +53,15 @@ class InstagramChannelAuthenticator extends OAuth2Authenticator {
    * TODO: check if all permissions needed for publishing are granted
    */
   async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
-    const { organizationId, redirectTo } = this.parseState(ctx.query.state!)
+    const { organizationId, redirectToOnSuccess, redirectToOnDeny } = this.parseState(
+      ctx.query.state!
+    )
     const platform = ctx.params.platform as Platform
+
+    // Handle denial case - Facebook/Instagram uses error=access_denied
+    if (ctx.query?.error === 'access_denied' && redirectToOnDeny) {
+      return ctx.redirect(`${decodeURI(redirectToOnDeny)}/?denied=true`, 302)
+    }
 
     const { accessToken: shortLivedToken } = await this.getTokens(
       ctx.query.code!,
@@ -101,9 +108,8 @@ class InstagramChannelAuthenticator extends OAuth2Authenticator {
       }
     }
 
-    if (redirectTo) {
-      // {{cId}} can also be encoded in the URL so we need to decode it
-      return ctx.redirect(decodeURI(redirectTo).replace('{{cId}}', channelId!), 302)
+    if (redirectToOnSuccess) {
+      return ctx.redirect(decodeURI(redirectToOnSuccess).replace('{{cId}}', channelId!), 302)
     }
 
     return { success: true }

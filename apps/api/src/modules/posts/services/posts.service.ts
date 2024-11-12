@@ -1,3 +1,4 @@
+import { coalesce } from '@bulkit/api/db/db-utils'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
@@ -25,18 +26,16 @@ import {
 } from '@bulkit/api/modules/resources/services/resources.service'
 import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
-import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import type {
   PostChannel,
   PostSchema,
   PostValidationErrorSchema,
   PostValidationResultSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
+import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import { dedupe } from '@bulkit/shared/types/data'
-import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, asc, eq, getTableColumns, inArray, isNotNull, or, sql } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
-import { coalesce } from '@bulkit/api/db/db-utils'
 
 export type Post = Static<typeof PostSchema>
 
@@ -865,18 +864,10 @@ export class PostsService {
     }
   ) {
     return db
-      .select({
-        id: postsTable.id,
-        status: postsTable.status,
-      })
-      .from(postsTable)
-      .where(
-        and(
-          eq(postsTable.id, opts.postId),
-          eq(postsTable.organizationId, opts.orgId),
-          isNotNull(postsTable.archivedAt)
-        )
-      )
+      .update(postsTable)
+      .set({ archivedAt: new Date().toISOString() })
+      .where(and(eq(postsTable.id, opts.postId), eq(postsTable.organizationId, opts.orgId)))
+      .returning()
       .then((res) => res[0])
   }
 
@@ -947,6 +938,25 @@ export class PostsService {
     const settings = DEFAULT_PLATFORM_SETTINGS[platform]
     const errors: Static<typeof PostValidationErrorSchema>[] = []
 
+    // Helper function to check if a MIME type is a video
+    const isVideoType = (mimeType: string) =>
+      mimeType.startsWith('video/') ||
+      mimeType === 'application/x-mpegURL' ||
+      mimeType === 'application/dash+xml'
+
+    // Helper function to validate media combination rules
+    const validateMediaCombination = (mediaItems: { resource: { type: string } }[]) => {
+      if (settings.mediaCombineType === 'images-only') {
+        const hasVideo = mediaItems.some((m) => isVideoType(m.resource.type))
+        if (hasVideo && mediaItems.length > 1) {
+          errors.push({
+            path: 'media',
+            message: 'When including video, only single media item is allowed',
+          })
+        }
+      }
+    }
+
     switch (post.type) {
       case 'post':
         if (post.text.length > settings.maxPostLength) {
@@ -979,6 +989,11 @@ export class PostsService {
           // if (media.resource.size > settings.mediaMaxSizeInBytes) {
           //   errors.push({ path: `media.${i}.resource.size`, message: `Media item exceeds ${settings.mediaMaxSizeInBytes} bytes limit` });
           // }
+        }
+
+        // Add media combination validation
+        if (post.media.length > 1) {
+          validateMediaCombination(post.media)
         }
         break
 
@@ -1061,9 +1076,14 @@ export class PostsService {
                   message: `Thread item requires at least ${settings.minMediaPerPost} media item(s)`,
                 })
               }
+
+              // Add media combination validation for each thread item
+              if (item.media.length > 1) {
+                validateMediaCombination(item.media)
+              }
             }
             break
-          case 'concat':
+          case 'concat': {
             if (totalTextLength > settings.maxPostLength) {
               errors.push({
                 path: 'items',
@@ -1081,7 +1101,14 @@ export class PostsService {
                 message: `Thread requires at least ${settings.minMediaPerPost} media item(s) in total`,
               })
             }
+
+            // Add media combination validation for all thread items combined
+            const allMedia = threadItems.flatMap((item) => item.media)
+            if (allMedia.length > 1) {
+              validateMediaCombination(allMedia)
+            }
             break
+          }
         }
         break
       }
@@ -1104,6 +1131,76 @@ export class PostsService {
     }
 
     return errors
+  }
+
+  async returnToDraft(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+    }
+  ): Promise<Post | null> {
+    const post = await this.getById(db, opts)
+
+    if (!post || post.status !== 'scheduled') {
+      return null
+    }
+
+    const updatedPost = await db
+      .update(postsTable)
+      .set({
+        status: 'draft',
+        scheduledAt: null,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(postsTable.id, opts.postId))
+      .returning()
+      .then((res) => res[0]!)
+
+    // Update all scheduled posts to draft
+    await db
+      .update(scheduledPostsTable)
+      .set({
+        status: 'draft',
+        scheduledAt: null,
+      })
+      .where(eq(scheduledPostsTable.postId, opts.postId))
+      .execute()
+
+    return {
+      ...post,
+      status: 'draft',
+      scheduledAt: null,
+    }
+  }
+
+  async rename(
+    db: TransactionLike,
+    opts: {
+      orgId: string
+      postId: string
+      name: string
+    }
+  ): Promise<Post | null> {
+    const post = await this.getById(db, opts)
+
+    if (!post) {
+      return null
+    }
+
+    await db
+      .update(postsTable)
+      .set({
+        name: opts.name,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(postsTable.id, opts.postId))
+      .then((r) => r[0]!)
+
+    return {
+      ...post,
+      name: opts.name,
+    }
   }
 }
 

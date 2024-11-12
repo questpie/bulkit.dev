@@ -18,11 +18,13 @@ class FacebookChannelAuthenticator extends OAuth2Authenticator {
         tokenEndpoint: 'https://graph.facebook.com/v20.0/oauth/access_token',
         scopes: [
           'pages_show_list',
+          'pages_manage_engagement',
           'pages_read_engagement',
           'pages_manage_posts',
-          'pages_manage_metadata',
-          'publish_video',
+          'pages_read_engagement',
+          //   'pages_read_user_engagement',
           'business_management',
+          'publish_video',
         ],
         isPKCE: true,
         userInfoEndpoint: 'https://graph.facebook.com/v20.0/me?fields=id,name,picture',
@@ -39,8 +41,15 @@ class FacebookChannelAuthenticator extends OAuth2Authenticator {
   }
 
   async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
-    const { organizationId, redirectTo } = this.parseState(ctx.query.state!)
+    const { organizationId, redirectToOnSuccess, redirectToOnDeny } = this.parseState(
+      ctx.query.state!
+    )
     const platform = ctx.params.platform as Platform
+
+    // Handle denial case - Facebook/Instagram uses error=access_denied
+    if (ctx.query?.error === 'access_denied' && redirectToOnDeny) {
+      return ctx.redirect(`${decodeURI(redirectToOnDeny)}/?denied=true`, 302)
+    }
 
     const { accessToken: shortLivedToken } = await this.getTokens(
       ctx.query.code!,
@@ -83,8 +92,8 @@ class FacebookChannelAuthenticator extends OAuth2Authenticator {
       }
     }
 
-    if (redirectTo) {
-      return ctx.redirect(decodeURI(redirectTo).replace('{{cId}}', channelId!), 302)
+    if (redirectToOnSuccess) {
+      return ctx.redirect(decodeURI(redirectToOnSuccess).replace('{{cId}}', channelId!), 302)
     }
 
     return { success: true }

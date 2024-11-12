@@ -1,6 +1,7 @@
 import { Button, type ButtonProps } from '@bulkit/ui/components/ui/button'
 import { cn } from '@bulkit/ui/lib'
-import type { PropsWithChildren, ReactNode } from 'react'
+import Link from 'next/link'
+import { Fragment, type PropsWithChildren, type ReactNode } from 'react'
 
 type HeaderProps = {
   beforeTitle?: ReactNode
@@ -30,17 +31,23 @@ export function Header(props: PropsWithChildren<HeaderProps>) {
 export function HeaderButton(
   props: Omit<ButtonProps, 'children'> & {
     icon: ReactNode
+    href?: string
     label?: string
   }
 ) {
+  const Wrapper = props.href ? Link : Fragment
+
   return (
     <Button
       {...props}
       size='default'
       className={cn('w-9 px-0 py-0 md:px-4 md:py-2 md:w-auto', props.className)}
+      asChild={!!props.href}
     >
-      {props.icon}
-      {props.label && <span className='hidden md:inline'>{props.label}</span>}
+      <Wrapper href={props.href as any}>
+        {props.icon}
+        {props.label && <span className='hidden md:inline'>{props.label}</span>}
+      </Wrapper>
     </Button>
   )
 }

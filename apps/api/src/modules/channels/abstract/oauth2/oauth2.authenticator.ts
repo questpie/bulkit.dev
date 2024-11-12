@@ -34,7 +34,10 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
 
   handleAuthRequest(ctx: InferContext<typeof channelAuthRoutes>): Promise<string> {
     return ctx.db.transaction(async (trx) => {
-      const state = this.buildState(ctx.organization!.id, ctx.query.redirectTo)
+      const state = this.buildState(ctx.organization!.id, {
+        redirectToOnSuccess: ctx.query.redirectToOnSuccess,
+        redirectToOnDeny: ctx.query.redirectToOnDeny,
+      })
       let codeVerifier: string | undefined
 
       if (this.oAuth2Provider.isPKCE) {
@@ -56,8 +59,15 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
    * There is no organizationId in ctx, it is in state here
    */
   async handleAuthCallback(ctx: InferContext<typeof channelAuthRoutes>): Promise<any> {
-    const { organizationId, redirectTo } = this.parseState(ctx.query.state!)
+    const { organizationId, redirectToOnSuccess, redirectToOnDeny } = this.parseState(
+      ctx.query.state!
+    )
     const platform = ctx.params.platform as Platform
+
+    // Handle denial case
+    if (ctx.query?.denied && redirectToOnDeny) {
+      return ctx.redirect(`${decodeURI(redirectToOnDeny)}/?denied=true`, 302)
+    }
 
     const { accessToken, refreshToken, accessTokenExpiresAt, idToken } = await this.getTokens(
       ctx.query.code!,
@@ -78,9 +88,11 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
       userInfo,
     })
 
-    if (redirectTo) {
-      // {{cId}} can also be encoded in the URL so we need to decode it
-      return ctx.redirect(decodeURI(redirectTo).replace('{{cId}}', entities.channel.id), 302)
+    if (redirectToOnSuccess) {
+      return ctx.redirect(
+        decodeURI(redirectToOnSuccess).replace('{{cId}}', entities.channel.id),
+        302
+      )
     }
 
     return { success: true }
@@ -210,14 +222,24 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
     return `code_verifier_${platform}_${organizationId}`
   }
 
-  protected buildState(organizationId: string, redirectTo?: string) {
-    return Buffer.from(JSON.stringify({ organizationId, redirectTo })).toString('base64')
+  protected buildState(
+    organizationId: string,
+    redirects: { redirectToOnSuccess?: string; redirectToOnDeny?: string }
+  ) {
+    return Buffer.from(
+      JSON.stringify({
+        organizationId,
+        redirectToOnSuccess: redirects.redirectToOnSuccess,
+        redirectToOnDeny: redirects.redirectToOnDeny,
+      })
+    ).toString('base64')
   }
 
   protected parseState(state: string) {
     return JSON.parse(Buffer.from(state, 'base64').toString()) as {
       organizationId: string
-      redirectTo?: string
+      redirectToOnSuccess?: string
+      redirectToOnDeny?: string
     }
   }
 

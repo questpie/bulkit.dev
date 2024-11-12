@@ -449,6 +449,58 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       },
     }
   )
+  .patch(
+    '/:id/return-to-draft',
+    async (ctx) => {
+      const post = await ctx.postService.returnToDraft(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+      })
+
+      if (!post) {
+        throw HttpError.NotFound('Post not found')
+      }
+
+      return post
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      response: {
+        200: PostSchema,
+        404: HttpErrorSchema(),
+      },
+    }
+  )
+  .patch(
+    '/:id/rename',
+    async (ctx) => {
+      const post = await ctx.postService.rename(ctx.db, {
+        orgId: ctx.organization!.id,
+        postId: ctx.params.id,
+        name: ctx.body.name,
+      })
+
+      if (!post) {
+        throw HttpError.NotFound('Post not found')
+      }
+
+      return post
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        name: t.String(),
+      }),
+      response: {
+        200: PostSchema,
+        404: HttpErrorSchema(),
+      },
+    }
+  )
 
 const POST_SORTABLE_COLUMNS: Record<PostSortableField, SQLWrapper> = {
   likes: coalesce(sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`, sql<number>`0`),

@@ -125,7 +125,7 @@ export function ResourceButtonUpload(
 
   return (
     <>
-      <input {...getInputProps()} type='button' />
+      <input {...getInputProps()} />
       <Button
         disabled={props.disabled}
         {...props.buttonProps}
