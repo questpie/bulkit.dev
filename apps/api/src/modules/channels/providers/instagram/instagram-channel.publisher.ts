@@ -328,11 +328,43 @@ export class InstagramChannelPublisher extends ChannelPublisher {
     }
   }
 
+  private async waitForMediaReady(
+    accessToken: string,
+    containerId: string,
+    instagramId: string,
+    maxAttempts = 10
+  ): Promise<void> {
+    const params = new URLSearchParams({
+      fields: 'status_code',
+      access_token: accessToken,
+    })
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const response = await fetch(`${this.baseUrl}/${containerId}?${params}`)
+      const data = await response.json()
+
+      if (data.status_code === 'FINISHED') {
+        return
+      }
+      if (data.status_code === 'ERROR') {
+        throw new Error('Media processing failed')
+      }
+
+      // Wait for 2 seconds before next attempt
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+    }
+
+    throw new Error('Media processing timeout')
+  }
+
   private async publishMedia(
     accessToken: string,
     containerId: string,
     instagramId: string
   ): Promise<string> {
+    // Wait for media to be ready before publishing
+    await this.waitForMediaReady(accessToken, containerId, instagramId)
+
     const params = new URLSearchParams({
       creation_id: containerId,
       access_token: accessToken,
