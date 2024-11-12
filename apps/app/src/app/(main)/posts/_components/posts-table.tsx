@@ -12,15 +12,24 @@ import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@bulkit/ui/components/ui/dialog'
+import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@bulkit/ui/components/ui/dropdown-menu'
+import { Input } from '@bulkit/ui/components/ui/input'
 import {
   ResponsiveConfirmDialog,
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
+import { toast } from '@bulkit/ui/components/ui/sonner'
 import {
   Table,
   TableBody,
@@ -33,18 +42,9 @@ import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { LuEye, LuMoreVertical, LuTrash, LuArchive } from 'react-icons/lu'
-import { PiChartBar, PiPencil } from 'react-icons/pi'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@bulkit/ui/components/ui/dialog'
-import { Input } from '@bulkit/ui/components/ui/input'
 import { useState } from 'react'
-import { toast } from '@bulkit/ui/components/ui/sonner'
+import { LuArchive, LuMoreVertical, LuTrash } from 'react-icons/lu'
+import { PiChartBar, PiPencil } from 'react-icons/pi'
 
 export type Post = RouteOutput<typeof apiClient.posts.index.get>['data'][number]
 
@@ -173,14 +173,14 @@ export function PostTableRow(props: PostTableRowProps) {
       <TableCell>
         <div className='flex justify-start items-center gap-2'>
           {props.post.status === 'draft' ? (
-            <Button variant='secondary' asChild>
+            <Button variant='secondary' className='flex-1 max-w-32' asChild>
               <Link href={`/posts/${props.post.id}`}>
                 <PiPencil className='h-4 w-4' />
                 Edit
               </Link>
             </Button>
           ) : (
-            <Button variant='secondary' asChild>
+            <Button variant='secondary' className='flex-1 max-w-32' asChild>
               <Link href={`/posts/${props.post.id}/results`}>
                 <PiChartBar className='h-4 w-4' />
                 Results

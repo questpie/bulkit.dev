@@ -37,6 +37,8 @@ export function HeaderButton(
 ) {
   const Wrapper = props.href ? Link : Fragment
 
+  const wrapperProps = props.href ? { href: props.href as any } : ({} as any)
+
   return (
     <Button
       {...props}
@@ -44,7 +46,7 @@ export function HeaderButton(
       className={cn('w-9 px-0 py-0 md:px-4 md:py-2 md:w-auto', props.className)}
       asChild={!!props.href}
     >
-      <Wrapper href={props.href as any}>
+      <Wrapper {...wrapperProps}>
         {props.icon}
         {props.label && <span className='hidden md:inline'>{props.label}</span>}
       </Wrapper>
