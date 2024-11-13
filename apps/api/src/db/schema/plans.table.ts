@@ -1,18 +1,9 @@
+import { organizationsTable } from '@bulkit/api/db/db.schema'
+import { primaryKeyCol, timestampCols } from '@bulkit/api/db/schema/_base.table'
+import { PLAN_STATUSES, SUBSCRIPTION_STATUSES } from '@bulkit/api/modules/plans/plans.constants'
+import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
 import { relations } from 'drizzle-orm'
 import { boolean, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
-import { primaryKeyCol, timestampCols } from '@bulkit/api/db/schema/_base.table'
-import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
-import { PLAN_STATUSES, SUBSCRIPTION_STATUSES } from '@bulkit/api/modules/plans/plans.constants'
-
-export const organizationsTable = pgTable('organizations', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-
-  // Optional - only for SaaS customers
-  externalCustomerId: text('external_customer_id'),
-
-  ...timestampCols(),
-})
 
 export const plansTable = pgTable('plans', {
   id: text('id').primaryKey(),
@@ -77,7 +68,7 @@ export const organizationRelations = relations(organizationsTable, ({ many }) =>
   subscriptions: many(subscriptionsTable),
 }))
 
-export const planRelations = relations(plansTable, ({ many }) => ({
+export const planRelations = relations(plansTable, ({ many, one }) => ({
   subscriptions: many(subscriptionsTable),
 }))
 

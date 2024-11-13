@@ -1,19 +1,36 @@
-import { envApi } from '@bulkit/api/envApi'
+import { type ApiKeyManager, injectApiKeyManager } from '@bulkit/api/common/api-key.manager'
+import type { TransactionLike } from '@bulkit/api/db/db.client'
+import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { PixabayProvider } from '@bulkit/api/modules/resources/stock-image/providers/pixabay.provider'
+import type { StockImageProvider } from '@bulkit/api/modules/resources/stock-image/types'
 import { HttpError } from 'elysia-http-error'
-import { PixabayProvider } from './providers/pixabay.provider'
-import type { StockImageProvider } from './types'
-import { iocRegister } from '@bulkit/api/ioc'
 
 export class StockImageService {
   private providers: Map<string, StockImageProvider> = new Map()
+  private initialized = false
 
-  constructor() {
-    if (envApi.PIXABAY_API_KEY) {
-      this.providers.set('pixabay', new PixabayProvider())
+  constructor(private readonly apiKeyManager: ApiKeyManager) {}
+
+  private async initializeProviders(db: TransactionLike) {
+    if (this.initialized) return
+
+    const providers = await db.query.stockImageProvidersTable.findMany()
+
+    for (const provider of providers) {
+      if (provider.id === 'pixabay') {
+        this.providers.set(
+          provider.id,
+          new PixabayProvider(this.apiKeyManager.decrypt(provider.apiKey))
+        )
+      }
     }
+
+    this.initialized = true
   }
 
-  async search(provider: string, query: string, perPage: number) {
+  async search(db: TransactionLike, provider: string, query: string, perPage: number) {
+    await this.initializeProviders(db)
+
     const service = this.providers.get(provider)
     if (!service) {
       throw HttpError.BadRequest(`Unsupported stock image provider: ${provider}`)
@@ -22,12 +39,13 @@ export class StockImageService {
     return service.search(query, perPage)
   }
 
-  getAvailableProviders() {
+  async getAvailableProviders(db: TransactionLike) {
+    await this.initializeProviders(db)
     return Array.from(this.providers.keys())
   }
 }
 
-export const injectStockImageService = iocRegister(
-  'stockImageService',
-  () => new StockImageService()
-)
+export const injectStockImageService = iocRegister('stockImageService', () => {
+  const container = iocResolve(ioc.use(injectApiKeyManager))
+  return new StockImageService(container.apiKeyManager)
+})

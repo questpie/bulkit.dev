@@ -1,4 +1,3 @@
-import { envApi } from '@bulkit/api/envApi'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { HttpError } from 'elysia-http-error'
 import type { StockImageProvider, StockImageSearchResult } from '../types'
@@ -6,11 +5,11 @@ import type { StockImageProvider, StockImageSearchResult } from '../types'
 const PIXABAY_BASE_URL = 'https://pixabay.com/api/'
 
 export class PixabayProvider implements StockImageProvider {
+  constructor(private readonly apiKey: string) {}
+
   async search(query: string, perPage: number): Promise<StockImageSearchResult[]> {
     const response = await fetch(
-      `${PIXABAY_BASE_URL}?q=${encodeURIComponent(query)}&key=${
-        envApi.PIXABAY_API_KEY
-      }&per_page=${perPage}&safesearch=true&image_type=photo`
+      `${PIXABAY_BASE_URL}?q=${encodeURIComponent(query)}&key=${this.apiKey}&per_page=${perPage}&safesearch=true&image_type=photo`
     )
 
     if (!response.ok) {

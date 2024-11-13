@@ -83,7 +83,7 @@ export const organizationsRelations = relations(organizationsTable, ({ many }) =
   resources: many(resourcesTable),
   channels: many(channelsTable),
   invites: many(organizationInvitesTable),
-  plans: many(subscriptionsTable),
+  subscriptions: many(subscriptionsTable),
 }))
 
 export const userOrganizationsRelations = relations(userOrganizationsTable, ({ one }) => ({
