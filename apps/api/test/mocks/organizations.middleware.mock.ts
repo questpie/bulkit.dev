@@ -1,5 +1,5 @@
+import { iocRegister } from '@bulkit/api/ioc'
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
-import { iocRegister } from '../../src/ioc'
 import Elysia from 'elysia'
 
 export const createMockOrganizationMiddleware = (mockOrg?: Partial<OrganizationWithRole>) => {
@@ -7,6 +7,9 @@ export const createMockOrganizationMiddleware = (mockOrg?: Partial<OrganizationW
     id: 'test-org-id',
     name: 'Test Organization',
     role: 'owner',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    externalCustomerId: 'test-external-customer-id',
     ...mockOrg,
   }
 

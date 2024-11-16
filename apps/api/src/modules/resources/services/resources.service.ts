@@ -1,20 +1,22 @@
-import cuid2 from '@paralleldrive/cuid2'
 import type { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
-import { drive } from '@bulkit/api/drive/drive'
-import { iocRegister } from '@bulkit/api/ioc'
+import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
+import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { extractPathExt } from '@bulkit/shared/utils/string'
+import cuid2 from '@paralleldrive/cuid2'
 import { and, desc, eq, inArray } from 'drizzle-orm'
 import type { Static } from 'elysia'
-import { Readable } from 'node:stream'
 import fetch from 'node-fetch'
+import { Readable } from 'node:stream'
 
 export type Resource = Static<typeof ResourceSchema>
 
 export class ResourcesService {
+  constructor(private readonly drive: Drive) {}
+
   async getAll(
     db: TransactionLike,
     opts: { organizationId: string; pagination: Static<typeof PaginationSchema> }
@@ -99,7 +101,7 @@ export class ResourcesService {
 
       if (!resource) return null
       if (!resource.isExternal && resource.location) {
-        await drive.use().delete(resource.location)
+        await this.drive.delete(resource.location)
       }
       return resource.id
     })
@@ -137,11 +139,13 @@ export class ResourcesService {
 
       await Promise.all(
         payload.map(async (item) => {
-          return drive
-            .use()
-            .putStream(item.fileName, Readable.fromWeb(item.content.stream() as any), {
+          return this.drive.putStream(
+            item.fileName,
+            Readable.fromWeb(item.content.stream() as any),
+            {
               contentType: item.content.type,
-            })
+            }
+          )
         })
       )
 
@@ -224,7 +228,7 @@ export class ResourcesService {
       }`
 
       // Upload to storage
-      await drive.use().put(fileName, Buffer.from(buffer), {
+      await this.drive.put(fileName, Buffer.from(buffer), {
         contentType,
       })
 
@@ -256,4 +260,7 @@ export class ResourcesService {
   }
 }
 
-export const injectResourcesService = iocRegister('resourcesService', () => new ResourcesService())
+export const injectResourcesService = iocRegister('resourcesService', () => {
+  const container = iocResolve(ioc.use(injectDrive))
+  return new ResourcesService(container.drive)
+})

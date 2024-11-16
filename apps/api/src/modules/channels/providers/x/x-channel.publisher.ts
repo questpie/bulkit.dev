@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -134,7 +133,7 @@ export class XChannelPublisher extends ChannelPublisher {
     let i = 0
     for (const resource of resources) {
       if (i > 3) break
-      const buffer = Buffer.from(await drive.use().getBytes(resource.location))
+      const buffer = Buffer.from(await this.drive.getBytes(resource.location))
       // client.loginWithOAuth2().
 
       const mediaId = await client.v1.uploadMedia(buffer, {

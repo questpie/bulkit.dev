@@ -2,8 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
-    // TODO: we have to do this to make drizzle work, but it's not ideal
+    "rootDir": ".",
     "paths": {
+      "@test/*": ["./test/*"],
       "@bulkit/api/*": ["./src/*"],
       "@bulkit/shared/*": ["../../packages/shared/src/*"],
       "@bulkit/translations/*": ["../../packages/translations/src/*"],
@@ -14,7 +15,23 @@
       "@bulkit/transactional/*": ["../../packages/transactional/src/*"],
       "@bulkit/seed/*": ["../../packages/seed/src/*"],
       "@bulkit/app/*": ["../../packages/app/src/*"]
-    }
+    },
+    "types": ["bun-types"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "include": ["./src/**/*", "../../packages/**/src/**/*", "./test/**/*"]
+  "include": ["src/**/*", "test/**/*"],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/translations" },
+    { "path": "../../packages/mail" },
+    { "path": "../../packages/jobs" },
+    { "path": "../../packages/redis" },
+    { "path": "../../packages/cache" },
+    { "path": "../../packages/transactional" },
+    { "path": "../../packages/seed" }
+  ]
 }

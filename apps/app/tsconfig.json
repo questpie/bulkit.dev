@@ -31,12 +31,16 @@
     }
   },
 
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../../packages/**/src/**/*"
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "references": [
+    { "path": "../api" },
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/translations" },
+    { "path": "../../packages/mail" },
+    { "path": "../../packages/jobs" },
+    { "path": "../../packages/redis" },
+    { "path": "../../packages/transactional" }
   ],
   "exclude": ["node_modules"]
 }

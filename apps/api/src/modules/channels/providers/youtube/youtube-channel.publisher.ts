@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -23,7 +22,7 @@ export class YoutubeChannelPublisher extends ChannelPublisher {
     }
 
     try {
-      const fileStream = await drive.use().getStream(post.resource.location)
+      const fileStream = await this.drive.getStream(post.resource.location)
 
       const res = await client.videos.insert({
         part: ['snippet', 'status'],

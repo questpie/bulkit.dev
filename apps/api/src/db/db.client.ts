@@ -29,6 +29,11 @@ export function createDbClient(dbNameOverride?: string) {
         database: dbName,
         host: envApi.DB_HOST,
       },
+      logger: {
+        logQuery: (query, time) => {
+          appLogger.debug(`${query} - ${time}ms`)
+        },
+      },
     })
 
     return dbInstance
@@ -85,8 +90,24 @@ export function createTestDb() {
   }
 
   const clean = async () => {
-    const dbInstance = db.getDbInstance()
-    await dbInstance.execute(sql`DROP DATABASE IF EXISTS ${sql.identifier(testDbName)}`)
+    // Connect to 'postgres' database to perform administrative tasks
+    const adminDb = createDbClient('postgres').getDbInstance()
+
+    try {
+      // Terminate all connections to the test database
+      await adminDb.execute(sql`
+        SELECT pg_terminate_backend(pid)
+        FROM pg_stat_activity
+        WHERE datname = ${testDbName}
+        AND pid <> pg_backend_pid()
+      `)
+
+      // Now drop the database
+      await adminDb.execute(sql`DROP DATABASE IF EXISTS ${sql.identifier(testDbName)}`)
+    } catch (error) {
+      appLogger.error(`Failed to clean test database ${testDbName}:`, error)
+      throw error
+    }
   }
 
   return {

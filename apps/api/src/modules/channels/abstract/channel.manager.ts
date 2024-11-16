@@ -1,5 +1,6 @@
 import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
 import { postMetricsHistoryTable, type InsertPostMetricsHistory } from '@bulkit/api/db/db.schema'
+import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
 import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
@@ -28,7 +29,12 @@ export type PostMetrics = Omit<
   'id' | 'createdAt' | 'updatedAt' | 'scheduledPostId'
 >
 export abstract class ChannelPublisher {
-  constructor(private readonly authenticator: ChannelAuthenticator) {}
+  protected readonly drive: Drive
+
+  constructor(private readonly authenticator: ChannelAuthenticator) {
+    const container = iocResolve(ioc.use(injectDrive))
+    this.drive = container.drive
+  }
 
   async publishPost(channel: ChannelWithIntegration, post: Post): Promise<string> {
     let refreshedChannel = channel

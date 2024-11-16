@@ -1,6 +1,6 @@
 import { generalEnv } from '@bulkit/shared/env/general.env'
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent'
 
 interface ILoggerRaw {
   debug(...args: unknown[]): void
@@ -10,63 +10,76 @@ interface ILoggerRaw {
 }
 
 class ConsoleLogger implements ILoggerRaw {
-  constructor(readonly level: LogLevel) {}
-
-  private log(level: LogLevel, ...args: unknown[]): void {
-    if (this.shouldLog(level)) {
-      const timestamp = new Date().toISOString()
-      const prefix = `[${level.toUpperCase()}]`
-      // biome-ignore lint/suspicious/noConsoleLog: <explanation>
-      console.log(`${prefix} ${timestamp}`, ...args)
-    }
-  }
-
-  private shouldLog(level: LogLevel): boolean {
-    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error']
-    return levels.indexOf(level) >= levels.indexOf(this.level)
-  }
-
   public debug(...args: unknown[]): void {
-    this.log('debug', ...args)
+    const timestamp = new Date().toISOString()
+    console.debug(`[DEBUG] ${timestamp}`, ...args)
   }
 
   public info(...args: unknown[]): void {
-    this.log('info', ...args)
+    const timestamp = new Date().toISOString()
+    console.info(`[INFO] ${timestamp}`, ...args)
   }
 
   public warn(...args: unknown[]): void {
-    this.log('warn', ...args)
+    const timestamp = new Date().toISOString()
+    console.warn(`[WARN] ${timestamp}`, ...args)
   }
 
   public error(...args: unknown[]): void {
-    this.log('error', ...args)
+    const timestamp = new Date().toISOString()
+    console.error(`[ERROR] ${timestamp}`, ...args)
   }
 }
 
 export class Logger {
   private logger: ILoggerRaw
+  private level: LogLevel
 
-  constructor(logger: ILoggerRaw) {
+  constructor(logger: ILoggerRaw, level: LogLevel = 'debug') {
     this.logger = logger
+    this.level = level
+  }
+
+  private shouldLog(level: LogLevel): boolean {
+    if (this.level === 'silent') return false
+    const levels: LogLevel[] = ['debug', 'info', 'warn', 'error']
+    return levels.indexOf(level) >= levels.indexOf(this.level)
   }
 
   public debug(...args: unknown[]): void {
-    this.logger.debug(...args)
+    if (this.shouldLog('debug')) {
+      this.logger.debug(...args)
+    }
   }
 
   public info(...args: unknown[]): void {
-    this.logger.info(...args)
+    if (this.shouldLog('info')) {
+      this.logger.info(...args)
+    }
   }
 
   public warn(...args: unknown[]): void {
-    this.logger.warn(...args)
+    if (this.shouldLog('warn')) {
+      this.logger.warn(...args)
+    }
   }
 
   public error(...args: unknown[]): void {
-    this.logger.error(...args)
+    if (this.shouldLog('error')) {
+      this.logger.error(...args)
+    }
+  }
+
+  setLevel(level: LogLevel): void {
+    this.level = level
+  }
+
+  getLevel(): LogLevel {
+    return this.level
   }
 }
 
 export const appLogger = new Logger(
-  new ConsoleLogger(generalEnv.PUBLIC_NODE_ENV === 'production' ? 'info' : 'debug')
+  new ConsoleLogger(),
+  generalEnv.PUBLIC_NODE_ENV === 'production' ? 'info' : 'debug'
 )

@@ -1,52 +1,50 @@
-import type { Elysia } from 'elysia'
-import { createTestDb } from './test-db'
-import { appLogger } from '@bulkit/shared/utils/logger'
+import { createTestDb, type TransactionLike } from '@bulkit/api/db/db.client'
+import { organizationsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { injectDrive } from '@bulkit/api/drive/drive'
+import { api } from '@bulkit/api/index'
 import { ioc } from '@bulkit/api/ioc'
-import { injectMockAuth } from '../mocks/auth.middleware.mock'
-import { injectMockOrganization } from '../mocks/organizations.middleware.mock'
-import { injectMockJobFactory } from '../../src/jobs/job-factory.mock'
-import type { User } from 'lucia'
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
+import { RedisManager } from '@bulkit/redis/redis-manager'
+import { appLogger } from '@bulkit/shared/utils/logger'
+import { treaty } from '@elysiajs/eden'
+import { injectMockAuth } from '@test/mocks/auth.middleware.mock'
+import { injectMockOrganization } from '@test/mocks/organizations.middleware.mock'
+import type { User } from 'lucia'
 
-export type TestContext = {
-  app: Elysia
-  db: Awaited<ReturnType<typeof createTestDb>>
-  cleanup: () => Promise<void>
-  jobFactory: ReturnType<typeof injectMockJobFactory>
-}
+export type TestContext = Awaited<ReturnType<typeof setupTestApp>>
 
-type SetupTestAppOptions = {
+type SetupTestDependenciesOptions = {
   mockUser?: Partial<User>
   mockOrganization?: Partial<OrganizationWithRole>
 }
 
-export async function setupTestApp(options: SetupTestAppOptions = {}): Promise<TestContext> {
+export async function setupTestApp(options: SetupTestDependenciesOptions = {}) {
   // Disable logging during tests
-  appLogger.level = 'silent'
+  appLogger.setLevel('silent')
 
-  const db = await createTestDb()
+  // Create TEST DB
+  const db = createTestDb()
   await db.ensureDatabasePromise
 
-  // Setup mocks
-  const mockJobFactory = injectMockJobFactory()
-  const mockAuth = injectMockAuth(options.mockUser)
-  const mockOrg = injectMockOrganization(options.mockOrganization)
+  // Enable Redis mock
+  await RedisManager.enableMock()
 
-  // Reset IoC container
-  ioc.use(mockJobFactory).use(mockAuth).use(mockOrg)
+  // Setup IoC
+  ioc
+    .use(db.injectDatabase)
+    .use(injectDrive)
+    .use(injectMockAuth(options.mockUser))
+    .use(injectMockOrganization(options.mockOrganization))
 
-  // Import your app after DB is ready to avoid connection issues
-  const { createApp } = await import('../../src/app')
-  const app = await createApp()
-
+  const client = treaty(api)
   return {
-    app,
-    db,
-    jobFactory: mockJobFactory,
+    db: db.getDbInstance(),
     cleanup: async () => {
       await db.clean()
-      mockJobFactory.reset()
+      RedisManager.disableMock()
     },
+    client,
+    testUser: await createTestUser(db.getDbInstance()),
   }
 }
 
@@ -56,26 +54,32 @@ export function createAuthHeader(token = 'test-token') {
   }
 }
 
-export async function createTestUser(ctx: TestContext) {
-  const db = ctx.db.getDbInstance()
-
+export async function createTestUser(db: TransactionLike) {
   // Create test user in DB
-  const user = {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    name: 'Test User',
-  }
+  const user = await db
+    .insert(usersTable)
+    .values({
+      id: 'test-user-id',
+      email: 'test@example.com',
+      name: 'Test User',
+    })
+    .returning()
+    .then((r) => r[0]!)
 
   // Create test organization
-  const organization = {
-    id: 'test-org-id',
-    name: 'Test Organization',
-  }
+  const organization = await db
+    .insert(organizationsTable)
+    .values({
+      id: 'test-org-id',
+      name: 'Test Organization',
+    })
+    .returning()
+    .then((r) => r[0]!)
 
   // Return test data
   return {
-    ...user,
-    organizationId: organization.id,
     token: 'test-token',
+    user,
+    organization,
   }
 }

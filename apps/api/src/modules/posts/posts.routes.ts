@@ -254,7 +254,12 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       response: {
         400: HttpErrorSchema(t.Object({ errors: t.Optional(PostValidationResultSchema) })),
         404: HttpErrorSchema(),
-        200: PostSchema,
+        200: t.Composite([
+          PostSchema,
+          t.Object({
+            scheduledPosts: t.Array(t.Object({ scheduledPostId: t.String(), delay: t.Number() })),
+          }),
+        ]),
       },
     }
   )

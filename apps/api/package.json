@@ -12,7 +12,7 @@
     "prod": "bun run out/main.entry.js",
     "prod:api": "bun run out/server.entry.js",
     "prod:worker": "bun run out/worker.entry.js",
-    "test": "bun test",
+    "test": "bun test ./test/**/*.test.ts",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "test:integration": "bun test integration/**/*.test.ts",

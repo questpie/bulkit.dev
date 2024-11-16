@@ -28,27 +28,28 @@ import {
 import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
 import type {
+  Post,
   PostChannel,
   PostSchema,
   PostValidationErrorSchema,
   PostValidationResultSchema,
+  PostWithType,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
+import type { ScheduledPost } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { addSeconds, isBefore, max } from 'date-fns'
 import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
-export type Post = Static<typeof PostSchema>
-
 export class PostsService {
   constructor(private readonly resourcesService: ResourcesService) {}
 
-  async getById(
-    db: TransactionLike,
-    opts: { orgId?: string; postId: string }
-  ): Promise<Post | null> {
+  async getById<
+    PType extends PostType = PostType,
+    PReturn extends PostWithType<PType> = PostWithType<PType>,
+  >(db: TransactionLike, opts: { orgId?: string; postId: string }): Promise<PReturn | null> {
     const tmpPost = await db
       .select({
         id: postsTable.id,
@@ -119,7 +120,7 @@ export class PostsService {
             isExternal: reelPost.resources.isExternal,
             url: await getResourcePublicUrl(reelPost.resources),
           },
-        } satisfies Extract<Post, { type: 'reel' }>
+        } satisfies PostWithType<'reel'> as unknown as PReturn
       }
       case 'post': {
         const regularPosts = await db
@@ -159,7 +160,7 @@ export class PostsService {
               })
           ),
           text: regularPosts[0]!.regular_posts.text,
-        } satisfies Extract<Post, { type: 'post' }>
+        } satisfies PostWithType<'post'> as unknown as PReturn
       }
       case 'thread': {
         const threads = await db
@@ -182,7 +183,7 @@ export class PostsService {
 
           threadsOrderMap.get(thread.thread_posts.order)!.push(thread)
         }
-        const items: Extract<Post, { type: 'thread' }>['items'] = []
+        const items: PostWithType<'thread'>['items'] = []
 
         for (const [order, threads] of threadsOrderMap) {
           items.push({
@@ -215,7 +216,7 @@ export class PostsService {
           type: post.type,
 
           items,
-        } satisfies Extract<Post, { type: 'thread' }>
+        } satisfies PostWithType<'thread'> as unknown as PReturn
       }
       case 'story': {
         const storyPosts = await db
@@ -241,164 +242,172 @@ export class PostsService {
             isExternal: storyPosts.resource.isExternal,
             url: await getResourcePublicUrl(storyPosts.resource),
           },
-        } satisfies Extract<Post, { type: 'story' }>
+        } satisfies PostWithType<'story'> as unknown as PReturn
       }
     }
 
     return null
   }
 
-  async create(
+  async create<
+    PType extends PostType = PostType,
+    PReturn extends PostWithType<PType> = PostWithType<PType>,
+  >(
     db: TransactionLike,
     opts: {
       orgId: string
       name?: string
       type: PostType
     }
-  ): Promise<Post> {
-    const post = await db
-      .insert(postsTable)
-      .values({
-        organizationId: opts.orgId,
-        type: opts.type,
-        name: opts.name || generateNewPostName(opts.type),
-        status: 'draft',
-      })
-      .returning()
-      .then((res) => ({
-        ...res[0]!,
-        channels: [],
-        totalComments: 0,
-        totalImpressions: 0,
-        totalLikes: 0,
-        totalShares: 0,
-      }))
+  ): Promise<PReturn> {
+    return db.transaction(async (trx) => {
+      const post = await trx
+        .insert(postsTable)
+        .values({
+          organizationId: opts.orgId,
+          type: opts.type,
+          name: opts.name || generateNewPostName(opts.type),
+          status: 'draft',
+        })
+        .returning()
+        .then((res) => ({
+          ...res[0]!,
+          channels: [],
+          totalComments: 0,
+          totalImpressions: 0,
+          totalLikes: 0,
+          totalShares: 0,
+        }))
 
-    switch (opts.type) {
-      case 'reel': {
-        const reelPost = await db
-          .insert(reelPostsTable)
-          .values({
-            postId: post.id,
-            description: '',
-          })
-          .returning()
-          .then((res) => res[0]!)
+      switch (opts.type) {
+        case 'reel': {
+          const reelPost = await trx
+            .insert(reelPostsTable)
+            .values({
+              postId: post.id,
+              description: '',
+            })
+            .returning()
+            .then((res) => res[0]!)
 
-        return {
-          ...post,
-          type: post.type as 'reel',
+          return {
+            ...post,
+            type: post.type as 'reel',
 
-          description: reelPost.description,
-          resource: null,
-        } satisfies Extract<Post, { type: 'reel' }>
+            description: reelPost.description,
+            resource: null,
+          } satisfies PostWithType<'reel'> as unknown as PReturn
+        }
+        case 'post': {
+          const regularPost = await trx
+            .insert(regularPostsTable)
+            .values({
+              postId: post.id,
+              text: '',
+            })
+            .returning()
+            .then((res) => res[0]!)
+
+          return {
+            ...post,
+            type: post.type as 'post',
+            text: regularPost.text,
+            media: [],
+          } satisfies PostWithType<'post'> as unknown as PReturn
+        }
+
+        case 'thread': {
+          const threadPost = await trx
+            .insert(threadPostsTable)
+            .values({
+              postId: post.id,
+              text: '',
+              order: 1,
+            })
+            .returning()
+            .then((res) => res[0]!)
+
+          return {
+            ...post,
+            type: post.type as 'thread',
+
+            items: [{ order: 1, text: '', media: [], id: threadPost.id }],
+          } satisfies PostWithType<'thread'> as unknown as PReturn
+        }
+        case 'story': {
+          const storyPost = await trx
+            .insert(storyPostsTable)
+            .values({
+              postId: post.id,
+            })
+            .returning()
+            .then((res) => res[0]!)
+
+          return {
+            ...post,
+            type: post.type as 'story',
+
+            resource: null,
+          } satisfies PostWithType<'story'> as unknown as PReturn
+        }
+        default:
+          throw HttpError.Internal(`Unsupported post type: ${opts.type}`)
       }
-      case 'post': {
-        const regularPost = await db
-          .insert(regularPostsTable)
-          .values({
-            postId: post.id,
-            text: '',
-          })
-          .returning()
-          .then((res) => res[0]!)
-
-        return {
-          ...post,
-          type: post.type as 'post',
-
-          text: regularPost.text,
-          description: '',
-          media: [],
-        } as Extract<Post, { type: 'post' }>
-      }
-
-      case 'thread': {
-        const threadPost = await db
-          .insert(threadPostsTable)
-          .values({
-            postId: post.id,
-            text: '',
-            order: 1,
-          })
-          .returning()
-          .then((res) => res[0]!)
-
-        return {
-          ...post,
-          type: post.type as 'thread',
-
-          items: [{ order: 1, text: '', media: [], id: threadPost.id }],
-        } as Extract<Post, { type: 'thread' }>
-      }
-      case 'story': {
-        const storyPost = await db
-          .insert(storyPostsTable)
-          .values({
-            postId: post.id,
-          })
-          .returning()
-          .then((res) => res[0]!)
-
-        return {
-          ...post,
-          type: post.type as 'story',
-
-          resource: null,
-        } as Extract<Post, { type: 'story' }>
-      }
-      default:
-        throw HttpError.Internal(`Unsupported post type: ${opts.type}`)
-    }
+    })
   }
-  async update(
+  async update<
+    PType extends PostType = PostType,
+    PReturn extends PostWithType<PType> = PostWithType<PType>,
+  >(
     db: TransactionLike,
     opts: {
       orgId: string
-      post: Post
+      post: PostWithType<PType>
     }
-  ): Promise<Post | null> {
-    const existingPost = await this.getById(db, { orgId: opts.orgId, postId: opts.post.id })
+  ): Promise<PReturn | null> {
+    return db.transaction(async (trx) => {
+      const existingPost = await this.getById(trx, { orgId: opts.orgId, postId: opts.post.id })
 
-    if (!existingPost) {
-      return null
-    }
+      if (!existingPost) {
+        return null
+      }
 
-    // Increase post version
-    const updatedPost = await db
-      .update(postsTable)
-      .set({
-        updatedAt: new Date().toISOString(),
-        name: opts.post.name,
-        status: opts.post.status,
-        scheduledAt: opts.post.scheduledAt,
+      // Increase post version
+      const updatedPost = await trx
+        .update(postsTable)
+        .set({
+          updatedAt: new Date().toISOString(),
+          name: opts.post.name,
+          status: opts.post.status,
+          scheduledAt: opts.post.scheduledAt,
+        })
+        .where(eq(postsTable.id, opts.post.id))
+        .returning()
+        .then((res) => res[0]!)
+
+      // Update channels
+      await this.updatePostChannels(trx, {
+        orgId: opts.orgId,
+        postId: opts.post.id,
+        existingChannels: existingPost.channels,
+        newChannels: opts.post.channels,
       })
-      .where(eq(postsTable.id, opts.post.id))
-      .returning()
-      .then((res) => res[0]!)
+      opts.post.status = updatedPost.status
+      opts.post.name = updatedPost.name
 
-    // Update channels
-    await this.updatePostChannels(db, {
-      orgId: opts.orgId,
-      postId: opts.post.id,
-      existingChannels: existingPost.channels,
-      newChannels: opts.post.channels,
+      switch (opts.post.type) {
+        case 'reel':
+          return (await this.updateShortPost(trx, { ...opts } as any)) as PReturn
+        case 'post':
+          return (await this.updateRegularPost(trx, { ...opts } as any)) as PReturn
+        case 'thread':
+          return (await this.updateThreadPost(trx, { ...opts } as any)) as PReturn
+        case 'story':
+          return (await this.updateStoryPost(trx, { ...opts } as any)) as PReturn
+        default:
+          throw HttpError.Internal(`Unsupported post type: ${(opts.post as any).type}`)
+      }
     })
-    opts.post.status = updatedPost.status
-    opts.post.name = updatedPost.name
-
-    switch (opts.post.type) {
-      case 'reel':
-        return await this.updateShortPost(db, { ...opts } as any)
-      case 'post':
-        return await this.updateRegularPost(db, { ...opts } as any)
-      case 'thread':
-        return await this.updateThreadPost(db, { ...opts } as any)
-      case 'story':
-        return await this.updateStoryPost(db, { ...opts } as any)
-      default:
-        throw HttpError.Internal(`Unsupported post type: ${(opts.post as any).type}`)
-    }
   }
 
   private async getPostChannels(db: TransactionLike, postId: string): Promise<PostChannel[]> {
@@ -1224,7 +1233,7 @@ export class PostsService {
       orgId: string
       postId: string
     }
-  ): Promise<Post> {
+  ): Promise<Post & { scheduledPosts: { scheduledPostId: string; delay: number }[] }> {
     const container = iocResolve(ioc.use(injectPublishPostJob))
     const post = await this.getById(db, {
       orgId: opts.orgId,
@@ -1314,6 +1323,7 @@ export class PostsService {
     return {
       ...post,
       status: 'scheduled',
+      scheduledPosts,
     }
   }
 }
