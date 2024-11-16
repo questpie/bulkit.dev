@@ -10,7 +10,7 @@ import {
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
-import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { postMetricsRoutes } from '@bulkit/api/modules/posts/post-metrics.routes'
 import { scheduledPostsRoutes } from '@bulkit/api/modules/posts/scheduled-post.routes'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
@@ -39,6 +39,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .use(injectPostService)
   .use(injectChannelService)
   .use(organizationMiddleware)
+  .use(injectPublishPostJob)
   .get(
     '/',
     async (ctx) => {
@@ -302,7 +303,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
             /**
              * This will throw if scheduled job is not in queue, but we should not fail the request because of it
              */
-            await publishPostJob.remove(channel.scheduledPost.id).catch(() => null)
+            await ctx.jobPublishPost.remove(channel.scheduledPost.id).catch(() => null)
           }
         }
 

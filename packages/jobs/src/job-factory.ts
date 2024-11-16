@@ -5,7 +5,6 @@ import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
 import {
   FlowProducer,
   Queue,
-  UnrecoverableError,
   Worker,
   type BulkJobOptions,
   type ConnectionOptions,
@@ -254,4 +253,10 @@ export class JobFactory {
     queueName: child.job._queue.name,
     children: child.children?.map(this.mapChild),
   })
+
+  static async mock(options: JobFactoryOptions = {}) {
+    const IORedis = await import('ioredis-mock').then((m) => m.default)
+
+    return new JobFactory(new IORedis(), options)
+  }
 }

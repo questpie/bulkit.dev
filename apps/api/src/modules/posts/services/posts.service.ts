@@ -16,7 +16,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
-import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import {
   getResourcePublicUrl,
   isMediaTypeAllowed,
@@ -35,9 +35,9 @@ import type {
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import { dedupe } from '@bulkit/shared/types/data'
+import { addSeconds, isBefore, max } from 'date-fns'
 import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
-import { max, addSeconds, isBefore } from 'date-fns'
 import { HttpError } from 'elysia-http-error'
 
 export type Post = Static<typeof PostSchema>
@@ -1144,6 +1144,7 @@ export class PostsService {
     }
   ): Promise<Post | null> {
     const post = await this.getById(db, opts)
+    const container = iocResolve(ioc.use(injectPublishPostJob))
 
     if (!post || post.status !== 'scheduled') {
       return null
@@ -1177,7 +1178,7 @@ export class PostsService {
 
     await Promise.all(
       scheduledPostIds.map(
-        (id) => publishPostJob.remove(id).catch(() => null) // Ignore errors if job doesn't exist
+        (id) => container.jobPublishPost.remove(id).catch(() => null) // Ignore errors if job doesn't exist
       )
     )
 
@@ -1224,6 +1225,7 @@ export class PostsService {
       postId: string
     }
   ): Promise<Post> {
+    const container = iocResolve(ioc.use(injectPublishPostJob))
     const post = await this.getById(db, {
       orgId: opts.orgId,
       postId: opts.postId,
@@ -1295,7 +1297,7 @@ export class PostsService {
 
     // Schedule the jobs
     for (const { scheduledPostId, delay } of scheduledPosts) {
-      await publishPostJob.invoke(
+      await container.jobPublishPost.invoke(
         { scheduledPostId },
         {
           jobId: scheduledPostId,

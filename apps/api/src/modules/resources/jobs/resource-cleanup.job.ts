@@ -2,11 +2,11 @@ import { injectDatabase } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { drive } from '@bulkit/api/drive/drive'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, eq, isNotNull, lt } from 'drizzle-orm'
 
-export const resourceCleanupJob = jobFactory.createJob({
+export const injectResourceCleanupJob = iocJobRegister('resourceCleanup', {
   name: 'resource-cleanup',
   repeat: {
     pattern: '0 0 * * *', // Run every day at midnight,

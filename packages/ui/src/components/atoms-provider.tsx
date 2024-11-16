@@ -2,7 +2,6 @@ import type { WritableAtom } from 'jotai'
 import { ScopeProvider } from 'jotai-scope'
 import { useHydrateAtoms } from 'jotai/utils'
 import type { ReactNode } from 'react'
-import React from 'react'
 
 export function AtomsHydrator({
   atomValues,
