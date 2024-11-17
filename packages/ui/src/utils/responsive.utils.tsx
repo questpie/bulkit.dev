@@ -22,26 +22,38 @@ export function applyResponsiveProps<TProps extends ResponsiveProps<any, any>>(
   isDesktop: boolean,
   defaultProps?: ResponsiveDefaultProps<any, any>
 ) {
+  const { desktopProps, mobileProps, ...rest } = props
+  const {
+    desktopProps: defaultDesktopProps,
+    mobileProps: defaultMobileProps,
+    ...defaultRest
+  } = defaultProps ?? {}
   if (isDesktop) {
     return {
-      ...(defaultProps ?? {}),
-      ...props,
-      ...(defaultProps?.desktopProps ?? {}),
-      ...(props.desktopProps ?? {}),
+      ...defaultRest,
+      ...rest,
+      ...defaultDesktopProps,
+      ...rest,
       className: cn(
-        defaultProps?.className,
-        props.className,
-        (props.desktopProps as any)?.className
+        defaultRest.className,
+        rest.className,
+        defaultDesktopProps?.className,
+        desktopProps?.className
       ),
     }
   }
 
   return {
-    ...(defaultProps ?? {}),
-    ...props,
-    ...(defaultProps?.mobileProps ?? {}),
-    ...props.mobileProps,
-    className: cn(defaultProps?.className, props.className, (props.mobileProps as any)?.className),
+    ...defaultRest,
+    ...rest,
+    ...defaultMobileProps,
+    ...rest,
+    className: cn(
+      defaultRest.className,
+      rest.className,
+      defaultMobileProps?.className,
+      mobileProps?.className
+    ),
   }
 }
 

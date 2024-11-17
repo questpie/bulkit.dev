@@ -88,6 +88,7 @@ export function ChannelsTable(props: ChannelsTableProps) {
           id: 'stats',
           header: 'Posts',
           accessorKey: 'postsCount',
+          hideBelow: 'sm',
           cell: (row) => (
             <div className='flex  gap-2'>
               <Badge variant='secondary'>

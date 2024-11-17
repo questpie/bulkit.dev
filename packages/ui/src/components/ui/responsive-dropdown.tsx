@@ -11,7 +11,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  type DropdownMenuLabel,
+  DropdownMenuLabel,
   type DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@bulkit/ui/components/ui/dropdown-menu'
@@ -49,12 +49,7 @@ const ResponsiveDropdownMenu = createResponsiveComponent(
   'ResponsiveDropdownMenu',
   DropdownMenu,
   Drawer,
-  true,
-  {
-    mobileProps: {
-      snapPoints: [0.3, 0.5, 0.8],
-    },
-  }
+  true
 )
 
 const ResponsiveDropdownMenuTrigger = createResponsiveComponent(
@@ -67,12 +62,7 @@ const ResponsiveDropdownMenuContent = createResponsiveComponent(
   'ResponsiveDropdownMenuContent',
   DropdownMenuContent,
   DrawerContent,
-  false,
-  {
-    mobileProps: {
-      className: 'flex flex-col overflow-y-auto h-full',
-    },
-  }
+  false
 )
 
 const ResponsiveDropdownMenuHeader = createResponsiveComponent(
@@ -156,7 +146,7 @@ type LabelProps = ComponentProps<typeof DropdownMenuLabel> & {
   inset?: boolean
 }
 
-const ResponsiveDropdownMenuLabel = forwardRef<HTMLDivElement, LabelProps>((props, ref) => {
+const MobileDropdownMenuLabel = forwardRef<HTMLDivElement, LabelProps>((props, ref) => {
   const { className, inset, ...rest } = props
 
   return (
@@ -172,7 +162,18 @@ const ResponsiveDropdownMenuLabel = forwardRef<HTMLDivElement, LabelProps>((prop
     />
   )
 })
-ResponsiveDropdownMenuLabel.displayName = 'ResponsiveDropdownMenuLabel'
+
+MobileDropdownMenuLabel.displayName = 'MobileDropdownMenuLabel'
+
+const ResponsiveDropdownMenuLabel = createResponsiveComponent(
+  'ResponsiveDropdownMenuLabel',
+  DropdownMenuLabel,
+  MobileDropdownMenuLabel,
+  false,
+  {
+    className: 'px-2 py-1.5 text-sm font-semibold text-muted-foreground',
+  }
+)
 
 export {
   ResponsiveDropdownMenu,

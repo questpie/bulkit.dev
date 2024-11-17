@@ -6,11 +6,11 @@ import { Drawer as DrawerPrimitive } from 'vaul'
 import { cn } from '@bulkit/ui/lib'
 
 const Drawer = ({
-  shouldScaleBackground = true,
+  shouldScaleBackground = false,
   ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
-)
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) => {
+  return <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+}
 Drawer.displayName = 'Drawer'
 
 const DrawerTrigger = DrawerPrimitive.Trigger

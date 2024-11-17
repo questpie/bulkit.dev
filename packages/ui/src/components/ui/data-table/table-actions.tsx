@@ -3,8 +3,10 @@ import {
   ResponsiveDropdownMenu,
   ResponsiveDropdownMenuContent,
   ResponsiveDropdownMenuItem,
+  ResponsiveDropdownMenuLabel,
   ResponsiveDropdownMenuTrigger,
 } from '@bulkit/ui/components/ui/responsive-dropdown'
+import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { Fragment, useState } from 'react'
 import { LuMoreVertical } from 'react-icons/lu'
@@ -15,19 +17,20 @@ type TableActionsProps<T> = {
   row: T
 }
 
-type TableActionBase<T> = {
+type TableActionBase = {
   label: string
   icon?: React.ReactNode
   show?: boolean
+  disabled?: boolean
   variant?: ButtonProps['variant']
 }
 
-type TableActionWithHref<T> = TableActionBase<T> & {
+type TableActionWithHref = TableActionBase & {
   href: string
   onClick?: never
 }
 
-type TableActionWithClick<T> = TableActionBase<T> & {
+type TableActionWithClick<T> = TableActionBase & {
   href?: never
   /**
    * if requiredConfirm is not provided, the action will be executed immediately
@@ -42,7 +45,7 @@ type TableActionWithClick<T> = TableActionBase<T> & {
   }
 }
 
-type TableAction<T> = TableActionWithHref<T> | TableActionWithClick<T>
+type TableAction<T> = TableActionWithHref | TableActionWithClick<T>
 
 export type TableActions<T> = {
   primary?: TableAction<T>
@@ -54,6 +57,7 @@ export function ActionButton<T>({ action, row }: { action: TableAction<T>; row: 
     const href = action.href
     return (
       <Button
+        disabled={action.disabled}
         variant={action.variant}
         className='flex items-center px-2 sm:px-4 h-8 sm:h-9 gap-1 sm:gap-2 w-full justify-start text-xs sm:text-sm'
         asChild
@@ -73,10 +77,14 @@ export function ActionButton<T>({ action, row }: { action: TableAction<T>; row: 
         content={action.requireConfirm.content}
         confirmLabel={action.requireConfirm.confirmLabel ?? 'Confirm'}
         cancelLabel={action.requireConfirm.cancelLabel ?? 'Cancel'}
-        onConfirm={async () => (await action.onClick(row)) ?? true}
+        onConfirm={async () => {
+          await action.onClick(row)
+          return true
+        }}
       >
         <ResponsiveDialogTrigger asChild>
           <Button
+            disabled={action.disabled}
             variant={action.variant}
             className='flex items-center gap-1 sm:gap-2 w-full justify-start text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-4'
           >
@@ -90,6 +98,7 @@ export function ActionButton<T>({ action, row }: { action: TableAction<T>; row: 
 
   return (
     <Button
+      disabled={action.disabled}
       variant={action.variant}
       className='flex items-center gap-2 w-full justify-start h-8 sm:h-9 px-2 sm:px-4'
       onClick={() => action.onClick(row)}
@@ -101,14 +110,12 @@ export function ActionButton<T>({ action, row }: { action: TableAction<T>; row: 
 }
 
 export function TableActions<T>(props: TableActionsProps<T>) {
-  const visibleOptions = props.actions.options?.filter((action) => action.show) ?? []
+  const visibleOptions = props.actions.options?.filter((action) => action.show ?? true) ?? []
   if (!props.actions.primary && !visibleOptions.length) return null
 
   const [activeRequireConfirm, setActiveRequireConfirm] = useState<
     TableActionWithClick<T> | undefined
   >(undefined)
-
-  console.log('activeRequireConfirm', activeRequireConfirm)
 
   return (
     <>
@@ -126,7 +133,14 @@ export function TableActions<T>(props: TableActionsProps<T>) {
                 <span className='sr-only'>Open menu</span>
               </Button>
             </ResponsiveDropdownMenuTrigger>
-            <ResponsiveDropdownMenuContent align='end'>
+            <ResponsiveDropdownMenuContent
+              align='end'
+              mobileProps={{
+                className: 'flex flex-col flex-1 min-h-[300px] overflow-y-auto max-h-[80vh]',
+              }}
+            >
+              <ResponsiveDropdownMenuLabel>Actions</ResponsiveDropdownMenuLabel>
+
               {visibleOptions.map((action, index) => {
                 const Wrapper = action.href ? Link : Fragment
                 const wrapperProps = (action.href ? { href: action.href } : {}) as any
@@ -134,7 +148,12 @@ export function TableActions<T>(props: TableActionsProps<T>) {
                   // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                   <Wrapper {...wrapperProps} key={index}>
                     <ResponsiveDropdownMenuItem
-                      className={action.variant === 'destructive' ? 'text-destructive' : undefined}
+                      className={cn(
+                        action.variant === 'destructive' ? 'text-destructive' : undefined,
+                        action.disabled
+                          ? 'opacity-50 cursor-default pointer-events-none'
+                          : undefined
+                      )}
                       onClick={() => {
                         if ('requireConfirm' in action && action.requireConfirm) {
                           setActiveRequireConfirm(action as TableActionWithClick<T>)

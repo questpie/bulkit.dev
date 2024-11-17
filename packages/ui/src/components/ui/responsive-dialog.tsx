@@ -162,3 +162,5 @@ export function ResponsiveConfirmDialog(
     </ResponsiveDialog>
   )
 }
+
+export const ResponsiveConfirmDialogTrigger = ResponsiveDialogTrigger

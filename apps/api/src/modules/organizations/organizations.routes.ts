@@ -6,6 +6,7 @@ import {
   organizationInvitesTable,
   organizationsTable,
   selectOrganizationSchema,
+  superAdminsTable,
   userOrganizationsTable,
   usersTable,
 } from '@bulkit/api/db/db.schema'
@@ -14,12 +15,14 @@ import { injectMailClient } from '@bulkit/api/mail/mail.client'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { USER_ROLE } from '@bulkit/shared/constants/db.constants'
 import {
+  OrganizationListItemSchema,
   OrganizationMemberSchema,
   SendInvitationSchema,
 } from '@bulkit/shared/modules/organizations/organizations.schemas'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { PaginatedResponseSchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { OrganizationInviteMail } from '@bulkit/transactional/emails/organization-invite-mail'
-import { and, desc, eq, getTableColumns } from 'drizzle-orm'
+import { and, count, desc, eq, getTableColumns } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -70,54 +73,70 @@ export const organizationRoutes = new Elysia({
     async ({ auth, db, query }) => {
       const limit = Number(query.limit) || 10
       const cursor = query.cursor ? Number(query.cursor) : 0
-      const userOrganizations = await db
+
+      const aggregatedMembers = alias(userOrganizationsTable, 'aggMembers')
+      const userRole = alias(userOrganizationsTable, 'userRole')
+
+      const isAdmin = await db
+        .select()
+        .from(superAdminsTable)
+        .where(eq(superAdminsTable.userId, auth.user.id))
+        .then((res) => res.length > 0)
+      const baseQuery = db
         .select({
           ...getTableColumns(organizationsTable),
-          role: userOrganizationsTable.role,
-          membersCount: db.$count(userOrganizationsTable),
+          role: userRole.role,
+          membersCount: count(aggregatedMembers.id),
         })
-        .from(userOrganizationsTable)
-        .innerJoin(
-          organizationsTable,
-          eq(userOrganizationsTable.organizationId, organizationsTable.id)
+        .from(organizationsTable)
+        .leftJoin(
+          userRole,
+          and(eq(userRole.organizationId, organizationsTable.id), eq(userRole.userId, auth.user.id))
         )
-        .where(eq(userOrganizationsTable.userId, auth.user.id))
+        .leftJoin(aggregatedMembers, eq(aggregatedMembers.organizationId, organizationsTable.id))
+        .where(isAdmin ? undefined : eq(userRole.userId, auth.user.id))
+        .groupBy(organizationsTable.id, userRole.role)
         .orderBy(desc(organizationsTable.id))
         .offset(cursor)
         .limit(limit + 1)
 
-      const hasNextPage = userOrganizations.length > limit
-      const results = userOrganizations.slice(0, limit)
+      const organizations = await baseQuery
 
-      const nextCursor = hasNextPage ? cursor + limit : null
+      const hasNextPage = organizations.length > limit
+      const results = organizations.slice(0, limit)
 
       return {
         data: results.map(({ role, membersCount, ...rest }) => ({
           ...rest,
-          role,
+          role: role || 'admin', // Handle case where user is admin but not a member
           membersCount,
         })),
-        nextCursor,
+        nextCursor: hasNextPage ? cursor + limit : null,
       }
     },
     {
       query: PaginationSchema,
       response: {
-        200: t.Object({
-          data: t.Array(
-            t.Composite([
-              selectOrganizationSchema,
-              t.Object({ role: StringLiteralEnum(USER_ROLE), membersCount: t.Number() }),
-            ])
-          ),
-          nextCursor: t.Union([t.Number(), t.Null()]),
-        }),
+        200: PaginatedResponseSchema(
+          t.Composite([
+            OrganizationListItemSchema,
+            t.Object({
+              role: t.Union([StringLiteralEnum(USER_ROLE), t.Null()]),
+            }),
+          ])
+        ),
       },
     }
   )
   .get(
     '/:id',
     async ({ params, auth, db, error }) => {
+      const isAdmin = await db
+        .select()
+        .from(superAdminsTable)
+        .where(eq(superAdminsTable.userId, auth.user.id))
+        .then((res) => res.length > 0)
+
       const organization = await db
         .select()
         .from(organizationsTable)
@@ -126,7 +145,7 @@ export const organizationRoutes = new Elysia({
           userOrganizationsTable,
           and(
             eq(userOrganizationsTable.organizationId, organizationsTable.id),
-            eq(userOrganizationsTable.userId, auth.user.id)
+            isAdmin ? undefined : eq(userOrganizationsTable.userId, auth.user.id)
           )
         )
         .then((res) => res[0])
@@ -318,6 +337,7 @@ export const organizationRoutes = new Elysia({
           email: usersTable.email,
           name: usersTable.name,
           role: userOrganizationsTable.role,
+          createdAt: userOrganizationsTable.createdAt,
         })
         .from(userOrganizationsTable)
         .innerJoin(usersTable, eq(userOrganizationsTable.userId, usersTable.id))
@@ -329,21 +349,16 @@ export const organizationRoutes = new Elysia({
       const [members, total] = await Promise.all([membersQuery, ctx.db.$count(membersQuery)])
 
       const nextCursor =
-        members.length > ctx.query.limit ? ctx.query.cursor + ctx.query.limit : undefined
+        members.length > ctx.query.limit ? ctx.query.cursor + ctx.query.limit : null
       return {
         data: members.slice(0, ctx.query.limit),
         nextCursor,
-        total,
       }
     },
     {
       query: PaginationSchema,
       response: {
-        200: t.Object({
-          data: t.Array(OrganizationMemberSchema),
-          nextCursor: t.Optional(t.Number()),
-          total: t.Number(),
-        }),
+        200: PaginatedResponseSchema(OrganizationMemberSchema),
         403: HttpErrorSchema(),
       },
     }

@@ -1,7 +1,7 @@
 import { apiServer } from '@bulkit/app/api/api.server'
 import { PageDescription } from '@bulkit/app/app/(main)/admin/_components/page-description'
+import { OrganizationsTable } from '@bulkit/app/app/(main)/organizations/_components/organizations-table'
 import { getPagination } from '@bulkit/app/app/_utils/pagination'
-import { OrganizationsTable } from './_components/organizations-table'
 
 export default async function AdminOrganizationsPage(props: {
   searchParams: Promise<Record<string, any>>
@@ -22,7 +22,7 @@ export default async function AdminOrganizationsPage(props: {
       />
       {!!organizations.data?.data.length && (
         <div className='mt-6'>
-          <OrganizationsTable organizations={organizations.data.data} />
+          <OrganizationsTable initialOrganizations={organizations.data} />
         </div>
       )}
       {!organizations.data?.data.length && (
