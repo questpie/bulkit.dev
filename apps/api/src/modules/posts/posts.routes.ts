@@ -23,10 +23,15 @@ import {
 import {
   PostChannelSchema,
   PostDetailsSchema,
+  PostListItemSchema,
   PostSchema,
   PostValidationResultSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
-import { MaybeArraySchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import {
+  MaybeArraySchema,
+  PaginatedResponseSchema,
+  StringLiteralEnum,
+} from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { unwrapMaybeArray } from '@bulkit/shared/utils/misc'
 import { and, asc, desc, eq, inArray, isNull, sql, type SQLWrapper } from 'drizzle-orm'
@@ -154,17 +159,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           ),
         }),
       ]),
-      response: t.Object({
-        data: t.Array(
-          t.Composite([
-            t.Omit(PostDetailsSchema, ['channels']),
-            t.Object({
-              channels: t.Array(t.Pick(PostChannelSchema, ['id', 'name', 'platform', 'imageUrl'])),
-            }),
-          ])
-        ),
-        nextCursor: t.Nullable(t.Number()),
-      }),
+      response: { 200: PaginatedResponseSchema(PostListItemSchema) },
     }
   )
   .get(

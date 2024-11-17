@@ -1,6 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "dist",
     "paths": {
       "@bulkit/ui/*": ["./src/*"],
       "@bulkit/shared/*": ["../shared/src/*"]
@@ -11,5 +14,5 @@
       }
     ]
   },
-  "include": ["./src/**/*", "../**/src/**/*", "./next-env.d.ts"]
+  "include": ["src", "next-env.d.ts"]
 }

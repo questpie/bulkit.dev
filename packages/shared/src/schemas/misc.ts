@@ -68,3 +68,15 @@ export function parse<T extends TSchema>(schema: T, data: unknown): StaticDecode
     throw new Error(`Invalid data: ${(error as Error).message}`)
   }
 }
+
+export type PaginatedResponse<T> = {
+  data: T[]
+  nextCursor: number | null
+}
+
+export function PaginatedResponseSchema<T extends TSchema>(dataSchema: T) {
+  return Type.Object({
+    data: Type.Array(dataSchema),
+    nextCursor: Nullable(Type.Number()),
+  })
+}

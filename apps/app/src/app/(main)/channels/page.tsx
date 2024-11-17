@@ -1,51 +1,44 @@
 import { apiServer } from '@bulkit/app/api/api.server'
-import { Pagination } from '@bulkit/app/app/(main)/_components/pagination-buttons'
 import { ChannelsPageHeader } from '@bulkit/app/app/(main)/channels/_components/channels-header'
 import { ChannelsTable } from '@bulkit/app/app/(main)/channels/_components/channels-table'
+import { Button } from '@bulkit/ui/components/ui/button'
 import {
   CreateChannelDialog,
   CreateChannelDialogTrigger,
-} from '@bulkit/app/app/(main)/channels/_components/create-channel-dialog'
-import { getPagination } from '@bulkit/app/app/_utils/pagination'
-import { Button } from '@bulkit/ui/components/ui/button'
+} from './_components/create-channel-dialog'
 import { PiPlus } from 'react-icons/pi'
 
-export default async function ChannelsPage(props: { searchParams: Promise<Record<string, any>> }) {
-  const pagination = getPagination(await props.searchParams)
-  const channels = await apiServer.channels.index.get({
+export default async function ChannelsPage() {
+  const initialChannels = await apiServer.channels.index.get({
     query: {
-      limit: pagination.limit,
-      cursor: pagination.cursor,
+      limit: 25,
+      cursor: 0,
     },
   })
 
-  return (
-    <div className='flex flex-col gap-4'>
-      <ChannelsPageHeader />
-      {!!channels.data?.data?.length && (
-        <>
-          <ChannelsTable channels={channels.data?.data ?? []} />
-          <Pagination
-            canGoNext={!!channels.data?.nextCursor}
-            canGoPrev={pagination.page > 1}
-            className='justify-end px-4'
-          />
-        </>
-      )}
-
-      {channels.data?.data.length === 0 && (
+  if (!initialChannels.data?.data.length) {
+    return (
+      <div className='flex flex-col'>
+        <ChannelsPageHeader />
         <div className='text-center py-12'>
           <h2 className='text-2xl font-semibold mb-2'>No channels yet</h2>
-          <p className='text-muted-foreground mb-4'>Get started by your social media account.</p>
+          <p className='text-muted-foreground mb-4'>Get started by connecting your first channel</p>
           <CreateChannelDialog>
             <CreateChannelDialogTrigger asChild>
               <Button>
-                <PiPlus /> Create Channel
+                <PiPlus /> Connect Channel
               </Button>
             </CreateChannelDialogTrigger>
           </CreateChannelDialog>
         </div>
-      )}
+      </div>
+    )
+  }
+
+  return (
+    <div className='flex flex-col'>
+      <ChannelsPageHeader />
+      <ChannelsTable initialChannels={initialChannels.data} />
     </div>
   )
 }

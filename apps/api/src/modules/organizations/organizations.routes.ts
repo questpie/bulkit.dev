@@ -71,7 +71,11 @@ export const organizationRoutes = new Elysia({
       const limit = Number(query.limit) || 10
       const cursor = query.cursor ? Number(query.cursor) : 0
       const userOrganizations = await db
-        .select()
+        .select({
+          ...getTableColumns(organizationsTable),
+          role: userOrganizationsTable.role,
+          membersCount: db.$count(userOrganizationsTable),
+        })
         .from(userOrganizationsTable)
         .innerJoin(
           organizationsTable,
@@ -88,9 +92,10 @@ export const organizationRoutes = new Elysia({
       const nextCursor = hasNextPage ? cursor + limit : null
 
       return {
-        data: results.map(({ user_organizations, organizations }) => ({
-          ...organizations,
-          role: user_organizations.role,
+        data: results.map(({ role, membersCount, ...rest }) => ({
+          ...rest,
+          role,
+          membersCount,
         })),
         nextCursor,
       }
@@ -102,7 +107,7 @@ export const organizationRoutes = new Elysia({
           data: t.Array(
             t.Composite([
               selectOrganizationSchema,
-              t.Object({ role: StringLiteralEnum(USER_ROLE) }),
+              t.Object({ role: StringLiteralEnum(USER_ROLE), membersCount: t.Number() }),
             ])
           ),
           nextCursor: t.Union([t.Number(), t.Null()]),

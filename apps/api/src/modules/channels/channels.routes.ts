@@ -8,10 +8,11 @@ import { injectChannelService } from '@bulkit/api/modules/channels/services/chan
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PLATFORMS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
 import { getAllowedPlatformsFromPostType } from '@bulkit/shared/modules/admin/utils/platform-settings.utils'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { PaginatedResponseSchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { and, desc, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
+import { ChannelListItemSchema } from '@bulkit/shared/modules/channels/channels.schemas'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
   .use(channelAuthRoutes)
@@ -81,19 +82,7 @@ export const channelRoutes = new Elysia({ prefix: '/channels' })
         }),
       ]),
       response: {
-        200: t.Object({
-          data: t.Array(
-            t.Composite([
-              selectChannelSchema,
-              t.Object({
-                postsCount: t.Numeric(),
-                publishedPostsCount: t.Numeric(),
-                scheduledPostsCount: t.Numeric(),
-              }),
-            ])
-          ),
-          nextCursor: t.Nullable(t.Numeric()),
-        }),
+        200: PaginatedResponseSchema(ChannelListItemSchema),
       },
     }
   )

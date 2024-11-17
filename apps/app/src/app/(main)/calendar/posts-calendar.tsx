@@ -33,6 +33,10 @@ import { LuAlarmClockOff } from 'react-icons/lu'
 import { PiCaretLeft, PiCaretRight } from 'react-icons/pi'
 import { useBreakpoint } from '@bulkit/ui/hooks/use-breakpoint'
 import { Drawer, DrawerContent } from '@bulkit/ui/components/ui/drawer'
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+} from '@bulkit/ui/components/ui/responsive-dialog'
 
 export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>[] }) {
   const searchParams = useSearchParams()
@@ -219,21 +223,23 @@ export function PostsCalendar(props: { posts: Static<typeof ScheduledPostSchema>
         {postListContent}
       </div>
 
-      <div className='block lg:hidden'>
-        <Drawer
-          open={!!selectedDate}
-          onOpenChange={(newOpen) => {
-            if (!newOpen) setSelectedDate(null)
-          }}
-          dismissible
-        >
-          <DrawerContent className='h-[80%] lg:h-[320px]'>
-            <div className='flex-1 overflow-auto px-4 mt-6 py-4 flex flex-col gap-4'>
-              {postListContent}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </div>
+      {!isLg && (
+        <div className='block lg:hidden'>
+          <ResponsiveDialog
+            open={!!selectedDate}
+            onOpenChange={(newOpen) => {
+              if (!newOpen) setSelectedDate(null)
+            }}
+            dismissible
+          >
+            <ResponsiveDialogContent className='h-[80%] sm:h-[460px] lg:h-[620px]'>
+              <div className='flex-1 overflow-auto px-4 mt-6 py-4 flex flex-col gap-4'>
+                {postListContent}
+              </div>
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
+        </div>
+      )}
     </div>
   )
 }

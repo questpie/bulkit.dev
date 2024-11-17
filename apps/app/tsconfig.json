@@ -31,9 +31,8 @@
     }
   },
 
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "../api/src/**/*.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "references": [
-    { "path": "../api" },
     { "path": "../../packages/shared" },
     { "path": "../../packages/ui" },
     { "path": "../../packages/translations" },

@@ -17,9 +17,9 @@ export enum PostDetailTab {
 
 export const POST_STATUS_TO_COLOR: Record<PostStatus, string> = {
   published: 'text-primary',
-  draft: 'text-secondary',
+  draft: 'text-muted-foreground',
   scheduled: 'text-warning',
-  'partially-published': 'text-blue-500',
+  'partially-published': 'text-warning',
 }
 
 export const POST_STATUS_TO_BADGE_VARIANT: Record<PostStatus, BadgeProps['variant']> = {
@@ -27,4 +27,11 @@ export const POST_STATUS_TO_BADGE_VARIANT: Record<PostStatus, BadgeProps['varian
   scheduled: 'warning',
   'partially-published': 'warning',
   published: 'default',
+}
+
+export const POST_STATUS_NAME: Record<PostStatus, string> = {
+  draft: 'Draft',
+  scheduled: 'Scheduled',
+  'partially-published': 'Partially Published',
+  published: 'Published',
 }

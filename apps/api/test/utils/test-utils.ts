@@ -1,6 +1,5 @@
 import { createTestDb, type TransactionLike } from '@bulkit/api/db/db.client'
 import { organizationsTable, usersTable } from '@bulkit/api/db/db.schema'
-import { injectDrive } from '@bulkit/api/drive/drive'
 import { api } from '@bulkit/api/index'
 import { ioc } from '@bulkit/api/ioc'
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
@@ -8,6 +7,7 @@ import { RedisManager } from '@bulkit/redis/redis-manager'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { treaty } from '@elysiajs/eden'
 import { injectMockAuth } from '@test/mocks/auth.middleware.mock'
+import { injectMockDrive } from '@test/mocks/drive.mock'
 import { injectMockOrganization } from '@test/mocks/organizations.middleware.mock'
 import type { User } from 'lucia'
 
@@ -32,7 +32,7 @@ export async function setupTestApp(options: SetupTestDependenciesOptions = {}) {
   // Setup IoC
   ioc
     .use(db.injectDatabase)
-    .use(injectDrive)
+    .use(injectMockDrive)
     .use(injectMockAuth(options.mockUser))
     .use(injectMockOrganization(options.mockOrganization))
 
