@@ -5,8 +5,9 @@ import { aiTextProvidersTable } from '@bulkit/api/db/db.schema'
 import { adminMiddleware } from '@bulkit/api/modules/auth/admin/admin.middleware'
 import {
   AddAIProviderSchema,
+  AIProviderSchema,
   UpdateAIProviderSchema,
-} from '@bulkit/shared/modules/admin/schemas/ai-providers.scemas'
+} from '@bulkit/shared/src/modules/admin/schemas/ai-providers.schemas'
 import { eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
@@ -15,10 +16,26 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
   .use(adminMiddleware)
   .use(injectDatabase)
   .use(injectApiKeyManager)
-  .get('/', async ({ db }) => {
-    const providers = await db.query.aiTextProvidersTable.findMany()
-    return providers
-  })
+  .get(
+    '/',
+    async ({ db }) => {
+      const providers = await db.query.aiTextProvidersTable.findMany({
+        columns: {
+          id: true,
+          name: true,
+          model: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      return providers
+    },
+    {
+      response: {
+        200: t.Array(AIProviderSchema),
+      },
+    }
+  )
   .post(
     '/',
     async ({ db, body, apiKeyManager }) => {
@@ -31,13 +48,21 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
           model: body.model,
           apiKey: encryptedApiKey,
         })
-        .returning()
-        .execute()
-
-      return provider[0]
+        .returning({
+          id: aiTextProvidersTable.id,
+          name: aiTextProvidersTable.name,
+          model: aiTextProvidersTable.model,
+          createdAt: aiTextProvidersTable.createdAt,
+          updatedAt: aiTextProvidersTable.updatedAt,
+        })
+        .then((r) => r[0]!)
+      return provider
     },
     {
       body: AddAIProviderSchema,
+      response: {
+        200: AIProviderSchema,
+      },
     }
   )
   .put(
@@ -45,28 +70,49 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
     async ({ db, body, apiKeyManager }) => {
       if (!body.apiKey) {
         const [provider] = await db
-          .select()
+          .select({
+            id: aiTextProvidersTable.id,
+            name: aiTextProvidersTable.name,
+            model: aiTextProvidersTable.model,
+            createdAt: aiTextProvidersTable.createdAt,
+            updatedAt: aiTextProvidersTable.updatedAt,
+          })
           .from(aiTextProvidersTable)
           .where(eq(aiTextProvidersTable.id, body.id))
           .limit(1)
+
+        if (!provider) throw HttpError.NotFound('Provider not found')
+
         return provider
       }
 
       const encryptedApiKey = apiKeyManager.encrypt(body.apiKey)
 
-      const [provider] = await db
+      const provider = await db
         .update(aiTextProvidersTable)
         .set({
           apiKey: encryptedApiKey,
           model: body.model,
         })
         .where(eq(aiTextProvidersTable.id, body.id))
-        .returning()
+        .returning({
+          id: aiTextProvidersTable.id,
+          name: aiTextProvidersTable.name,
+          model: aiTextProvidersTable.model,
+          createdAt: aiTextProvidersTable.createdAt,
+          updatedAt: aiTextProvidersTable.updatedAt,
+        })
+        .then((r) => r[0])
 
+      if (!provider) throw HttpError.NotFound('Provider not found')
       return provider
     },
     {
       body: UpdateAIProviderSchema,
+      response: {
+        200: AIProviderSchema,
+        404: HttpErrorSchema(),
+      },
     }
   )
   .delete(

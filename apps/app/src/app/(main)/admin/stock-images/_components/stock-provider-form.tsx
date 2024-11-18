@@ -1,6 +1,14 @@
+'use client'
+import { apiClient } from '@bulkit/app/api/api.client'
+import { stockProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/stock-images/stock-providers.queries'
+import {
+  AddStockImageProviderSchema,
+  UpdateStockImageProviderSchema,
+  type AddStockImageProvider,
+  type UpdateStockImageProvider,
+} from '@bulkit/shared/modules/admin/schemas/stock-image-providers.schemas'
 import { STOCK_IMAGE_PROVIDER_TYPES } from '@bulkit/shared/modules/app/app-constants'
 import { Button } from '@bulkit/ui/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@bulkit/ui/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -11,55 +19,112 @@ import {
 } from '@bulkit/ui/components/ui/form'
 import { Input } from '@bulkit/ui/components/ui/input'
 import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@bulkit/ui/components/ui/responsive-dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from '@bulkit/ui/components/ui/sonner'
+import useControllableState from '@bulkit/ui/hooks/use-controllable-state'
+import { typeboxResolver } from '@hookform/resolvers/typebox'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { PropsWithChildren } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-
-const formSchema = z.object({
-  id: z.enum(STOCK_IMAGE_PROVIDER_TYPES),
-  apiKey: z.string().min(1),
-})
-
-type FormValues = z.infer<typeof formSchema>
 
 type StockProviderFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => Promise<void>
-  defaultValues?: Partial<FormValues>
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  defaultValues?: UpdateStockImageProvider | AddStockImageProvider
   mode?: 'add' | 'edit'
 }
 
 export function StockProviderForm({
-  open,
-  onOpenChange,
-  onSubmit,
   defaultValues,
   mode = 'add',
-}: StockProviderFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  ...props
+}: PropsWithChildren<StockProviderFormProps>) {
+  const [open, setOpen] = useControllableState({
+    defaultValue: props.open ?? false,
+    onChange: props.onOpenChange,
+    value: props.open,
+  })
+
+  const form = useForm<UpdateStockImageProvider | AddStockImageProvider>({
+    resolver: typeboxResolver(
+      mode === 'edit' ? UpdateStockImageProviderSchema : AddStockImageProviderSchema
+    ),
     defaultValues: defaultValues || {
       id: 'unsplash',
-      apiKey: '',
     },
   })
 
+  const queryClient = useQueryClient()
+
+  const editMutation = useMutation({
+    mutationFn: async (values: UpdateStockImageProvider) => {
+      const response = await apiClient.admin['stock-image-providers'].index.put({
+        ...values,
+        apiKey: values.apiKey || undefined,
+      })
+      if (response.error) throw new Error(response.error.value.message)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stockProvidersQueryOptions({}).queryKey })
+      setOpen(false)
+      toast.success('Provider updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update provider', {
+        description: error.message,
+      })
+    },
+  })
+
+  const addMutation = useMutation({
+    mutationFn: async (values: AddStockImageProvider) => {
+      const response = await apiClient.admin['stock-image-providers'].index.post(values)
+      if (response.error) throw new Error(response.error.value.message)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: stockProvidersQueryOptions({}).queryKey })
+      setOpen(false)
+      toast.success('Provider added successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to add provider', {
+        description: error.message,
+      })
+    },
+  })
+
+  const handleSubmit = form.handleSubmit((values) => {
+    if (mode === 'edit') editMutation.mutate(values as UpdateStockImageProvider)
+    else addMutation.mutate(values as AddStockImageProvider)
+  })
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === 'edit' ? 'Edit' : 'Add'} Stock Image Provider</DialogTitle>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={setOpen}>
+      {props.children}
+
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
+            {mode === 'edit' ? 'Edit' : 'Add'} Stock Image Provider
+          </ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={handleSubmit} className='space-y-4'>
             <FormField
               control={form.control}
               name='id'
@@ -117,7 +182,9 @@ export function StockProviderForm({
             </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }
+
+export const StockProviderFormTrigger = ResponsiveDialogTrigger

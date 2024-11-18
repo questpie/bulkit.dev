@@ -5,6 +5,7 @@ import { stockImageProvidersTable } from '@bulkit/api/db/db.schema'
 import { adminMiddleware } from '@bulkit/api/modules/auth/admin/admin.middleware'
 import {
   AddStockImageProviderSchema,
+  StockImageProviderSchema,
   UpdateStockImageProviderSchema,
 } from '@bulkit/shared/modules/admin/schemas/stock-image-providers.schemas'
 import type { StockImageProviderType } from '@bulkit/shared/modules/app/app-constants'
@@ -16,10 +17,24 @@ export const stockImageProvidersRoutes = new Elysia({ prefix: '/stock-image-prov
   .use(adminMiddleware)
   .use(injectDatabase)
   .use(injectApiKeyManager)
-  .get('/', async ({ db }) => {
-    const providers = await db.query.stockImageProvidersTable.findMany()
-    return providers
-  })
+  .get(
+    '/',
+    async ({ db }) => {
+      const providers = await db.query.stockImageProvidersTable.findMany({
+        columns: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      return providers
+    },
+    {
+      response: {
+        200: t.Array(StockImageProviderSchema),
+      },
+    }
+  )
   .post(
     '/',
     async ({ db, body, apiKeyManager }) => {
@@ -44,7 +59,11 @@ export const stockImageProvidersRoutes = new Elysia({ prefix: '/stock-image-prov
           id: body.id,
           apiKey: encryptedApiKey,
         })
-        .returning()
+        .returning({
+          id: stockImageProvidersTable.id,
+          createdAt: stockImageProvidersTable.createdAt,
+          updatedAt: stockImageProvidersTable.updatedAt,
+        })
         .then((r) => r[0]!)
 
       return provider
@@ -52,7 +71,7 @@ export const stockImageProvidersRoutes = new Elysia({ prefix: '/stock-image-prov
     {
       body: AddStockImageProviderSchema,
       response: {
-        200: AddStockImageProviderSchema,
+        200: StockImageProviderSchema,
         400: HttpErrorSchema(),
       },
     }
@@ -63,27 +82,45 @@ export const stockImageProvidersRoutes = new Elysia({ prefix: '/stock-image-prov
       if (!body.apiKey) {
         // If no new API key provided, just return the existing provider
         const [provider] = await db
-          .select()
+          .select({
+            id: stockImageProvidersTable.id,
+            createdAt: stockImageProvidersTable.createdAt,
+            updatedAt: stockImageProvidersTable.updatedAt,
+          })
           .from(stockImageProvidersTable)
           .where(eq(stockImageProvidersTable.id, body.id))
           .limit(1)
+
+        if (!provider) throw HttpError.NotFound('Provider not found')
+
         return provider
       }
 
       const encryptedApiKey = apiKeyManager.encrypt(body.apiKey)
 
-      const [provider] = await db
+      const provider = await db
         .update(stockImageProvidersTable)
         .set({
           apiKey: encryptedApiKey,
         })
         .where(eq(stockImageProvidersTable.id, body.id))
-        .returning()
+        .returning({
+          id: stockImageProvidersTable.id,
+          createdAt: stockImageProvidersTable.createdAt,
+          updatedAt: stockImageProvidersTable.updatedAt,
+        })
+        .then((r) => r[0]!)
+
+      if (!provider) throw HttpError.NotFound('Provider not found')
 
       return provider
     },
     {
       body: UpdateStockImageProviderSchema,
+      response: {
+        200: StockImageProviderSchema,
+        404: HttpErrorSchema(),
+      },
     }
   )
   .delete(

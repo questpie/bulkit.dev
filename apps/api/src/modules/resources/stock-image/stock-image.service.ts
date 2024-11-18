@@ -2,11 +2,11 @@ import { type ApiKeyManager, injectApiKeyManager } from '@bulkit/api/common/api-
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PixabayProvider } from '@bulkit/api/modules/resources/stock-image/providers/pixabay.provider'
-import type { StockImageProvider } from '@bulkit/api/modules/resources/stock-image/types'
+import type { StockImageProviderAdapter } from '@bulkit/api/modules/resources/stock-image/types'
 import { HttpError } from 'elysia-http-error'
 
 export class StockImageService {
-  private providers: Map<string, StockImageProvider> = new Map()
+  private providers: Map<string, StockImageProviderAdapter> = new Map()
   private initialized = false
 
   constructor(private readonly apiKeyManager: ApiKeyManager) {}

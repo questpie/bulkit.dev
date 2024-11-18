@@ -1,6 +1,15 @@
+'use client'
+
+import { apiClient } from '@bulkit/app/api/api.client'
+import { aiProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-providers/ai-providers.queries'
+import {
+  AddAIProviderSchema,
+  UpdateAIProviderSchema,
+  type AddAIProvider,
+  type UpdateAIProvider,
+} from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
 import { AI_TEXT_PROVIDER_TYPES } from '@bulkit/shared/modules/app/app-constants'
 import { Button } from '@bulkit/ui/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@bulkit/ui/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -11,57 +20,107 @@ import {
 } from '@bulkit/ui/components/ui/form'
 import { Input } from '@bulkit/ui/components/ui/input'
 import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
+} from '@bulkit/ui/components/ui/responsive-dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { toast } from '@bulkit/ui/components/ui/sonner'
+import useControllableState from '@bulkit/ui/hooks/use-controllable-state'
+import { typeboxResolver } from '@hookform/resolvers/typebox'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import type { PropsWithChildren } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-
-const formSchema = z.object({
-  name: z.enum(AI_TEXT_PROVIDER_TYPES),
-  model: z.string().min(1),
-  apiKey: z.string().min(1),
-})
-
-type FormValues = z.infer<typeof formSchema>
 
 type AIProviderFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (values: FormValues) => Promise<void>
-  defaultValues?: Partial<FormValues>
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  defaultValues?: Partial<AddAIProvider>
   mode?: 'add' | 'edit'
 }
 
-export function AIProviderForm({
-  open,
-  onOpenChange,
-  onSubmit,
-  defaultValues,
-  mode = 'add',
-}: AIProviderFormProps) {
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: defaultValues || {
+export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
+  const [open, setOpen] = useControllableState({
+    defaultValue: props.open ?? false,
+    onChange: props.onOpenChange,
+    value: props.open,
+  })
+
+  const form = useForm<UpdateAIProvider | AddAIProvider>({
+    resolver: typeboxResolver(props.mode === 'edit' ? UpdateAIProviderSchema : AddAIProviderSchema),
+    defaultValues: props.defaultValues || {
       name: 'anthropic',
       model: '',
-      apiKey: '',
     },
   })
 
+  const queryClient = useQueryClient()
+
+  const editMutation = useMutation({
+    mutationFn: async (values: UpdateAIProvider) => {
+      const response = await apiClient.admin['ai-providers'].index.put({
+        ...values,
+        apiKey: values.apiKey || undefined,
+      })
+      if (response.error) throw new Error(response.error.value.message)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: aiProvidersQueryOptions({}).queryKey })
+      setOpen(false)
+      toast.success('Provider updated successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to update provider', {
+        description: error.message,
+      })
+    },
+  })
+
+  const addMutation = useMutation({
+    mutationFn: async (values: AddAIProvider) => {
+      const response = await apiClient.admin['ai-providers'].index.post(values)
+      if (response.error) throw new Error(response.error.value.message)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: aiProvidersQueryOptions({}).queryKey })
+      setOpen(false)
+      toast.success('Provider added successfully')
+    },
+    onError: (error) => {
+      toast.error('Failed to add provider', {
+        description: error.message,
+      })
+    },
+  })
+
+  const handleSubmit = form.handleSubmit((values) => {
+    if (props.mode === 'edit') editMutation.mutate(values as UpdateAIProvider)
+    else addMutation.mutate(values as AddAIProvider)
+  })
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{mode === 'edit' ? 'Edit' : 'Add'} AI Provider</DialogTitle>
-        </DialogHeader>
+    <ResponsiveDialog open={open} onOpenChange={setOpen}>
+      {props.children}
+
+      <ResponsiveDialogContent>
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>
+            {props.mode === 'edit' ? 'Edit' : 'Add'} AI Provider
+          </ResponsiveDialogTitle>
+        </ResponsiveDialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={handleSubmit} className='space-y-4'>
             <FormField
               control={form.control}
               name='name'
@@ -71,7 +130,7 @@ export function AIProviderForm({
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    disabled={mode === 'edit'}
+                    disabled={props.mode === 'edit'}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -114,11 +173,11 @@ export function AIProviderForm({
                   <FormControl>
                     <Input
                       type='password'
-                      placeholder={mode === 'edit' ? 'Enter new API key' : 'Enter API key'}
+                      placeholder={props.mode === 'edit' ? 'Enter new API key' : 'Enter API key'}
                       {...field}
                     />
                   </FormControl>
-                  {mode === 'edit' && (
+                  {props.mode === 'edit' && (
                     <p className='text-xs text-muted-foreground'>
                       Leave empty to keep the current API key
                     </p>
@@ -129,11 +188,13 @@ export function AIProviderForm({
             />
 
             <Button type='submit' className='w-full'>
-              {mode === 'edit' ? 'Update' : 'Save'} Provider
+              {props.mode === 'edit' ? 'Update' : 'Save'} Provider
             </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   )
 }
+
+export const AIProviderFormTrigger = ResponsiveDialogTrigger

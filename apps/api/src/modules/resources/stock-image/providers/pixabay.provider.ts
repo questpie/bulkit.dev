@@ -1,10 +1,10 @@
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { HttpError } from 'elysia-http-error'
-import type { StockImageProvider, StockImageSearchResult } from '../types'
+import type { StockImageProviderAdapter, StockImageSearchResult } from '../types'
 
 const PIXABAY_BASE_URL = 'https://pixabay.com/api/'
 
-export class PixabayProvider implements StockImageProvider {
+export class PixabayProvider implements StockImageProviderAdapter {
   constructor(private readonly apiKey: string) {}
 
   async search(query: string, perPage: number): Promise<StockImageSearchResult[]> {
