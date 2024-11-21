@@ -1,9 +1,9 @@
 import { organizationsTable } from '@bulkit/api/db/db.schema'
 import { primaryKeyCol, timestampCols } from '@bulkit/api/db/schema/_base.table'
-import { PLAN_STATUSES, SUBSCRIPTION_STATUSES } from '@bulkit/api/modules/plans/plans.constants'
 import { PLATFORMS } from '@bulkit/shared/constants/db.constants'
+import { PLAN_STATUSES, SUBSCRIPTION_STATUSES } from '@bulkit/shared/modules/plans/plans.constants'
 import { relations } from 'drizzle-orm'
-import { boolean, integer, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 export const plansTable = pgTable('plans', {
   id: text('id').primaryKey(),
@@ -22,6 +22,16 @@ export const plansTable = pgTable('plans', {
   maxChannels: integer('max_channels').notNull(),
   allowedPlatforms: text({ enum: PLATFORMS }).array(),
   monthlyAICredits: integer('monthly_ai_credits').notNull(),
+
+  order: integer('order').notNull(),
+  priorityType: text('priority_type', { enum: ['default', 'best-value'] })
+    .notNull()
+    .default('default'),
+
+  // Add features array
+  features: jsonb('features').$type<string[]>().notNull().default([]),
+  // Add highlight features (shown prominently in pricing cards)
+  highlightFeatures: jsonb('highlight_features').$type<string[]>().notNull().default([]),
 
   ...timestampCols(),
 })

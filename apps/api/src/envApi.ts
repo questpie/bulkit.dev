@@ -44,7 +44,7 @@ export const envApi = createEnv({
     // this have no reason being specified on self-hosted
     LEMON_SQUEEZY_API_KEY: cloudEnv(Type.String()),
     LEMON_SQUEEZY_WEBHOOK_SECRET: cloudEnv(Type.String()),
-    LEMON_SQUEEZE_STORE_SLUG: cloudEnv(Type.String({ default: 'bulkit' })),
+    LEMON_SQUEEZY_STORE_SLUG: cloudEnv(StringInt({ default: '1' })),
 
     // TODO: support for local drive
     // storage
@@ -128,7 +128,7 @@ export const envApi = createEnv({
 
     LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
-    LEMON_SQUEEZE_STORE_SLUG: process.env.LEMON_SQUEEZE_STORE_SLUG,
+    LEMON_SQUEEZY_STORE_SLUG: process.env.LEMON_SQUEEZY_STORE_SLUG,
 
     DB_HOST: process.env.DB_HOST,
     DB_PORT: process.env.DB_PORT,

@@ -23,7 +23,11 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "../../packages/shared/src/modules/plans/plans.constants.ts"
+  ],
   "references": [
     { "path": "../../packages/shared" },
     { "path": "../../packages/translations" },

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "seed": "bun run src/seed.entry.ts",
     "dev": "bun run --bun --watch src/main.entry.ts",
     "dev:worker": "bun run --bun --watch src/worker.entry.ts",
     "dev:api": "bun run --bun --watch src/api.entry.ts",
@@ -33,6 +34,7 @@
     "@bulkit/jobs": "workspace:*",
     "@bulkit/mail": "workspace:*",
     "@bulkit/redis": "workspace:*",
+    "@bulkit/cache": "workspace:*",
     "@bulkit/seed": "workspace:*",
     "@bulkit/shared": "workspace:*",
     "@elysiajs/cors": "^1.1.1",

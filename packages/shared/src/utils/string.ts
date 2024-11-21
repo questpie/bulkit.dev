@@ -1,3 +1,5 @@
+import { roundTo } from '@bulkit/shared/utils/math'
+
 export function extractPathExt(path: string): string {
   const matches = path.match(/\.([^./\\]+)$/)
   return matches ? `.${matches[1]}` : ''
@@ -23,4 +25,10 @@ export function toCamelCase(str: string): string {
 
 export function toSnakeCase(str: string): string {
   return str.replace(/([A-Z])/g, '_$1').toLowerCase()
+}
+
+export function formatCurrency(cents: number, currency: string, locale?: string) {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
+    roundTo(cents / 100, 2)
+  )
 }

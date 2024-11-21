@@ -31,7 +31,14 @@
     }
   },
 
-  "include": ["next-env.d.ts", "../api/src/**/*.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "../api/src/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../packages/shared/src/modules/plans/plans.constants.ts"
+  ],
   "references": [
     { "path": "../../packages/shared" },
     { "path": "../../packages/ui" },

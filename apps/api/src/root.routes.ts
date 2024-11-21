@@ -5,6 +5,7 @@ import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
 import { channelRoutes } from '@bulkit/api/modules/channels/channels.routes'
 import { openGraphRoutes } from '@bulkit/api/modules/open-graph/open-graph.routes'
 import { organizationRoutes } from '@bulkit/api/modules/organizations/organizations.routes'
+import { planRoutes } from '@bulkit/api/modules/plans/plans.routes'
 import { postsRoutes } from '@bulkit/api/modules/posts/posts.routes'
 import { resourceRoutes } from '@bulkit/api/modules/resources/resources.routes'
 import { Elysia } from 'elysia'
@@ -22,3 +23,4 @@ export const rootRoutes = new Elysia()
   .use(resourceRoutes)
   .use(openGraphRoutes)
   .use(lemonSqueezyWebhookRoutes)
+  .use(planRoutes)

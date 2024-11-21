@@ -19,6 +19,8 @@ export const CreateOrganizationSchema = Type.Object({
 
 export function CreateOrganizationForm() {
   const auth = useAuthData()
+  const router = useRouter()
+
   const form = useForm<Static<typeof CreateOrganizationSchema>>({
     resolver: typeboxResolver(CreateOrganizationSchema),
     defaultValues: {
@@ -26,47 +28,43 @@ export function CreateOrganizationForm() {
     },
   })
 
-  const router = useRouter()
   const mutation = useMutation({
-    mutationFn: async (...args: Parameters<typeof apiClient.organizations.index.post>) => {
-      const resp = await apiClient.organizations.index.post(...args)
+    mutationFn: async (data: Static<typeof CreateOrganizationSchema>) => {
+      const resp = await apiClient.organizations.index.post(data)
       if (resp.error) {
         throw new Error(resp.error.value.message)
       }
-
       await setOrganization(resp.data.id)
-
       return resp.data
     },
     onSuccess: () => {
-      router.push('/')
+      router.push('/onboarding/plan')
     },
   })
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    return toast.promise(mutation.mutateAsync({ name: data.name }), {
+    return toast.promise(mutation.mutateAsync(data), {
       loading: 'Creating organization...',
-      success: 'Organization created!',
+      success: "Organization created! Let's select a plan.",
       error: 'Failed to create organization',
     })
   })
 
   return (
     <Form {...form}>
-      <form onSubmit={handleSubmit} className='flex flex-col gap-2'>
+      <form onSubmit={handleSubmit} className='space-y-6'>
         <FormField
           name='name'
-          render={({ field }) => {
-            return (
-              <FormItem className='flex flex-col'>
-                <FormLabel>Organization Name</FormLabel>
-                <Input {...field} placeholder='Organization Name' />
-                <FormMessage />
-              </FormItem>
-            )
-          }}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Organization Name</FormLabel>
+              <Input {...field} autoFocus />
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <Button type='submit' isLoading={form.formState.isSubmitting}>
+
+        <Button type='submit' className='w-full' isLoading={form.formState.isSubmitting}>
           Create Organization
         </Button>
       </form>

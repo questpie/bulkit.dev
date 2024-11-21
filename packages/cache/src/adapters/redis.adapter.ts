@@ -17,15 +17,19 @@ type RedisAdapterOptions = {
  */
 export class RedisAdapter implements CacheAdapter {
   private client: Redis
-  private readonly prefix: string = 'cache:'
 
-  constructor(options: RedisAdapterOptions) {
-    this.client = new Redis({
-      host: options.host,
-      port: options.port,
-      password: options.password,
-    })
-    this.prefix = options.prefix ?? 'cache:'
+  constructor(
+    optionsOrClient: RedisAdapterOptions | Redis,
+    private readonly prefix: string = 'cache:'
+  ) {
+    this.client =
+      optionsOrClient instanceof Redis
+        ? optionsOrClient
+        : new Redis({
+            host: optionsOrClient.host,
+            port: optionsOrClient.port,
+            password: optionsOrClient.password,
+          })
   }
 
   /**
