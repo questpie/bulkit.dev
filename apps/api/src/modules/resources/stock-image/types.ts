@@ -6,6 +6,6 @@ export interface StockImageSearchResult {
   author: string
 }
 
-export interface StockImageProvider {
+export interface StockImageProviderAdapter {
   search(query: string, perPage: number): Promise<StockImageSearchResult[]>
 }

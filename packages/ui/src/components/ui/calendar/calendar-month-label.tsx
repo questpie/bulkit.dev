@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { cn } from '@bulkit/ui/lib'
 import { useAtomValue } from 'jotai'
-import { currentDateAtom, monthOffsetAtom } from './calendar-atoms'
+import { currentDateAtom, monthOffsetAtom } from './calendar.atoms'
 import { format, addMonths } from 'date-fns'
 
 type CalendarMonthLabelProps = {

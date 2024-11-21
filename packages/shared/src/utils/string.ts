@@ -1,8 +1,34 @@
+import { roundTo } from '@bulkit/shared/utils/math'
+
 export function extractPathExt(path: string): string {
-  const ext = path.split('.').pop()
-  return ext ? `.${ext}` : ''
+  const matches = path.match(/\.([^./\\]+)$/)
+  return matches ? `.${matches[1]}` : ''
 }
 
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+export function toKebabCase(str: string): string {
+  return str
+    .replace(/([A-Z])/g, '-$1')
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function toCamelCase(str: string): string {
+  return str
+    .replace(/[-_\s]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''))
+    .replace(/^[A-Z]/, (c) => c.toLowerCase())
+}
+
+export function toSnakeCase(str: string): string {
+  return str.replace(/([A-Z])/g, '_$1').toLowerCase()
+}
+
+export function formatCurrency(cents: number, currency: string, locale?: string) {
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(
+    roundTo(cents / 100, 2)
+  )
 }

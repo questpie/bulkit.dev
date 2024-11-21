@@ -13,22 +13,47 @@ export type ResponsiveProps<
 
 const ResponsiveContext = createContext<boolean>(false)
 
+type ResponsiveDefaultProps<
+  TDesktopComponent extends React.ComponentType<any>,
+  TMobileComponent extends React.ComponentType<any>,
+> = ResponsiveProps<TDesktopComponent, TMobileComponent>
 export function applyResponsiveProps<TProps extends ResponsiveProps<any, any>>(
   props: TProps,
-  isDesktop: boolean
+  isDesktop: boolean,
+  defaultProps?: ResponsiveDefaultProps<any, any>
 ) {
+  const { desktopProps, mobileProps, ...rest } = props
+  const {
+    desktopProps: defaultDesktopProps,
+    mobileProps: defaultMobileProps,
+    ...defaultRest
+  } = defaultProps ?? {}
   if (isDesktop) {
     return {
-      ...props,
-      ...(props.desktopProps ?? {}),
-      className: cn(props.className, (props.desktopProps as any)?.className),
+      ...defaultRest,
+      ...rest,
+      ...defaultDesktopProps,
+      ...rest,
+      className: cn(
+        defaultRest.className,
+        rest.className,
+        defaultDesktopProps?.className,
+        desktopProps?.className
+      ),
     }
   }
 
   return {
-    ...props,
-    ...props.mobileProps,
-    className: cn(props.className, (props.mobileProps as any)?.className),
+    ...defaultRest,
+    ...rest,
+    ...defaultMobileProps,
+    ...rest,
+    className: cn(
+      defaultRest.className,
+      rest.className,
+      defaultMobileProps?.className,
+      mobileProps?.className
+    ),
   }
 }
 
@@ -43,7 +68,8 @@ export function createResponsiveComponent<
   name: string,
   DesktopComponent: TDesktopComponent = FallbackComponent as any,
   MobileComponent: TMobileComponent = FallbackComponent as any,
-  isProvider = false
+  isProvider = false,
+  defaultProps?: ResponsiveDefaultProps<TDesktopComponent, TMobileComponent>
 ) {
   const Component = (
     isProvider
@@ -53,9 +79,9 @@ export function createResponsiveComponent<
           return (
             <ResponsiveContext.Provider value={isDesktop}>
               {isDesktop ? (
-                <DesktopComponent {...applyResponsiveProps(props, isDesktop)} />
+                <DesktopComponent {...applyResponsiveProps(props, isDesktop, defaultProps)} />
               ) : (
-                <MobileComponent {...applyResponsiveProps(props, isDesktop)} />
+                <MobileComponent {...applyResponsiveProps(props, isDesktop, defaultProps)} />
               )}
             </ResponsiveContext.Provider>
           )
@@ -64,9 +90,9 @@ export function createResponsiveComponent<
           const isDesktop = useContext(ResponsiveContext)
 
           return isDesktop ? (
-            <DesktopComponent {...applyResponsiveProps(props, isDesktop)} />
+            <DesktopComponent {...applyResponsiveProps(props, isDesktop, defaultProps)} />
           ) : (
-            <MobileComponent {...applyResponsiveProps(props, isDesktop)} />
+            <MobileComponent {...applyResponsiveProps(props, isDesktop, defaultProps)} />
           )
         }
   ) as React.FC<ResponsiveProps<TDesktopComponent, TMobileComponent>>

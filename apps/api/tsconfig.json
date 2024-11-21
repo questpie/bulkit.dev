@@ -1,4 +1,41 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./src/**/*", "../../packages/**/src/**/*", "./test/**/*"]
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": ".",
+    "paths": {
+      "@test/*": ["./test/*"],
+      "@bulkit/api/*": ["./src/*"],
+      "@bulkit/shared/*": ["../../packages/shared/src/*"],
+      "@bulkit/translations/*": ["../../packages/translations/src/*"],
+      "@bulkit/mail/*": ["../../packages/mail/src/*"],
+      "@bulkit/jobs/*": ["../../packages/jobs/src/*"],
+      "@bulkit/redis/*": ["../../packages/redis/src/*"],
+      "@bulkit/cache/*": ["../../packages/cache/src/*"],
+      "@bulkit/transactional/*": ["../../packages/transactional/src/*"],
+      "@bulkit/seed/*": ["../../packages/seed/src/*"],
+      "@bulkit/app/*": ["../../packages/app/src/*"]
+    },
+    "types": ["bun-types"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*",
+    "test/**/*",
+    "../../packages/shared/src/modules/plans/plans.constants.ts"
+  ],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/translations" },
+    { "path": "../../packages/mail" },
+    { "path": "../../packages/jobs" },
+    { "path": "../../packages/redis" },
+    { "path": "../../packages/cache" },
+    { "path": "../../packages/transactional" },
+    { "path": "../../packages/seed" }
+  ]
 }

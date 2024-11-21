@@ -1,12 +1,12 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
-import { drive } from '@bulkit/api/drive/drive'
+import { injectDrive } from '@bulkit/api/drive/drive'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, eq, isNotNull, lt } from 'drizzle-orm'
 
-export const resourceCleanupJob = jobFactory.createJob({
+export const injectResourceCleanupJob = iocJobRegister('resourceCleanup', {
   name: 'resource-cleanup',
   repeat: {
     pattern: '0 0 * * *', // Run every day at midnight,
@@ -14,7 +14,7 @@ export const resourceCleanupJob = jobFactory.createJob({
     // every: 10000, // Run every 10 seconds for testing
   },
   handler: async (job) => {
-    const { db } = iocResolve(ioc.use(injectDatabase))
+    const { db, drive } = iocResolve(ioc.use(injectDatabase).use(injectDrive))
 
     appLogger.info('Fetching unused resources')
     job.log('Fetching unused resources')
@@ -49,7 +49,7 @@ export const resourceCleanupJob = jobFactory.createJob({
         await trx.delete(resourcesTable).where(eq(resourcesTable.id, resource.id))
 
         if (!resource.isExternal && resource.location) {
-          await drive.use().delete(resource.location)
+          await drive.delete(resource.location)
         }
       })
     }

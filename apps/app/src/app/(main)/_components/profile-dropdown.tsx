@@ -77,6 +77,15 @@ export function ProfileDropdown() {
           </Link>
         </DropdownMenuItem>
 
+        {authData.user.isAdmin && (
+          <DropdownMenuItem className='flex flex-row gap-2' asChild>
+            <Link href='/admin'>
+              <PiBuilding className='size-5' />
+              <span>Administration</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuItem
           onClick={() => logout.mutate()}
           disabled={logout.isPending}

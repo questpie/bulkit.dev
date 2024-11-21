@@ -1,9 +1,11 @@
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
-import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import { injectStockImageService } from '@bulkit/api/modules/resources/stock-image/stock-image.service'
-import { PLATFORMS, type Platform } from '@bulkit/shared/constants/db.constants'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
-import Elysia, { t } from 'elysia'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
+import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
+import type { Platform } from '@bulkit/shared/constants/db.constants'
+import Elysia from 'elysia'
+import { AppSettingsResponseSchema } from '@bulkit/shared/modules/app/app-schemas'
 
 export const appRoutes = new Elysia({
   prefix: '/app',
@@ -14,8 +16,9 @@ export const appRoutes = new Elysia({
   .get('/healthy', () => 'ok', {
     detail: { description: 'Health check' },
   })
-  .use(protectedMiddleware)
-  .use(injectStockImageService)
+  // .use(protectedMiddleware)
+  .use(injectAppSettingsService)
+  .use(injectDatabase)
   .get(
     '/settings',
     async (ctx) => {
@@ -28,16 +31,27 @@ export const appRoutes = new Elysia({
         x: envApi.X_ENABLED,
       }
 
+      let currency = 'USD'
+
+      if (envApi.DEPLOYMENT_TYPE === 'cloud') {
+        const lemonSqueezy = iocResolve(ioc.use(injectLemonSqueezy)).lemonSqueezy
+        currency = await lemonSqueezy
+          .getStore()
+          .then((s) => s.data?.attributes.currency)
+          .catch(() => 'USD')
+      }
+
+      console.log(currency)
+
       return {
         platforms,
-        stockImageProviders: ctx.stockImageService.getAvailableProviders(),
+        deploymentType: envApi.DEPLOYMENT_TYPE,
+        currency,
       }
     },
     {
       response: {
-        200: t.Object({
-          platforms: t.Record(StringLiteralEnum(PLATFORMS), t.Boolean()),
-        }),
+        200: AppSettingsResponseSchema,
       },
     }
   )

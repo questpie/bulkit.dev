@@ -33,10 +33,20 @@
 
   "include": [
     "next-env.d.ts",
+    "../api/src/**/*.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../../packages/**/src/**/*"
+    "../../packages/shared/src/modules/plans/plans.constants.ts"
+  ],
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../packages/ui" },
+    { "path": "../../packages/translations" },
+    { "path": "../../packages/mail" },
+    { "path": "../../packages/jobs" },
+    { "path": "../../packages/redis" },
+    { "path": "../../packages/transactional" }
   ],
   "exclude": ["node_modules"]
 }

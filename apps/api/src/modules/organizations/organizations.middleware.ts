@@ -30,17 +30,19 @@ export const organizationMiddleware = new Elysia({
       throw HttpError.Forbidden('Organization header is required')
     }
 
-    const isSuperAdmin = await authService.getSuperAdmin(db, auth.user.id)
+    const superAdmin = await authService.getSuperAdmin(db, auth.user.id)
 
     let organization = null
+
     if (organizationId) {
       organization = await organizationsService.getForUser(db, {
         organizationId,
         userId: auth.user.id,
+        isSuperAdmin: !!superAdmin,
       })
     }
 
-    if (organization && isSuperAdmin) {
+    if (organization && !!superAdmin) {
       organization = { ...organization, role: 'superAdmin' }
     }
 

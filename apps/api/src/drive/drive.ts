@@ -1,8 +1,15 @@
 import { envApi } from '@bulkit/api/envApi'
+import { iocRegister } from '@bulkit/api/ioc'
+import { appLogger } from '@bulkit/shared/utils/logger'
 import { DriveManager } from 'flydrive'
 import { S3Driver } from 'flydrive/drivers/s3'
 
-export const drive = new DriveManager({
+/**
+ * @description Drive manager
+ * To use the drive, inject it using `ioc.use(injectDrive)`
+ * Don't get the drive instance directly, use the injector
+ */
+export const driveManager = new DriveManager({
   /**
    * Name of the default service. It must be defined inside
    * the service object
@@ -42,7 +49,15 @@ export const drive = new DriveManager({
         region: envApi.S3_REGION,
         bucket: envApi.S3_BUCKET,
         visibility: 'public',
+
+        logger: appLogger,
       })
     },
   },
+})
+
+export type Drive = ReturnType<typeof driveManager.use>
+
+export const injectDrive = iocRegister('drive', () => {
+  return driveManager.use()
 })

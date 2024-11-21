@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -24,7 +23,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
       }
 
       // Step 1: Create container with REELS type
-      const videoUrl = await drive.use().getSignedUrl(post.resource.location)
+      const videoUrl = await this.drive.getSignedUrl(post.resource.location)
       const params = new URLSearchParams({
         media_type: 'REELS',
         video_url: videoUrl,
@@ -72,7 +71,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
       }
 
       // Step 1: Create container with STORIES type
-      const mediaUrl = await drive.use().getSignedUrl(post.resource.location)
+      const mediaUrl = await this.drive.getSignedUrl(post.resource.location)
       const isVideo = post.resource.type.startsWith('video/')
 
       const params = new URLSearchParams({
@@ -127,7 +126,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
       // Step 1: Create containers for each media item
       const mediaContainerIds = await Promise.all(
         allMedia.map(async (media) => {
-          const mediaUrl = await drive.use().getSignedUrl(media.resource.location)
+          const mediaUrl = await this.drive.getSignedUrl(media.resource.location)
           const isVideo = media.resource.type.startsWith('video/')
 
           const params = new URLSearchParams({
@@ -206,7 +205,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
 
       if (post.media.length === 1) {
         // Single media post
-        const mediaUrl = await drive.use().getSignedUrl(post.media[0]!.resource.location)
+        const mediaUrl = await this.drive.getSignedUrl(post.media[0]!.resource.location)
         const isVideo = post.media[0]!.resource.type.startsWith('video/')
 
         // Step 1: Create media container
@@ -255,7 +254,7 @@ export class InstagramChannelPublisher extends ChannelPublisher {
       // Step 1: Create containers for each media item
       const mediaContainerIds = await Promise.all(
         post.media.map(async (media) => {
-          const mediaUrl = await drive.use().getSignedUrl(media.resource.location)
+          const mediaUrl = await this.drive.getSignedUrl(media.resource.location)
           const isVideo = media.resource.type.startsWith('video/')
 
           const params = new URLSearchParams({

@@ -22,6 +22,7 @@ import {
   Drawer,
 } from '@bulkit/ui/components/ui/drawer'
 import { Input } from '@bulkit/ui/components/ui/input'
+import useControllableState from '@bulkit/ui/hooks/use-controllable-state'
 import { cn } from '@bulkit/ui/lib'
 import { createResponsiveComponent } from '@bulkit/ui/utils/responsive.utils'
 import React, { type ComponentProps, type PropsWithChildren } from 'react'
@@ -90,7 +91,11 @@ export function ResponsiveConfirmDialog(
   const [confirmText, setConfirmText] = React.useState('')
   const [isConfirmError, setIsConfirmError] = React.useState(false)
 
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = useControllableState({
+    value: props.open,
+    defaultValue: false,
+    onChange: props.onOpenChange,
+  })
   const [isClosing, setIsClosing] = React.useState(false)
 
   return (
@@ -157,3 +162,5 @@ export function ResponsiveConfirmDialog(
     </ResponsiveDialog>
   )
 }
+
+export const ResponsiveConfirmDialogTrigger = ResponsiveDialogTrigger

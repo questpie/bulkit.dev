@@ -46,6 +46,7 @@ export class OrganizationsService {
     opts: {
       organizationId: string
       userId: string
+      isSuperAdmin?: boolean
     }
   ) {
     return db
@@ -57,7 +58,7 @@ export class OrganizationsService {
       .where(
         and(
           eq(userOrganizationsTable.organizationId, opts.organizationId),
-          eq(userOrganizationsTable.userId, opts.userId)
+          opts.isSuperAdmin ? undefined : eq(userOrganizationsTable.userId, opts.userId)
         )
       )
       .innerJoin(

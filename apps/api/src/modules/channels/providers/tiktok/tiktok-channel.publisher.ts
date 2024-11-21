@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -23,7 +22,7 @@ export class TikTokChannelPublisher extends ChannelPublisher {
         throw new Error('A video resource is required for a TikTok video')
       }
 
-      const videoUrl = await drive.use().getSignedUrl(post.resource.location)
+      const videoUrl = await this.drive.getSignedUrl(post.resource.location)
 
       // Implementation will depend on TikTok's API specifics
       const response = await client.videos.upload({

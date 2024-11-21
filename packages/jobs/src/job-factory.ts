@@ -5,7 +5,6 @@ import type { Static, TAnySchema, TSchema } from '@sinclair/typebox'
 import {
   FlowProducer,
   Queue,
-  UnrecoverableError,
   Worker,
   type BulkJobOptions,
   type ConnectionOptions,

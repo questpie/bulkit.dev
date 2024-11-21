@@ -23,7 +23,7 @@ import {
   minDateAtom,
   monthOffsetAtom,
   selectedAtom,
-} from './calendar-atoms'
+} from './calendar.atoms'
 import { isDateDisabled, isDateSelected } from './calendar-utils'
 
 type CalendarDayClassNames = {

@@ -3,6 +3,7 @@ import {
   POST_STATUS,
   POST_TYPE,
   SCHEDULED_POST_STATUS,
+  type PostType,
 } from '@bulkit/shared/constants/db.constants'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { Nullable, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
@@ -132,3 +133,21 @@ export const PostValidationResultSchema = Type.Object({
   common: Type.Array(PostValidationErrorSchema),
   platforms: Type.Record(StringLiteralEnum(PLATFORMS), Type.Array(PostValidationErrorSchema)),
 })
+
+export const PostListItemSchema = Type.Composite([
+  Type.Omit(PostDetailsSchema, ['channels']),
+  Type.Object({
+    channels: Type.Array(Type.Pick(PostChannelSchema, ['id', 'name', 'platform', 'imageUrl'])),
+  }),
+])
+
+export type RegularPost = Static<typeof RegularPostSchema>
+export type ReelPost = Static<typeof ReelPostSchema>
+export type ThreadPost = Static<typeof ThreadPostSchema>
+export type StoryPost = Static<typeof StoryPostSchema>
+
+export type Post = Static<typeof PostSchema>
+export type PostDetails = Static<typeof PostDetailsSchema>
+export type PostWithType<T extends PostType> = Extract<Post, { type: T }>
+
+export type PostListItem = Static<typeof PostListItemSchema>

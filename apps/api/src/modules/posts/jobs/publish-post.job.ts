@@ -1,27 +1,30 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
-import { collectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
+import { injectCollectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { UnrecoverableError } from '@bulkit/jobs/job-factory'
-import { appLogger } from '@bulkit/shared/utils/logger'
 import { Type } from '@sinclair/typebox'
 import { and, count, eq, getTableColumns, isNotNull, or } from 'drizzle-orm'
 import ms from 'ms'
 
 // TODO: implement timeout mechanism maybe
-export const publishPostJob = jobFactory.createJob({
+export const injectPublishPostJob = iocJobRegister('publishPost', {
   name: 'publish-post',
   schema: Type.Object({
     scheduledPostId: Type.String(),
   }),
 
   handler: async (job) => {
-    const { postService, db, channelsService } = iocResolve(
-      ioc.use(injectDatabase).use(injectPostService).use(injectChannelService)
+    const { postService, db, channelsService, jobCollectMetrics } = iocResolve(
+      ioc
+        .use(injectDatabase)
+        .use(injectPostService)
+        .use(injectChannelService)
+        .use(injectCollectMetricsJob)
     )
     await job.log('Getting scheduled post')
 
@@ -105,7 +108,7 @@ export const publishPostJob = jobFactory.createJob({
     await job.log('Post publish transaction committed')
 
     await job.log('Invoking metrics collection job')
-    await collectMetricsJob.invoke(
+    await jobCollectMetrics.invoke(
       { scheduledPostId: scheduledPost.id },
       {
         delay: ms('1m'),

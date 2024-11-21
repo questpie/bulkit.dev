@@ -14,6 +14,13 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { LuImage, LuSparkles, LuUploadCloud } from 'react-icons/lu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@bulkit/ui/components/ui/select'
 
 type ResourceUploaderProps = {
   onUploaded?: (resources: Resource[]) => void
@@ -75,13 +82,25 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
   const [search, setSearch] = useState('nature landscape')
   const debouncedSearch = useDebouncedValue(search, 500)
 
+  const { data: providers = [] } = useQuery({
+    queryKey: ['admin', 'stock-providers'],
+    queryFn: async () => {
+      const response = await apiClient.admin['stock-image-providers'].index.get()
+      if (response.error) throw response.error
+      return response.data
+    },
+  })
+
+  const [activeProvider, setActiveProvider] = useState<string | undefined>(providers[0]?.id)
+
   const { data, isLoading } = useQuery({
-    queryKey: ['stock-images', debouncedSearch],
+    queryKey: ['stock-images', debouncedSearch, activeProvider],
     queryFn: async () => {
       const response = await apiClient.resources.stock.search.get({
         query: {
           query: debouncedSearch,
           per_page: 30,
+          provider: activeProvider,
         },
       })
 
@@ -91,17 +110,48 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
 
       return response.data
     },
-    enabled: search.length > 0,
+    enabled: search.length > 0 && !!activeProvider,
   })
+
+  if (providers.length === 0) {
+    return (
+      <div className='h-full flex flex-col items-center justify-center text-center p-4'>
+        <LuImage className='w-12 h-12 text-muted-foreground/40' />
+        <h3 className='mt-4 text-sm font-bold'>Stock images not configured</h3>
+        <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
+          Contact your administrator to configure stock image providers.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className='space-y-4 h-full flex flex-col'>
-      <Input
-        type='search'
-        value={search}
-        placeholder='Search stock images...'
-        onChange={(e) => setSearch(e.target.value)}
-      />
+      <div className='space-y-2'>
+        <Input
+          type='search'
+          value={search}
+          placeholder='Search stock images...'
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {providers.length > 1 && (
+          <Select value={activeProvider} onValueChange={setActiveProvider}>
+            <SelectTrigger className='h-7 text-xs'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {providers.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id} className='text-xs'>
+                  {provider.id}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {providers.length === 1 && (
+          <p className='text-[10px] text-primary'>Using {providers[0]!.id}</p>
+        )}
+      </div>
       <div className='overflow-y-auto flex-1'>
         <StockImageGrid images={data ?? []} onSelect={onSelect} isLoading={isLoading} />
       </div>
@@ -223,9 +273,17 @@ function ResourceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  // const appSettings = useSett()
-
   const [activeTab, setActiveTab] = useState<'upload' | 'stock' | 'ai'>('upload')
+
+  const { data: stockProviders = [] } = useQuery({
+    queryKey: ['admin', 'stock-providers'],
+    queryFn: async () => {
+      const response = await apiClient.admin['stock-image-providers'].index.get()
+      if (response.error) throw response.error
+      return response.data
+    },
+  })
+
   const stockSaveMutation = useMutation({
     mutationFn: async (image: StockImage) => {
       const response = await apiClient.resources.stock.save.post({
@@ -277,8 +335,9 @@ function ResourceDialog({
             <Card
               onClick={() => setActiveTab('stock')}
               className={cn(
-                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
+                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors relative',
                 activeTab === 'stock' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
+                // stockProviders.length === 0 && 'opacity-50 cursor-not-allowed hover:bg-transparent'
               )}
               asChild
             >

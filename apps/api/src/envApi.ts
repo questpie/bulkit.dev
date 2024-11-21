@@ -1,7 +1,12 @@
 import { createEnv } from '@bulkit/shared/env/create-env'
 import { generalEnv } from '@bulkit/shared/env/general.env'
-import { StringBoolean, StringInt } from '@bulkit/shared/schemas/misc'
-import { Type } from '@sinclair/typebox'
+import { DEPLOYMENT_TYPES, type DeploymentType } from '@bulkit/shared/modules/app/app-constants'
+import { StringBoolean, StringInt, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { Type, type TSchema } from '@sinclair/typebox'
+
+function cloudEnv<Schema extends TSchema>(schema: Schema) {
+  return process.env.DEPLOYMENT_TYPE !== 'cloud' ? Type.Optional(schema) : schema
+}
 
 export const envApi = createEnv({
   server: {
@@ -30,6 +35,18 @@ export const envApi = createEnv({
     // server
     SERVER_URL: Type.String(),
 
+    // maybe we should add an external ip validation for cloud instances if app is misused
+    DEPLOYMENT_TYPE: StringLiteralEnum(DEPLOYMENT_TYPES, {
+      default: 'self-hosted' satisfies DeploymentType,
+    }),
+
+    // Lemon Squeezy
+    // this have no reason being specified on self-hosted
+    LEMON_SQUEEZY_API_KEY: cloudEnv(Type.String()),
+    LEMON_SQUEEZY_WEBHOOK_SECRET: cloudEnv(Type.String()),
+    LEMON_SQUEEZY_STORE_SLUG: cloudEnv(StringInt({ default: '1' })),
+
+    // TODO: support for local drive
     // storage
     DEFAULT_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
       default: 's3',
@@ -83,8 +100,6 @@ export const envApi = createEnv({
     LINKEDIN_CLIENT_SECRET: Type.Optional(Type.String()),
     LINKEDIN_ENABLED: StringBoolean({ default: false }),
 
-    PIXABAY_API_KEY: Type.Optional(Type.String()),
-
     // Pusher/Soketi -> if no ws needed, remove this
     PUSHER_APP_ID: Type.String(),
     PUSHER_KEY: Type.String(),
@@ -108,6 +123,12 @@ export const envApi = createEnv({
     APP_URL: process.env.APP_URL,
 
     API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
+
+    DEPLOYMENT_TYPE: process.env.DEPLOYMENT_TYPE,
+
+    LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
+    LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
+    LEMON_SQUEEZY_STORE_SLUG: process.env.LEMON_SQUEEZY_STORE_SLUG,
 
     DB_HOST: process.env.DB_HOST,
     DB_PORT: process.env.DB_PORT,
@@ -140,8 +161,6 @@ export const envApi = createEnv({
     FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
     FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
     FACEBOOK_ENABLED: process.env.FACEBOOK_ENABLED,
-
-    PIXABAY_API_KEY: process.env.PIXABAY_API_KEY,
 
     // X_CLIENT_ID: process.env.X_CLIENT_ID,
     // X_CLIENT_SECRET: process.env.X_CLIENT_SECRET,

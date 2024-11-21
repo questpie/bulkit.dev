@@ -1,6 +1,5 @@
 'use client'
 import { useSelectedOrganization } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
-import { Card, CardContent, CardHeader, CardTitle } from '@bulkit/ui/components/ui/card'
 import { Input } from '@bulkit/ui/components/ui/input'
 import { Label } from '@bulkit/ui/components/ui/label'
 import { Separator } from '@bulkit/ui/components/ui/separator'

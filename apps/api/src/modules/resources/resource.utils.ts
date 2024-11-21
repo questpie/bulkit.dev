@@ -1,4 +1,5 @@
-import { drive } from '@bulkit/api/drive/drive'
+import { injectDrive } from '@bulkit/api/drive/drive'
+import { ioc, iocResolve } from '@bulkit/api/ioc'
 
 // TODO: think about when is fine to use this and when to use signed urls and implements the signed urls
 export async function getResourcePublicUrl(resource: {
@@ -10,13 +11,15 @@ export async function getResourcePublicUrl(resource: {
    */
   expiresInSeconds?: number
 }) {
+  const { drive } = iocResolve(ioc.use(injectDrive))
+
   return resource.isExternal
     ? resource.location
     : resource.isPrivate
-      ? drive.use().getSignedUrl(resource.location, {
+      ? drive.getSignedUrl(resource.location, {
           expiresIn: resource.expiresInSeconds || 60 * 60 * 24,
         })
-      : drive.use().getUrl(resource.location)
+      : drive.getUrl(resource.location)
 }
 
 export function isMediaTypeAllowed(allowedMediaTypes: string[], mediaType: string): boolean {

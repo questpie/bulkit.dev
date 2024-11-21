@@ -47,12 +47,21 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const sessionResp = await apiServer.auth.session.index.get()
+  const [sessionResp, appSettingsResp] = await Promise.all([
+    apiServer.auth.session.index.get(),
+    apiServer.app.settings.get(),
+  ])
+
+  if (!appSettingsResp.data) {
+    throw new Error('App is not properly configured')
+  }
 
   return (
     <html lang='en' suppressHydrationWarning>
       <body className={cn('min-h-screen bg-background font-sans antialiased', fontSans.variable)}>
-        <RootProviders authData={sessionResp.data}>{children}</RootProviders>
+        <RootProviders authData={sessionResp.data} appSettings={appSettingsResp.data}>
+          {children}
+        </RootProviders>
       </body>
     </html>
   )

@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -84,7 +83,7 @@ export class LinkedInChannelPublisher extends ChannelPublisher {
 
       const mediaAssets = await Promise.all(
         resources.slice(0, 9).map(async (resource) => {
-          const mediaUrl = await drive.use().getSignedUrl(resource.location)
+          const mediaUrl = await this.drive.getSignedUrl(resource.location)
 
           // Upload the media to LinkedIn
           await fetch(

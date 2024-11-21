@@ -11,11 +11,14 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
   .use(injectResourcesService)
   .use(organizationMiddleware)
   .use(injectStockImageService)
+  .get('/providers', async (ctx) => {
+    return ctx.stockImageService.getAvailableProviders(ctx.db)
+  })
   .get(
     '/search',
     async (ctx) => {
       const { query, provider = 'pixabay', per_page = 30 } = ctx.query
-      return ctx.stockImageService.search(provider, query, per_page)
+      return ctx.stockImageService.search(ctx.db, provider, query, per_page)
     },
     {
       query: t.Object({

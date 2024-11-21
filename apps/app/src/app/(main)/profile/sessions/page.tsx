@@ -1,11 +1,14 @@
 import { apiServer } from '@bulkit/app/api/api.server'
-import {
-  RemoveAllSessions,
-  SessionsTable,
-} from '@bulkit/app/app/(main)/profile/_components/sessions-table'
+import { RemoveAllSessionsButton } from '@bulkit/app/app/(main)/profile/_components/remove-all-sessions-button'
+import { SessionsTable } from '@bulkit/app/app/(main)/profile/_components/sessions-table'
 
 export default async function ProfileSessionsPage() {
-  const sessionsResp = await apiServer.auth.session.list.get()
+  const initialSessions = await apiServer.auth.session.list.get({
+    query: {
+      limit: 25,
+      cursor: 0,
+    },
+  })
 
   return (
     <div className='flex flex-col gap-6'>
@@ -14,16 +17,10 @@ export default async function ProfileSessionsPage() {
           <h4 className='text-xl font-bold'>Sessions</h4>
           <p className='text-sm text-muted-foreground'>Manage your active sessions and devices</p>
         </div>
-
-        {/* <OrganizationSendInviteDialog>
-          <OrganizationSendInviteDialogTrigger asChild>
-            <HeaderButton icon={<PiPaperPlane />} variant='secondary' label='Invite Members' />
-          </OrganizationSendInviteDialogTrigger>
-        </OrganizationSendInviteDialog> */}
-        <RemoveAllSessions />
+        <RemoveAllSessionsButton />
       </div>
 
-      <SessionsTable sessions={sessionsResp.data ?? []} />
+      <SessionsTable initialSessions={initialSessions.data ?? []} />
     </div>
   )
 }

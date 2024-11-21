@@ -1,4 +1,3 @@
-import { drive } from '@bulkit/api/drive/drive'
 import {
   ChannelPublisher,
   type PostMetrics,
@@ -24,7 +23,7 @@ export class FacebookChannelPublisher extends ChannelPublisher {
         throw new Error('A video resource is required for a Facebook reel')
       }
 
-      const videoUrl = await drive.use().getSignedUrl(post.resource.location)
+      const videoUrl = await this.drive.getSignedUrl(post.resource.location)
       const params = new URLSearchParams({
         file_url: videoUrl,
         description: post.description,
@@ -61,7 +60,7 @@ export class FacebookChannelPublisher extends ChannelPublisher {
         throw new Error('A media resource is required for a Facebook story')
       }
 
-      const mediaUrl = await drive.use().getSignedUrl(post.resource.location)
+      const mediaUrl = await this.drive.getSignedUrl(post.resource.location)
       const isVideo = post.resource.type.startsWith('video/')
 
       const params = new URLSearchParams({
@@ -103,7 +102,7 @@ export class FacebookChannelPublisher extends ChannelPublisher {
       // For Facebook, we'll create this as a regular post with multiple media items
       const mediaIds = await Promise.all(
         allMedia.map(async (media) => {
-          const mediaUrl = await drive.use().getSignedUrl(media.resource.location)
+          const mediaUrl = await this.drive.getSignedUrl(media.resource.location)
           const isVideo = media.resource.type.startsWith('video/')
 
           const params = new URLSearchParams({
@@ -179,7 +178,7 @@ export class FacebookChannelPublisher extends ChannelPublisher {
       // Post with media
       const mediaIds = await Promise.all(
         post.media.map(async (media) => {
-          const mediaUrl = await drive.use().getSignedUrl(media.resource.location)
+          const mediaUrl = await this.drive.getSignedUrl(media.resource.location)
           const isVideo = media.resource.type.startsWith('video/')
 
           const params = new URLSearchParams({

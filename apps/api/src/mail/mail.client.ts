@@ -1,6 +1,6 @@
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister } from '@bulkit/api/ioc'
-import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { injectJobFactory } from '@bulkit/api/jobs/job-factory'
 import { ResendAdapter } from '@bulkit/mail/adapter/resend.adapter'
 import { SmtpAdapter } from '@bulkit/mail/adapter/smtp.adapter'
 import { MailClient, type MailAdapter } from '@bulkit/mail/base-mail'
@@ -31,6 +31,8 @@ export const injectMailClient = iocRegister('mailClient', () => {
       },
     })
   }
+
+  const { jobFactory } = iocResolve(ioc.use(injectJobFactory))
 
   return new MailClient({
     adapter: adapterPromise(),

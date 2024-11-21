@@ -1,7 +1,7 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { scheduledPostsTable, type TimeInterval } from '@bulkit/api/db/db.schema'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import { jobFactory } from '@bulkit/api/jobs/job-factory'
+import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { Type } from '@sinclair/typebox'
@@ -28,15 +28,18 @@ function getNextMetricsDelay(intervals: TimeInterval[], publishedAt: Date): numb
     : null
 }
 
-export const collectMetricsJob = jobFactory.createJob({
+export const injectCollectMetricsJob = iocJobRegister('collectMetrics', {
   name: 'collect-metrics',
   schema: Type.Object({
     scheduledPostId: Type.String(),
   }),
-
   handler: async (job) => {
-    const { appSettingsService, db, channelsService } = iocResolve(
-      ioc.use(injectAppSettingsService).use(injectDatabase).use(injectChannelService)
+    const { appSettingsService, db, channelsService, jobCollectMetrics } = iocResolve(
+      ioc
+        .use(injectAppSettingsService)
+        .use(injectDatabase)
+        .use(injectChannelService)
+        .use(injectCollectMetricsJob)
     )
 
     await job.log('Starting metrics collection job')
@@ -101,7 +104,7 @@ export const collectMetricsJob = jobFactory.createJob({
       `Next collection scheduled for: ${new Date(Date.now() + nextDelay).toISOString()}`
     )
 
-    await collectMetricsJob.invoke(
+    await jobCollectMetrics.invoke(
       { scheduledPostId: scheduledPost.id },
       {
         delay: nextDelay,

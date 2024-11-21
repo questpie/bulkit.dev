@@ -1,7 +1,8 @@
 'use client'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
-import { PLATFORMS, PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
+import { usePlatforms } from '@bulkit/app/app/_hooks/use-platforms'
+import { PLATFORM_TO_NAME, type Platform } from '@bulkit/shared/constants/db.constants'
 import { Card, CardContent } from '@bulkit/ui/components/ui/card'
 import {
   ResponsiveDialog,
@@ -17,6 +18,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
 
 export function CreateChannelDialog(props: PropsWithChildren) {
+  const { activePlatforms } = usePlatforms()
   const mutation = useMutation({
     mutationFn: (platform: Platform) =>
       apiClient.channels.auth({ platform }).index.get({
@@ -53,8 +55,9 @@ export function CreateChannelDialog(props: PropsWithChildren) {
 
         <div className='flex gap-4 flex-wrap justify-center py-8'>
           {/* TODO: filter only enabled platforms */}
-          {PLATFORMS.map((platform) => {
+          {activePlatforms.map((platform) => {
             const Icon = PLATFORM_ICON[platform]
+
             return (
               <Card
                 // biome-ignore lint/a11y/useSemanticElements: <explanation>

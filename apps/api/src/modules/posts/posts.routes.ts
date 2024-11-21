@@ -10,7 +10,7 @@ import {
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
-import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { postMetricsRoutes } from '@bulkit/api/modules/posts/post-metrics.routes'
 import { scheduledPostsRoutes } from '@bulkit/api/modules/posts/scheduled-post.routes'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
@@ -23,10 +23,15 @@ import {
 import {
   PostChannelSchema,
   PostDetailsSchema,
+  PostListItemSchema,
   PostSchema,
   PostValidationResultSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
-import { MaybeArraySchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import {
+  MaybeArraySchema,
+  PaginatedResponseSchema,
+  StringLiteralEnum,
+} from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { unwrapMaybeArray } from '@bulkit/shared/utils/misc'
 import { and, asc, desc, eq, inArray, isNull, sql, type SQLWrapper } from 'drizzle-orm'
@@ -39,6 +44,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .use(injectPostService)
   .use(injectChannelService)
   .use(organizationMiddleware)
+  .use(injectPublishPostJob)
   .get(
     '/',
     async (ctx) => {
@@ -153,17 +159,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           ),
         }),
       ]),
-      response: t.Object({
-        data: t.Array(
-          t.Composite([
-            t.Omit(PostDetailsSchema, ['channels']),
-            t.Object({
-              channels: t.Array(t.Pick(PostChannelSchema, ['id', 'name', 'platform', 'imageUrl'])),
-            }),
-          ])
-        ),
-        nextCursor: t.Nullable(t.Number()),
-      }),
+      response: { 200: PaginatedResponseSchema(PostListItemSchema) },
     }
   )
   .get(
@@ -253,7 +249,12 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
       response: {
         400: HttpErrorSchema(t.Object({ errors: t.Optional(PostValidationResultSchema) })),
         404: HttpErrorSchema(),
-        200: PostSchema,
+        200: t.Composite([
+          PostSchema,
+          t.Object({
+            scheduledPosts: t.Array(t.Object({ scheduledPostId: t.String(), delay: t.Number() })),
+          }),
+        ]),
       },
     }
   )
@@ -302,7 +303,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
             /**
              * This will throw if scheduled job is not in queue, but we should not fail the request because of it
              */
-            await publishPostJob.remove(channel.scheduledPost.id).catch(() => null)
+            await ctx.jobPublishPost.remove(channel.scheduledPost.id).catch(() => null)
           }
         }
 

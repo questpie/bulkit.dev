@@ -1,3 +1,4 @@
+import { subscriptionsTable } from '@bulkit/api/db/db.schema'
 import { Type } from '@sinclair/typebox'
 import { relations } from 'drizzle-orm'
 import { index, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
@@ -23,12 +24,12 @@ export const userOrganizationsTable = pgTable(
     role: text('role', { enum: USER_ROLE }).notNull(),
     ...timestampCols(),
   },
-  (table) => ({
-    userIdIdx: index().on(table.userId),
-    orgIdIdx: index().on(table.organizationId),
-    roleIdx: index().on(table.role),
-    compoundIdx: uniqueIndex().on(table.userId, table.organizationId),
-  })
+  (t) => [
+    index().on(t.userId),
+    index().on(t.organizationId),
+    index().on(t.role),
+    uniqueIndex().on(t.userId, t.organizationId),
+  ]
 )
 
 export type SelectUserOrganization = typeof userOrganizationsTable.$inferSelect
@@ -40,6 +41,8 @@ export const selectUserOrganizationSchema = createSelectSchema(userOrganizations
 export const organizationsTable = pgTable('organizations', {
   id: primaryKeyCol(),
   name: text('name').notNull(),
+  externalCustomerId: text('external_customer_id'),
+  // affiliate_id: text('affiliate_id'),
   ...timestampCols(),
 })
 
@@ -63,6 +66,7 @@ export const organizationInvitesTable = pgTable('organization_invites', {
   email: text('email').notNull(),
   role: text('role', { enum: USER_ROLE }).notNull(),
   expiresAt: timestamp('expires_at', { mode: 'string', withTimezone: true }).notNull(),
+
   ...timestampCols(),
 })
 
@@ -77,8 +81,9 @@ export const organizationsRelations = relations(organizationsTable, ({ many }) =
   socialMediaIntegrations: many(socialMediaIntegrationsTable),
   // scheduledPosts: many(scheduledPostsTable),
   resources: many(resourcesTable),
-  channels: many(channelsTable), // Add this line
+  channels: many(channelsTable),
   invites: many(organizationInvitesTable),
+  subscriptions: many(subscriptionsTable),
 }))
 
 export const userOrganizationsRelations = relations(userOrganizationsTable, ({ one }) => ({

@@ -7,21 +7,26 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 // register pinio logger
 import '@bulkit/api/common/logger'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import { publishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
-import { resourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
-import { collectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
-
+import { injectCollectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
+import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
+import { injectResourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
 export async function bootWorker() {
-  const container = iocResolve(ioc.use(injectMailClient))
+  const container = iocResolve(
+    ioc
+      .use(injectMailClient)
+      .use(injectResourceCleanupJob)
+      .use(injectPublishPostJob)
+      .use(injectCollectMetricsJob)
+  )
 
   // mails
   container.mailClient.registerWorker()
   // resources
-  resourceCleanupJob.registerWorker()
+  container.jobResourceCleanup.registerWorker()
 
   // posts
-  publishPostJob.registerWorker()
-  collectMetricsJob.registerWorker()
+  container.jobPublishPost.registerWorker()
+  container.jobCollectMetrics.registerWorker()
 
   appLogger.info('Workers instances running')
 }
