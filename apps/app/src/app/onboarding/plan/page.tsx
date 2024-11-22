@@ -14,18 +14,19 @@ export default async function PlanSelectionPage() {
   const selectedOrgId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
 
   if (!selectedOrgId) {
-    // just redirect to the home page, the organization guard will handle all the organization setter logic
+    // just redirect to the home page,
+    // the organization guard will handle all the organization setter logic
     redirect('/')
   }
 
   // Get organization data
   const orgResp = await apiServer.organizations({ id: selectedOrgId! }).get()
   if (!orgResp.data) {
-    // just redirect to the home page, the organization guard will handle all the organization setter logic
+    // just redirect to the home page,
+    // the organization guard will handle all the organization setter logic
     redirect('/')
   }
 
-  // Fetch plans server-side
   const plansResponse = await apiServer.plans.index.get()
   if (plansResponse.error) {
     throw new Error('Failed to fetch plans')
