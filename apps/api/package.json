@@ -2,6 +2,7 @@
   "name": "@bulkit/api",
   "version": "0.0.0-next-20241126191001",
   "type": "module",
+  "private": true,
   "scripts": {
     "seed": "bun run src/seed.entry.ts",
     "dev": "bun run --bun --watch src/main.entry.ts",

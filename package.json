@@ -3,6 +3,7 @@
   "module": "index.ts",
   "type": "module",
   "version": "0.1.0",
+  "private": true,
   "peerDependencies": {
     "typescript": "^5.5.4"
   },
