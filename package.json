@@ -27,7 +27,8 @@
     "version": "changeset version",
     "version:next": "changeset version --snapshot next",
     "release": "changeset publish",
-    "release:next": "changeset publish --tag next"
+    "release:next": "changeset publish --tag next",
+    "workflow:release:next": "gh workflow run next-release.yml"
   },
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {

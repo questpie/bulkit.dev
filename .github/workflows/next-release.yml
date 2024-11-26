@@ -1,9 +1,13 @@
 name: Next Release
 
 on:
-  push:
-    branches:
-      - next
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Create next release'
+        required: true
+        type: boolean
+        default: true
 
 jobs:
   release:
