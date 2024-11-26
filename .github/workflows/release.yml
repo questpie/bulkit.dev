@@ -31,12 +31,14 @@ jobs:
         id: sha
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Create Release Pull Request or Publish
+      - name: Create Release
         id: changesets
         uses: changesets/action@v1
         with:
           version: bun run version
           publish: bun run release
+          commit: "chore: version packages"
+          title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
