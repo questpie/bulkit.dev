@@ -6,6 +6,7 @@ import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/service
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import Elysia from 'elysia'
 import { AppSettingsResponseSchema } from '@bulkit/shared/modules/app/app-schemas'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 
 export const appRoutes = new Elysia({
   prefix: '/app',
@@ -13,10 +14,25 @@ export const appRoutes = new Elysia({
     tags: ['App'],
   },
 })
+  .use(
+    applyRateLimit({
+      tiers: {
+        anonymous: {
+          points: 50, // 50 requests
+          duration: 300, // per 5 minutes
+          blockDuration: 600, // 10 minute block
+        },
+        authenticated: {
+          points: 200, // 200 requests
+          duration: 300, // per 5 minutes
+          blockDuration: 300, // 5 minute block
+        },
+      },
+    })
+  )
   .get('/healthy', () => 'ok', {
     detail: { description: 'Health check' },
   })
-  // .use(protectedMiddleware)
   .use(injectAppSettingsService)
   .use(injectDatabase)
   .get(
@@ -40,8 +56,6 @@ export const appRoutes = new Elysia({
           .then((s) => s.data?.attributes.currency)
           .catch(() => 'USD')
       }
-
-      console.log(currency)
 
       return {
         platforms,

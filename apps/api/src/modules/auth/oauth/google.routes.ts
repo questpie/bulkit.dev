@@ -8,7 +8,6 @@ import { Elysia, t } from 'elysia'
 
 export const googleRoutes = new Elysia({ prefix: '/google' })
   .use(injectDatabase)
-  .use(rateLimit())
   .use(injectAuthService)
   .get(
     '/',

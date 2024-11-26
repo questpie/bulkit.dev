@@ -1,3 +1,4 @@
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { lemonSqueezyWebhookRoutes } from '@bulkit/api/lemon-squeezy/lemon-squeezy-webhook.routes'
 import { appRoutes } from '@bulkit/api/modules/app/app.routes'
 import { adminRoutes } from '@bulkit/api/modules/auth/admin/admin.routes'

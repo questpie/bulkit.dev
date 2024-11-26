@@ -9,7 +9,6 @@ export default async function PostMetricsChart(props: {
   defaultPeriod?: MetricsPeriod
 }) {
   const awaitedSearchParams = await props.searchParams
-  console.log(awaitedSearchParams)
 
   const period = ensureEnum(
     METRICS_PERIODS,
@@ -17,7 +16,6 @@ export default async function PostMetricsChart(props: {
     props.defaultPeriod ?? '30d'
   )
 
-  console.log(period)
   const metrics = await apiServer.posts.metrics({ id: props.postId }).get({
     query: { period },
   })

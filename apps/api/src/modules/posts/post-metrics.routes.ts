@@ -1,4 +1,5 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPostMetricsService } from '@bulkit/api/modules/posts/services/post-metrics.service'
 import {

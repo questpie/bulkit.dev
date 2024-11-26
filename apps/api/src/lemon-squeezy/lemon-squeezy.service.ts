@@ -129,7 +129,6 @@ export class LemonSqueezyService {
     }
 
     const store = await this.client.getStore(envApi.LEMON_SQUEEZY_STORE_SLUG)
-    console.log(store)
 
     if (!store.data) {
       throw HttpError.Internal('Failed to fetch store')

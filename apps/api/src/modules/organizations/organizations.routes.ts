@@ -1,5 +1,6 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import {
   insertOrganizationSchema,
@@ -32,6 +33,17 @@ export const organizationRoutes = new Elysia({
     tags: ['Organizations'],
   },
 })
+  .use(
+    applyRateLimit({
+      tiers: {
+        authenticated: {
+          points: 100, // 100 requests
+          duration: 60, // per minute
+          blockDuration: 300, // 5 minute block
+        },
+      },
+    })
+  )
   .use(protectedMiddleware)
   .use(injectDatabase)
   .use(injectMailClient)

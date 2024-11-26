@@ -1,5 +1,6 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { resourceStockRoutes } from '@bulkit/api/modules/resources/routes/resources-stock.routes'
@@ -11,6 +12,17 @@ import { HttpError } from 'elysia-http-error'
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
 })
+  .use(
+    applyRateLimit({
+      tiers: {
+        authenticated: {
+          points: 100, // 100 requests
+          duration: 300, // per 5 minutes
+          blockDuration: 600, // 10 minute block
+        },
+      },
+    })
+  )
   .use(injectDatabase)
   .use(injectResourcesService)
   .use(organizationMiddleware)

@@ -14,7 +14,16 @@ export const magicLinkRoutes = new Elysia({ prefix: '/magic-link' })
   .use(injectDatabase)
   .use(injectAuthService)
   .use(injectMailClient)
-  .use(applyRateLimit({ limit: 10, window: 60 }))
+  .use(
+    applyRateLimit({
+      tiers: {
+        anonymous: {
+          points: 10,
+          duration: 60,
+        },
+      },
+    })
+  )
   .post(
     '/',
     async ({ body, db, mailClient }) => {

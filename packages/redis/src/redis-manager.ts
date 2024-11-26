@@ -6,7 +6,9 @@ export type RedisConfig = {
   [key: string]: RedisOptions | string
 }
 
-export class RedisManager<const TRedisConfig extends RedisConfig> {
+export type RedisClient = Redis
+
+export class RedisManager<const TRedisConfig extends RedisConfig = RedisConfig> {
   private clients: Map<keyof TRedisConfig, Redis> = new Map()
   private defaultClient: keyof TRedisConfig = 'default'
   private static useMock = false

@@ -1,5 +1,6 @@
 import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { coalesce, selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
 import {
   channelsTable,
@@ -39,6 +40,17 @@ import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
 export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Posts'] } })
+  .use(
+    applyRateLimit({
+      tiers: {
+        authenticated: {
+          points: 300, // 300 requests
+          duration: 300, // per 5 minutes
+          blockDuration: 600, // 10 minute block
+        },
+      },
+    })
+  )
   .use(scheduledPostsRoutes)
   .use(postMetricsRoutes)
   .use(injectPostService)

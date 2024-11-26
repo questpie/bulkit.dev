@@ -13,8 +13,20 @@ import { and, desc, eq, getTableColumns, ilike, inArray, sql } from 'drizzle-orm
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 import { ChannelListItemSchema } from '@bulkit/shared/modules/channels/channels.schemas'
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 
 export const channelRoutes = new Elysia({ prefix: '/channels' })
+  .use(
+    applyRateLimit({
+      tiers: {
+        authenticated: {
+          points: 200, // 200 requests
+          duration: 300, // per 5 minutes
+          blockDuration: 600, // 10 minute block
+        },
+      },
+    })
+  )
   .use(channelAuthRoutes)
   .use(organizationMiddleware)
   .use(injectDatabase)

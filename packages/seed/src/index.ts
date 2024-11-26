@@ -1,6 +1,6 @@
-import { appLogger } from '@bulkit/shared/utils/logger'
 import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { appLogger } from '@bulkit/shared/utils/logger'
 
 export type DbLike = PostgresJsDatabase
 

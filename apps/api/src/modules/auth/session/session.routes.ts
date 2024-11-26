@@ -12,7 +12,6 @@ import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
   .use(injectDatabase)
-  .use(rateLimit())
   .post(
     '/',
     async ({ body, error, db, request }) => {

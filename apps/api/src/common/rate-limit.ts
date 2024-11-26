@@ -1,74 +1,69 @@
+import { authMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { Elysia } from 'elysia'
-import { createHash } from 'node:crypto'
-import { ip } from 'elysia-ip'
-import { injectRedis } from '@bulkit/api/redis/redis-clients'
 import { HttpError } from 'elysia-http-error'
+import { RateLimiter } from './services/rate-limiter.service'
 
-interface RateLimitOptions {
-  /**
-   * @default 100
-   */
-  limit?: number
-  /**
-   * @default 60
-   */
-  window?: number // in seconds
+type RateLimitTier = {
+  points: number
+  duration: number
+  blockDuration?: number
+}
+
+type RateLimitOptions = {
+  tiers?: {
+    anonymous?: RateLimitTier
+    authenticated?: RateLimitTier
+  }
   keyPrefix?: string
-
-  /**
-   *
-   * @param ctx Elysia context, defined as any because of difficult type inference
-   */
-  buildIdentifierKey?(ctx: any): Promise<string> | string
 }
 
-export const rateLimit = () => {
-  return new Elysia({ name: 'rate-limit' })
-    .use(ip())
-    .use(injectRedis)
-    .macro(({ onBeforeHandle }) => ({
-      applyRateLimit(options?: RateLimitOptions) {
-        if (!options) return
-
-        onBeforeHandle(async (ctx) => {
-          const limit = options.limit ?? 100
-          const window = options.window ?? 60
-          const keyPrefix = options.keyPrefix ?? 'rate-limit:'
-
-          let key: string
-
-          if (options.buildIdentifierKey) {
-            key = await options.buildIdentifierKey(ctx)
-          } else {
-            const ip = ctx.ip || 'unknown'
-            const path = new URL(ctx.request.url).pathname
-            const hash = createHash('md5').update(`${ip}:${path}`).digest('hex')
-            key = `${keyPrefix}${hash}`
-          }
-
-          const redis = ctx.redis.get('default')
-          const multi = redis.multi()
-          multi.incr(key)
-          multi.expire(key, window)
-          const result = await multi.exec()
-          const count = result ? result[0] : null
-
-          const remaining = Math.max(0, limit - (count?.[1] as number))
-          const reset = (Math.ceil(Date.now() / 1000) + window) * 1000
-
-          // set ratelimit response headers
-          ctx.set.headers['x-ratelimit-limit'] = String(limit)
-          ctx.set.headers['x-ratelimit-remaining'] = String(remaining)
-          ctx.set.headers['x-ratelimit-reset'] = String(reset)
-
-          if (remaining === 0) {
-            throw HttpError.TooManyRequests()
-          }
-        })
-      },
-    }))
-    .as('plugin')
+const DEFAULT_TIERS = {
+  anonymous: {
+    points: 100,
+    duration: 60,
+    blockDuration: 300,
+  },
+  authenticated: {
+    points: 200,
+    duration: 60,
+    blockDuration: 300,
+  },
 }
 
-export const applyRateLimit = (options: RateLimitOptions = {}) =>
-  new Elysia().use(rateLimit()).guard({ applyRateLimit: options }).as('plugin')
+const defaultOptions: RateLimitOptions = {
+  tiers: DEFAULT_TIERS,
+}
+
+export const rateLimit = new Elysia({ name: 'rate-limit' })
+  .use(authMiddleware)
+  .macro(({ onBeforeHandle }) => ({
+    applyRateLimit(options: RateLimitOptions = defaultOptions) {
+      if (!options) return
+
+      const limiter = new RateLimiter({
+        anonymous: options.tiers?.anonymous ?? DEFAULT_TIERS.anonymous,
+        authenticated: options.tiers?.authenticated ?? DEFAULT_TIERS.authenticated,
+        keyPrefix: options.keyPrefix,
+      })
+
+      onBeforeHandle(async (ctx) => {
+        try {
+          const { headers } = await limiter.isAllowed(ctx, ctx.auth?.user?.id)
+
+          for (const [header, value] of Object.entries(headers)) {
+            ctx.set.headers[header.toLowerCase()] = value
+          }
+        } catch (error) {
+          if (error instanceof HttpError) {
+            throw error
+          }
+          throw HttpError.TooManyRequests('Too Many Requests')
+        }
+      })
+    },
+  }))
+  .as('plugin')
+
+export const applyRateLimit = (options: RateLimitOptions = defaultOptions) => {
+  return new Elysia().use(rateLimit).guard({ applyRateLimit: options }).as('plugin')
+}
