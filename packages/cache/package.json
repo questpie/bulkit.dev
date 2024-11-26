@@ -1,7 +1,10 @@
 {
   "name": "@bulkit/cache",
   "module": "src/index.ts",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
+  "version": "0.0.0-next-20241126191001",
   "type": "module",
   "private": true,
   "devDependencies": {

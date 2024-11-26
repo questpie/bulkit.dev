@@ -2,6 +2,7 @@
   "name": "@bulkit/monorepo",
   "module": "index.ts",
   "type": "module",
+  "version": "0.1.0",
   "peerDependencies": {
     "typescript": "^5.5.4"
   },
