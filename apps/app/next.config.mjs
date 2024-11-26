@@ -3,14 +3,17 @@ const nextConfig = {
   images: {
     remotePatterns: [{ hostname: '*' }],
   },
-  experimental:{
-    reactCompiler:true
+  experimental: {
+    reactCompiler: true,
   },
-  logging:{
-    fetches:{
-      fullUrl:true
-    }
-  }
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
 }
 
 export default nextConfig

@@ -24,6 +24,7 @@
       "@bulkit/translations/*": ["../../packages/translations/src/*"],
       "@bulkit/mail/*": ["../../packages/mail/src/*"],
       "@bulkit/jobs/*": ["../../packages/jobs/src/*"],
+      "@bulkit/cache/*": ["../../packages/cache/src/*"],
       "@bulkit/redis/*": ["../../packages/redis/src/*"],
       "@bulkit/app/*": ["./src/*"],
       "@bulkit/ui/*": ["../../packages/ui/src/*"],
@@ -31,14 +32,7 @@
     }
   },
 
-  "include": [
-    "next-env.d.ts",
-    "../api/src/**/*.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "../../packages/shared/src/modules/plans/plans.constants.ts"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "references": [
     { "path": "../../packages/shared" },
     { "path": "../../packages/ui" },
