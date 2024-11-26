@@ -6,6 +6,7 @@ const nextConfig = {
   experimental: {
     reactCompiler: true,
   },
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },
