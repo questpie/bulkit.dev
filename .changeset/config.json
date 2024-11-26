@@ -2,23 +2,11 @@
   "$schema": "https://unpkg.com/@changesets/config@2.3.1/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [
-    [
-      "@bulkit/cache",
-      "@bulkit/jobs",
-      "@bulkit/mail",
-      "@bulkit/redis",
-      "@bulkit/seed",
-      "@bulkit/shared",
-      "@bulkit/ui"
-    ]
-  ],
-  "linked": [["@bulkit/api", "@bulkit/app"]],
+  "fixed": [["@bulkit/*"]],
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "privatePackages": {
-    "version": true,
-    "tag": true
+    "version": true
   }
 }
