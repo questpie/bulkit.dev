@@ -52,6 +52,8 @@ export default async function RootLayout({
     apiServer.app.settings.get(),
   ])
 
+  console.log(sessionResp.data)
+
   if (!appSettingsResp.data) {
     throw new Error('App is not properly configured')
   }

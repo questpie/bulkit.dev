@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto'
 import { UAParser } from 'ua-parser-js'
-import geoip from 'geoip-lite'
 
 const UNKNOWN = 'unknown' as const
 
@@ -8,7 +7,6 @@ export type DeviceInfo = {
   browser: string
   os: string
   device: string
-  country: string
 }
 
 export function getDeviceInfo(request: Request): {
@@ -30,7 +28,6 @@ export function getDeviceInfo(request: Request): {
     browser: uaParser.getBrowser().name ?? UNKNOWN,
     os: uaParser.getOS().name ?? UNKNOWN,
     device: uaParser.getDevice().type ?? 'desktop',
-    country,
   }
 
   return { deviceFingerprint, deviceInfo }
@@ -55,16 +52,5 @@ function extractCountry(request: Request): string {
     if (country && country.length === 2) return country.toUpperCase()
   }
 
-  // Use GeoIP as a fallback
-  return getCountryFromIP(request) ?? UNKNOWN
-}
-
-function getCountryFromIP(request: Request): string | null {
-  const forwardedFor = request.headers.get('x-forwarded-for')
-  const ip = forwardedFor ? forwardedFor.split(',')[0]?.trim() : request.headers.get('x-real-ip')
-
-  if (!ip) return null
-
-  const geo = geoip.lookup(ip)
-  return geo?.country ?? null
+  return UNKNOWN
 }
