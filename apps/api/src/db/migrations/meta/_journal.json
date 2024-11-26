@@ -36,6 +36,13 @@
       "when": 1731768274426,
       "tag": "20241116144434_magenta_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1732651195782,
+      "tag": "20241126195955_illegal_magdalene",
+      "breakpoints": true
     }
   ]
 }
