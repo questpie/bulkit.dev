@@ -1,7 +1,7 @@
 {
   "name": "@bulkit/ui",
   "module": "src/index.ts",
-  "version": "0.0.0-next-20241126191001",
+  "version": "0.0.0",
   "main": "src/index.ts",
   "files": [
     "src"
