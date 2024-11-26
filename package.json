@@ -20,8 +20,12 @@
     "i18n": "cd packages/translations && bun i18n",
     "lint": "bun biome lint ./packages ./apps",
     "postinstall": "bun deps:check",
+    "types:check": "tsc --noEmit",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "version:next": "changeset version --snapshot next",
     "release": "changeset publish",
-    "types:check": "tsc --noEmit"
+    "release:next": "changeset publish --tag next"
   },
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {

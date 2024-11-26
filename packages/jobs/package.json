@@ -3,6 +3,7 @@
   "module": "src/index.ts",
   "files": ["src"],
   "type": "module",
+  "private": true,
   "devDependencies": {
     "@types/bun": "latest"
   },
