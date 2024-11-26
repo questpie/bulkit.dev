@@ -25,6 +25,10 @@ RUN adduser -S nextjs -u 1001
 
 COPY --from=base /usr/src/app/apps/app/public ./apps/app/public
 
+COPY --from=base --chown=nextjs:nodejs /usr/src/app/apps/app/entrypoint.sh ./
+RUN chmod +x /usr/bin/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=base --chown=nextjs:nodejs /usr/src/app/apps/app/.next/standalone/ ./
@@ -35,5 +39,6 @@ USER nextjs
 EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME 0.0.0.0
+
 
 CMD ["node", "apps/app/server.js"]
