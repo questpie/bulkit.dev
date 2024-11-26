@@ -37,8 +37,11 @@ jobs:
         with:
           version: bun run version:next
           publish: bun run release:next
+          commit: "chore: version packages (next)"
+          title: "chore: version packages (next)"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_ENV: production
 
   build-next:
     needs: release
