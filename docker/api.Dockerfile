@@ -3,7 +3,7 @@
 FROM oven/bun:debian as base
 WORKDIR /usr/src/app
 
-# Install Python, curl, and other necessary build tools
+# Install curl and wget
 RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -12,7 +12,6 @@ RUN apt-get update && apt-get install -y \
 RUN groupadd -r bunuser && useradd -r -g bunuser bunuser
 
 FROM base AS build
-ARG DATABASE_URL
 COPY . .
 RUN bun install --frozen-lockfile
 
@@ -21,7 +20,7 @@ RUN cd apps/api && bun build:api
 
 FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
-COPY --from=build /usr/src/app/apps/api/src/db/migrations ./migrations
+COPY --from=build /usr/src/app/apps/api/src/db/migrations/ ./migrations/
 
 USER bunuser
 
