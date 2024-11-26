@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox'
  * This are env that are both accessible inside server and client environments
  */
 export const env = createEnv({
-  client: {
+  server: {
     PUBLIC_NODE_ENV: Type.Union(
       [Type.Literal('production'), Type.Literal('development'), Type.Literal('test')],
       {

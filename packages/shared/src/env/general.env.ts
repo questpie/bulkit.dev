@@ -16,6 +16,6 @@ export const generalEnv = createEnv({
   },
   runtimeEnv: {
     PUBLIC_APP_NAME: process.env.PUBLIC_APP_NAME,
-    PUBLIC_NODE_ENV: process.env.PUBLIC_NODE_ENV,
+    PUBLIC_NODE_ENV: process.env.NODE_ENV,
   },
 })
