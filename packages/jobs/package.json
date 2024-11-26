@@ -1,7 +1,7 @@
 {
   "name": "@bulkit/jobs",
   "module": "src/index.ts",
-  "version": "0.0.0-next-20241126191001",
+  "version": "0.0.0-next-20241126202817",
   "files": [
     "src"
   ],
