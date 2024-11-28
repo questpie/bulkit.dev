@@ -26,13 +26,40 @@ async function execCommand(command: string) {
   }
 }
 
-async function createAppTags() {
-  for (const app of MAIN_APPS) {
-    const packagePath = path.resolve(process.cwd(), 'apps', app, 'package.json')
-    const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'))
-    const version = packageJson.version
+async function getBaseVersion(app: string): Promise<string> {
+  const packagePath = path.resolve(process.cwd(), 'apps', app, 'package.json')
+  const packageJson = JSON.parse(readFileSync(packagePath, 'utf8'))
 
-    // Create tags without Docker org prefix
+  // If it's already a valid version, use it as base
+  if (packageJson.version && packageJson.version !== '0.0.0') {
+    return packageJson.version
+  }
+
+  // Default to 0.1.0 for new packages
+  return '0.1.0'
+}
+
+async function cleanupInternalTags() {
+  const tags = execSync('git tag --points-at HEAD').toString().trim().split('\n')
+
+  for (const tag of tags) {
+    if (!tag.startsWith('bulkitdev-')) {
+      try {
+        await execCommand(`git tag -d ${tag}`)
+        console.log(`Removed internal tag: ${tag}`)
+      } catch (error) {
+        console.error(`Failed to remove tag ${tag}:`, error)
+      }
+    }
+  }
+}
+
+async function createAppTags(isNext: boolean) {
+  for (const app of MAIN_APPS) {
+    const baseVersion = await getBaseVersion(app)
+    const timestamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0]
+    const version = isNext ? `${baseVersion}-next.${timestamp}` : baseVersion
+
     for (const imageName of DOCKER_IMAGES[app]) {
       const tagName = `${imageName}/v${version}`
       try {
@@ -46,23 +73,6 @@ async function createAppTags() {
   }
 }
 
-async function cleanupInternalTags() {
-  // Get all tags that were just created
-  const tags = execSync('git tag --points-at HEAD').toString().trim().split('\n')
-
-  // Remove any tags that don't match our expected format
-  for (const tag of tags) {
-    if (!tag.startsWith('bulkitdev-')) {
-      try {
-        await execCommand(`git tag -d ${tag}`)
-        console.log(`Removed internal tag: ${tag}`)
-      } catch (error) {
-        console.error(`Failed to remove tag ${tag}:`, error)
-      }
-    }
-  }
-}
-
 export async function release(opts: ReleaseOptions = {}) {
   try {
     // Create changeset
@@ -70,7 +80,9 @@ export async function release(opts: ReleaseOptions = {}) {
 
     // Version packages
     if (opts.next) {
-      await execCommand('bun changeset version --snapshot next')
+      // For next releases, we'll handle versioning differently
+      console.log('Creating next release...')
+      // TODO: do next releases
     } else {
       await execCommand('bun changeset version')
     }
@@ -79,8 +91,8 @@ export async function release(opts: ReleaseOptions = {}) {
     await execCommand('git add .')
     await execCommand(`git commit -m "chore: version packages${opts.next ? ' (next)' : ''}"`)
 
-    // Create tags matching Docker image structure
-    await createAppTags()
+    // Create tags only for main apps
+    await createAppTags(Boolean(opts.next))
 
     // Clean up any internal package tags
     await cleanupInternalTags()
