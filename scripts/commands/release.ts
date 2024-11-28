@@ -46,6 +46,23 @@ async function createAppTags() {
   }
 }
 
+async function cleanupInternalTags() {
+  // Get all tags that were just created
+  const tags = execSync('git tag --points-at HEAD').toString().trim().split('\n')
+
+  // Remove any tags that don't match our expected format
+  for (const tag of tags) {
+    if (!tag.startsWith('bulkitdev-')) {
+      try {
+        await execCommand(`git tag -d ${tag}`)
+        console.log(`Removed internal tag: ${tag}`)
+      } catch (error) {
+        console.error(`Failed to remove tag ${tag}:`, error)
+      }
+    }
+  }
+}
+
 export async function release(opts: ReleaseOptions = {}) {
   try {
     // Create changeset
@@ -64,6 +81,9 @@ export async function release(opts: ReleaseOptions = {}) {
 
     // Create tags matching Docker image structure
     await createAppTags()
+
+    // Clean up any internal package tags
+    await cleanupInternalTags()
 
     // Push changes and tags
     await execCommand('git push')
