@@ -55,3 +55,4 @@ jobs:
           file: docker/${{ contains(steps.get_info.outputs.image, '-worker') && 'worker' || contains(steps.get_info.outputs.image, '-api') && 'api' || 'app' }}.Dockerfile
           push: true
           tags: ${{ steps.docker_tags.outputs.tags }}
+          platforms: linux/amd64,linux/arm64
