@@ -5,17 +5,7 @@
   "access": "restricted",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@bulkit/cache",
-    "@bulkit/jobs",
-    "@bulkit/mail",
-    "@bulkit/redis",
-    "@bulkit/seed",
-    "@bulkit/shared",
-    "@bulkit/transactional",
-    "@bulkit/translations",
-    "@bulkit/ui"
-  ],
+  "fixed": [["@bulkit/api", "@bulkit/app"]],
   "privatePackages": {
     "version": true,
     "tag": false
