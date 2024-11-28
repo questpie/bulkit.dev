@@ -1,6 +1,6 @@
 {
   "name": "@bulkit/api",
-  "version": "0.0.0-next-20241128003516",
+  "version": "0.0.0-next-20241128003925",
   "type": "module",
   "private": true,
   "scripts": {
