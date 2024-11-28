@@ -1,6 +1,6 @@
 {
   "name": "@bulkit/app",
-  "version": "0.1.0",
+  "version": "0.0.0-next-20241128003516",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
