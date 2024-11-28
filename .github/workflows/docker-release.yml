@@ -3,7 +3,7 @@ name: Docker Release
 on:
   push:
     tags:
-      - 'bulkitdev-*/v*'
+      - 'bulkitdev-*'
 
 jobs:
   build:
