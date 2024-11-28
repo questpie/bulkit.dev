@@ -24,11 +24,8 @@
     "postinstall": "bun deps:check",
     "types:check": "tsc --noEmit",
     "changeset": "changeset",
-    "version": "changeset version",
-    "version:next": "changeset version --snapshot next",
-    "release": "changeset publish",
-    "release:next": "changeset publish --tag next",
-    "workflow:release:next": "gh workflow run next-release.yml"
+    "version-packages": "changeset version",
+    "release": "changeset && changeset version && git add . && git commit -m \"chore: version packages\" && git push && git push --tags"
   },
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {

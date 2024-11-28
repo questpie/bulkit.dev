@@ -3,7 +3,7 @@
   "module": "src/index.ts",
   "private": true,
   "files": ["src"],
-  "version": "0.0.0-next-20241126191001",
+  "version": "0.1.0",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"

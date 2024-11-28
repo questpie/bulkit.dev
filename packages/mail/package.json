@@ -1,11 +1,9 @@
 {
   "name": "@bulkit/mail",
   "module": "src/index.ts",
-  "files": [
-    "src"
-  ],
+  "files": ["src"],
   "type": "module",
-  "version": "0.0.0-next-20241126191001",
+  "version": "0.1.0",
   "private": true,
   "devDependencies": {
     "@bulkit/shared": "workspace:*",
