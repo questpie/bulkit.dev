@@ -3,29 +3,29 @@ name: Docker Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'bulkitdev-*/v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get_version.outputs.version }}
-    strategy:
-      matrix:
-        include:
-          - name: api
-            dockerfile: docker/api.Dockerfile
-            image: questpie/bulkitdev-api
-          - name: worker
-            dockerfile: docker/worker.Dockerfile
-            image: questpie/bulkitdev-worker
-          - name: app
-            dockerfile: docker/app.Dockerfile
-            image: questpie/bulkitdev-app
     steps:
-      - name: Get version from tag
-        id: get_version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Get image info from tag
+        id: get_info
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          IMAGE_NAME=$(echo $TAG | cut -d'/' -f1)
+          VERSION=$(echo $TAG | cut -d'/' -f2)
+          VERSION=${VERSION#v}
+
+          # Check if this is a next release
+          if [[ "$VERSION" == *"next"* ]]; then
+            echo "is_next=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_next=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "image=questpie/$IMAGE_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Checkout
         uses: actions/checkout@v3
@@ -39,40 +39,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Should tag as latest
-        id: tag_latest
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "tag=true" >> $GITHUB_OUTPUT
-          else
-            echo "tag=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Generate Docker Tags
+      - name: Generate Docker tags
         id: docker_tags
         run: |
-          TAGS="${{ matrix.image }}:${{ steps.get_version.outputs.version }}"
-          if [[ "${{ steps.tag_latest.outputs.tag }}" == "true" ]]; then
-            TAGS="$TAGS,${{ matrix.image }}:latest"
+          TAGS="${{ steps.get_info.outputs.image }}:${{ steps.get_info.outputs.version }}"
+          if [[ "${{ steps.get_info.outputs.is_next }}" == "false" ]]; then
+            TAGS="$TAGS,${{ steps.get_info.outputs.image }}:latest"
           fi
           echo "tags=$TAGS" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Docker Images
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
+          file: docker/${{ contains(steps.get_info.outputs.image, '-worker') && 'worker' || contains(steps.get_info.outputs.image, '-api') && 'api' || 'app' }}.Dockerfile
           push: true
           tags: ${{ steps.docker_tags.outputs.tags }}
-
-      - name: Update GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          body: |
-            Docker Images:
-            - API: `questpie/bulkitdev-api:${{ steps.get_version.outputs.version }}`
-            - Worker: `questpie/bulkitdev-worker:${{ steps.get_version.outputs.version }}`
-            - App: `questpie/bulkitdev-app:${{ steps.get_version.outputs.version }}`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

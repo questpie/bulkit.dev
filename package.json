@@ -25,7 +25,9 @@
     "types:check": "tsc --noEmit",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset && changeset version && git add . && git commit -m \"chore: version packages\" && git push && git push --tags"
+    "version-packages:next": "changeset version --snapshot next",
+    "release": "bun run scripts/cli.ts release",
+    "release:next": "bun run scripts/cli.ts release --next"
   },
   "workspaces": ["apps/*", "packages/*"],
   "dependencies": {
