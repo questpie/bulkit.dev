@@ -6,6 +6,7 @@ import {
   injectLemonSqueezy,
   type LemonSqueezyService,
 } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
+import type { LemonSqueezyCustomData } from '@bulkit/api/modules/plans/jobs/process-webhook.job'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import type { AvailablePlan } from '@bulkit/shared/modules/plans/plans.schemas'
 import { and, desc, eq, isNotNull } from 'drizzle-orm'
@@ -137,6 +138,12 @@ export class PlansService {
       {
         productOptions: {
           redirectUrl: `${envApi.APP_URL}?orgId=${data.organizationId}`,
+        },
+        checkoutData: {
+          custom: {
+            organization_id: data.organizationId,
+            plan_id: data.planId,
+          } satisfies LemonSqueezyCustomData,
         },
         testMode: generalEnv.PUBLIC_NODE_ENV === 'development',
       }

@@ -2,6 +2,7 @@
 
 import { apiClient } from '@bulkit/app/api/api.client'
 import { PlanSelection } from '@bulkit/app/app/onboarding/organization/_components/plan-selection'
+import { env } from '@bulkit/app/env'
 import type { AvailablePlan } from '@bulkit/shared/modules/plans/plans.schemas'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Form } from '@bulkit/ui/components/ui/form'
@@ -63,7 +64,9 @@ export function PlanSelectionForm(props: PlanSelectionFormProps) {
     return toast.promise(checkoutMutation.mutateAsync(data), {
       loading: 'Creating checkout session...',
       success: 'Redirecting to checkout...',
-      error: 'Failed to create checkout session',
+      error: (err) => {
+        return err.message || 'Failed to create checkout session'
+      },
     })
   })
 

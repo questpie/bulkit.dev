@@ -27,14 +27,14 @@ export class LemonSqueezyService {
     this.client = LemonSqueezy
   }
 
-  verifyWebhook<TCustomData = unknown>(payload: Buffer, signature: string) {
+  verifyWebhook<TCustomData = unknown>(payload: string, signature: string) {
     if (!envApi.LEMON_SQUEEZY_WEBHOOK_SECRET) {
       throw new Error('LEMON_SQUEEZY_WEBHOOK_SECRET not configured')
     }
 
     const hmac = crypto.createHmac('sha256', envApi.LEMON_SQUEEZY_WEBHOOK_SECRET)
-    const digest = Buffer.from(hmac.update(payload).digest('hex'), 'utf8')
-    const bufferSignature = Buffer.from(signature, 'utf8')
+    const digest = Buffer.from(hmac.update(payload).digest('hex'), 'hex')
+    const bufferSignature = Buffer.from(signature, 'hex')
 
     if (!crypto.timingSafeEqual(digest, bufferSignature)) {
       throw HttpError.BadRequest('Invalid signature.')

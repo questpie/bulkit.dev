@@ -27,6 +27,13 @@ export default async function PlanSelectionPage() {
     redirect('/')
   }
 
+  // Check if organization already has an active plan
+  const activePlanResp = await apiServer.plans.active.get()
+  if (activePlanResp.data) {
+    // Organization already has a plan, redirect to home
+    redirect('/')
+  }
+
   const plansResponse = await apiServer.plans.index.get()
   if (plansResponse.error) {
     throw new Error('Failed to fetch plans')

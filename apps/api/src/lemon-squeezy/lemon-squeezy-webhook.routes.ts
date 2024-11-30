@@ -2,7 +2,10 @@ import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
-import { injectProcessWebhookJob } from '@bulkit/api/modules/plans/jobs/process-webhook.job'
+import {
+  injectProcessWebhookJob,
+  type LemonSqueezyCustomData,
+} from '@bulkit/api/modules/plans/jobs/process-webhook.job'
 import Elysia from 'elysia'
 import { HttpError } from 'elysia-http-error'
 import ms from 'ms'
@@ -13,12 +16,9 @@ export const lemonSqueezyWebhookRoutes =
     : new Elysia({ prefix: '/lemon-squeezy' })
         .use(injectLemonSqueezy)
         .use(injectDatabase)
-        .onParse(async ({ request, headers }) => {
-          if (headers['content-type'] === 'application/json; charset=utf-8') {
-            const arrayBuffer = await Bun.readableStreamToArrayBuffer(request.body!)
-            const rawBody = Buffer.from(arrayBuffer)
-            return rawBody
-          }
+        .onParse(async ({ request }) => {
+          const rawBody = await request.text()
+          return rawBody
         })
         .post('/webhook', async (ctx) => {
           const { jobProcessLemonSqueezyWebhook } = iocResolve(ioc.use(injectProcessWebhookJob))
@@ -28,11 +28,10 @@ export const lemonSqueezyWebhookRoutes =
             throw HttpError.BadRequest('Missing signature header')
           }
 
-          const payload = ctx.lemonSqueezy.verifyWebhook<{
-            organizationId: string
-            planId?: string
-            creditTransactionId?: string
-          }>(ctx.body as Buffer, signature)
+          const payload = ctx.lemonSqueezy.verifyWebhook<LemonSqueezyCustomData>(
+            ctx.body as string,
+            signature
+          )
 
           await jobProcessLemonSqueezyWebhook.invoke(
             {

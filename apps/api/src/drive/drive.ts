@@ -17,6 +17,17 @@ export const driveManager = new DriveManager({
   default: 's3',
   // default: envApi.DEFAULT_DRIVER,
 
+  fakes: {
+    location: new URL('./uploads', import.meta.url).toString(),
+    urlBuilder: {
+      async generateURL(key, filePath) {
+        return [filePath, key].filter(Boolean).join('/')
+      },
+      async generateSignedURL(key, filePath) {
+        return [filePath, key].filter(Boolean).join('/')
+      },
+    },
+  },
   /**
    * A collection of services you plan to use in your application
    */
