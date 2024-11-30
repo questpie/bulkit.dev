@@ -4,6 +4,7 @@ import { appRoutes } from '@bulkit/api/modules/app/app.routes'
 import { adminRoutes } from '@bulkit/api/modules/auth/admin/admin.routes'
 import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
 import { channelRoutes } from '@bulkit/api/modules/channels/channels.routes'
+import { commentsRoutes } from '@bulkit/api/modules/comments/comments.routes'
 import { openGraphRoutes } from '@bulkit/api/modules/open-graph/open-graph.routes'
 import { organizationRoutes } from '@bulkit/api/modules/organizations/organizations.routes'
 import { planRoutes } from '@bulkit/api/modules/plans/plans.routes'
@@ -19,6 +20,7 @@ export const rootRoutes = new Elysia()
   .use(appRoutes)
   .use(authRoutes)
   .use(channelRoutes)
+  .use(commentsRoutes)
   .use(organizationRoutes)
   .use(postsRoutes)
   .use(resourceRoutes)

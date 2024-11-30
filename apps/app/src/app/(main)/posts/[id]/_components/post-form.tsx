@@ -1,6 +1,5 @@
 'use client'
 
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import ChannelPicker from '@bulkit/app/app/(main)/posts/[id]/_components/channel-picker'
 import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
@@ -12,6 +11,7 @@ import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils
 import {
   getPostSchemaFromType,
   PostDetailsSchema,
+  type Post,
   type PostMediaSchema,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { Alert, AlertDescription, AlertTitle } from '@bulkit/ui/components/ui/alert'

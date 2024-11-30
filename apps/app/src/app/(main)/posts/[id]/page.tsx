@@ -8,14 +8,12 @@ import {
   RegularPostFields,
   ThreadPostFields,
 } from '@bulkit/app/app/(main)/posts/[id]/_components/post-form'
-import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
+import { PostSidebar } from '@bulkit/app/app/(main)/posts/[id]/_components/post-sidebar'
 import { PublishSettings } from '@bulkit/app/app/(main)/posts/[id]/_components/publish-settings'
 import { PostDetailTab } from '@bulkit/app/app/(main)/posts/post.constants'
-import { POST_TYPE_NAME } from '@bulkit/shared/constants/db.constants'
 import { Tabs, TabsContent } from '@bulkit/ui/components/ui/tabs'
 import { notFound } from 'next/navigation'
 import type { ReactNode } from 'react'
-import { PiEye } from 'react-icons/pi'
 
 export default async function PostDetail(props: {
   params: Promise<{ id: string }>
@@ -87,11 +85,14 @@ export default async function PostDetail(props: {
         </div>
 
         <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border pb-4 bottom-0 h-full overflow-auto '>
-          <div className='flex flex-row items-center gap-2 pt-4'>
+          {/* <div className='flex flex-row items-center gap-2 pt-4'>
             <h4 className='text-lg font-bold'>{POST_TYPE_NAME[postResp.data.type]} Preview</h4>
             <PiEye />
           </div>
-          <PostPreview />
+
+
+          <PostPreview /> */}
+          <PostSidebar postId={postResp.data.id} type={postResp.data.type} />
         </div>
       </div>
     </PostFormProvider>

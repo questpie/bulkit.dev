@@ -3,18 +3,12 @@ import { usersTable } from './auth.table'
 import { organizationsTable } from './organizations.table'
 import { postsTable } from './posts.table'
 import { relations } from 'drizzle-orm'
-import { text, timestamp, index, jsonb } from 'drizzle-orm/pg-core'
+import { text, jsonb, index } from 'drizzle-orm/pg-core'
 import { pgTable } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-typebox'
 
-export type CommentMention = {
-  type: 'user' | 'ai'
-  startIndex: number
-  endIndex: number
-}
-
-export const commentsTable = pgTable(
-  'comments',
+export const postHistoryTable = pgTable(
+  'post_history',
   {
     id: primaryKeyCol(),
     postId: text('post_id')
@@ -28,9 +22,8 @@ export const commentsTable = pgTable(
       .references(() => organizationsTable.id, {
         onDelete: 'cascade',
       }),
-    content: text('content').notNull(),
-    mentions: jsonb('mentions').$type<CommentMention[]>().default([]),
-    isAiResponse: text('is_ai_response').default('false'),
+    snapshot: jsonb('snapshot').notNull(), // The full post data at this point
+    changeDescription: text('change_description').notNull(), // Description of what changed
     ...timestampCols(),
   },
   (table) => ({
@@ -40,22 +33,22 @@ export const commentsTable = pgTable(
   })
 )
 
-export type SelectComment = typeof commentsTable.$inferSelect
-export type InsertComment = typeof commentsTable.$inferInsert
-export const insertCommentSchema = createInsertSchema(commentsTable)
-export const selectCommentSchema = createSelectSchema(commentsTable)
+export type SelectPostHistory = typeof postHistoryTable.$inferSelect
+export type InsertPostHistory = typeof postHistoryTable.$inferInsert
+export const insertPostHistorySchema = createInsertSchema(postHistoryTable)
+export const selectPostHistorySchema = createSelectSchema(postHistoryTable)
 
-export const commentsRelations = relations(commentsTable, ({ one }) => ({
+export const postHistoryRelations = relations(postHistoryTable, ({ one }) => ({
   post: one(postsTable, {
-    fields: [commentsTable.postId],
+    fields: [postHistoryTable.postId],
     references: [postsTable.id],
   }),
   user: one(usersTable, {
-    fields: [commentsTable.userId],
+    fields: [postHistoryTable.userId],
     references: [usersTable.id],
   }),
   organization: one(organizationsTable, {
-    fields: [commentsTable.organizationId],
+    fields: [postHistoryTable.organizationId],
     references: [organizationsTable.id],
   }),
 }))
