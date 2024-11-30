@@ -151,3 +151,5 @@ export type PostDetails = Static<typeof PostDetailsSchema>
 export type PostWithType<T extends PostType> = Extract<Post, { type: T }>
 
 export type PostListItem = Static<typeof PostListItemSchema>
+
+export type PostMedia = Static<typeof PostMediaSchema>

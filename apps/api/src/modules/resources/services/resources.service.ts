@@ -126,7 +126,7 @@ export class ResourcesService {
             location: item.fileName,
             isExternal: false,
             cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
-            isPrivate: opts.isPrivate,
+            isPrivate: opts.isPrivate ?? true,
           }))
         )
         .returning({

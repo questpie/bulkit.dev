@@ -59,7 +59,7 @@ export const driveManager = new DriveManager({
 
         region: envApi.S3_REGION,
         bucket: envApi.S3_BUCKET,
-        visibility: 'public',
+        visibility: 'private',
 
         logger: appLogger,
       })

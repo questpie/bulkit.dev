@@ -8,7 +8,7 @@ export const resourcesTable = pgTable('resources', {
   isExternal: boolean('is_external').notNull().default(false),
   location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
   type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
-  isPrivate: boolean('is_private').notNull().default(false),
+  isPrivate: boolean('is_private').notNull().default(true),
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {

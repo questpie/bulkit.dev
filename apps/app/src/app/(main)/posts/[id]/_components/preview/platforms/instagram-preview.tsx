@@ -1,11 +1,11 @@
 'use client'
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
-import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
 import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
-import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
+import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
+import type { PostType } from '@bulkit/shared/constants/db.constants'
+import type { Post, PostMedia } from '@bulkit/shared/modules/posts/posts.schemas'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
+import { Button } from '@bulkit/ui/components/ui/button'
 import {
   Carousel,
   CarouselContent,
@@ -13,174 +13,226 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@bulkit/ui/components/ui/carousel'
-import Image from 'next/image'
 import { useState } from 'react'
-import { useFormContext } from 'react-hook-form'
-import { PiBookmarkSimple, PiChatTeardrop, PiHeart, PiPaperPlaneTilt } from 'react-icons/pi'
+import { useFormContext, useWatch } from 'react-hook-form'
+import {
+  PiHeart,
+  PiChatTeardrop,
+  PiPaperPlaneTilt,
+  PiBookmarkSimple,
+  PiDotsThree,
+  PiSmileyStickerLight,
+} from 'react-icons/pi'
 
 export function InstagramPreview(props: PreviewPostProps) {
-  const { watch } = useFormContext<Post>()
-  const postData = watch()
-  const Icon = POST_TYPE_ICON[postData.type]
+  const form = useFormContext<Post>()
+  const postData = useWatch({
+    control: form.control,
+  })
+
+  if (!postData.type) {
+    throw new Error('Post type is required')
+  }
 
   const renderPreview = () => {
     switch (postData.type) {
       case 'post':
-        return <RegularPostPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <RegularPostPreview
+            postData={postData as Extract<Post, { type: 'post' }>}
+            previewUser={props.previewUser}
+          />
+        )
       case 'reel':
-        return <ReelPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <ReelPostPreview
+            postData={postData as Extract<Post, { type: 'reel' }>}
+            previewUser={props.previewUser}
+          />
+        )
       case 'story':
-        return <StoryPreview postData={postData} previewUser={props.previewUser} />
-      case 'thread':
-        return <CarouselPostPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <StoryPostPreview
+            postData={postData as Extract<Post, { type: 'story' }>}
+            previewUser={props.previewUser}
+          />
+        )
       default:
         return <div>Unsupported post type</div>
     }
   }
 
-  return (
-    <div className='bg-background w-full mx-auto border border-border rounded-md overflow-hidden'>
-      {renderPreview()}
-    </div>
-  )
+  return <div className='bg-background rounded-lg'>{renderPreview()}</div>
 }
 
-function PostHeader({ previewUser }: { previewUser: PreviewPostProps['previewUser'] }) {
-  return (
-    <div className='flex items-center p-3'>
-      <Avatar className='w-8 h-8'>
-        <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-        <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
-      </Avatar>
-      <span className='ml-2 font-semibold text-sm'>{previewUser.username}</span>
-    </div>
-  )
+export type InstagramPreviewProps<Type extends PostType = PostType> = {
+  postData: Post & { type: Type }
+  previewUser: PreviewPostProps['previewUser']
 }
 
-function PostFooter() {
-  const [likes] = useState(Math.floor(Math.random() * 1000))
-
+function PostHeader(props: InstagramPreviewProps) {
   return (
-    <div className='px-3 py-2'>
-      <div className='flex justify-between mb-2'>
-        <div className='flex space-x-4'>
-          <PiHeart className='w-6 h-6' />
-          <PiChatTeardrop className='w-6 h-6' />
-          <PiPaperPlaneTilt className='w-6 h-6' />
+    <div className='p-4'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
+          <Avatar className='h-8 w-8'>
+            <AvatarFallback>{props.previewUser.name[0]}</AvatarFallback>
+            <AvatarImage src={props.previewUser.avatar} alt={props.previewUser.name} />
+          </Avatar>
+          <span className='font-semibold text-sm'>{props.previewUser.username}</span>
         </div>
-        <PiBookmarkSimple className='w-6 h-6' />
+        <Button variant='ghost' size='icon'>
+          <PiDotsThree className='h-5 w-5' />
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function PostActions() {
+  const [likes] = useState(Math.floor(Math.random() * 10000))
+  const [comments] = useState(Math.floor(Math.random() * 1000))
+
+  return (
+    <div className='px-4 pb-4'>
+      <div className='flex justify-between py-2'>
+        <div className='flex gap-4'>
+          <Button variant='ghost' size='icon'>
+            <PiHeart className='h-7 w-7' />
+          </Button>
+          <Button variant='ghost' size='icon'>
+            <PiChatTeardrop className='h-7 w-7' />
+          </Button>
+          <Button variant='ghost' size='icon'>
+            <PiPaperPlaneTilt className='h-7 w-7' />
+          </Button>
+        </div>
+        <Button variant='ghost' size='icon'>
+          <PiBookmarkSimple className='h-7 w-7' />
+        </Button>
       </div>
       <div className='font-semibold text-sm' suppressHydrationWarning>
-        {likes} likes
+        {Intl.NumberFormat(undefined, { notation: 'compact' }).format(likes)} likes
       </div>
-    </div>
-  )
-}
-
-function PostCarousel(props: { resources: Resource[] }) {
-  return (
-    <Carousel className='relative'>
-      <CarouselContent>
-        {props.resources.map((resource) => (
-          <CarouselItem key={resource.id} className='relative w-full aspect-square'>
-            <ResourcePreview hideActions resource={resource} className='border-none rounded-none' />
-          </CarouselItem>
-        ))}
-      </CarouselContent>
-      <CarouselPrevious className='disabled:hidden absolute left-4 -translate-y-1/2 top-1/2 z-10' />
-      <CarouselNext className='disabled:hidden absolute right-4 -translate-y-1/2 top-1/2 z-10' />
-      {/* <CarouselPrevious />
-          <CarouselNext /> */}
-    </Carousel>
-  )
-}
-
-function RegularPostPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'post' }; previewUser: PreviewPostProps['previewUser'] }) {
-  const resources = postData.media.map((m) => m.resource)
-  return (
-    <div>
-      <PostHeader previewUser={previewUser} />
-      <PostCarousel resources={resources} />
-      <PostFooter />
-      <div className='px-3 pb-3'>
-        <TextPreview text={postData.text} className={{ root: 'text-sm' }} />
-      </div>
-    </div>
-  )
-}
-
-function ReelPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'reel' }; previewUser: PreviewPostProps['previewUser'] }) {
-  return (
-    <div className='relative aspect-[9/16] bg-black'>
-      {postData.resource && (
-        <video
-          src={postData.resource.url}
-          className='w-full h-full object-cover'
-          loop
-          muted
-          playsInline
-        />
-      )}
-      <div className='absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent'>
-        <div className='flex items-center'>
-          <Avatar className='w-8 h-8'>
-            <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-            <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
-          </Avatar>
-          <span className='ml-2 font-semibold text-sm text-white'>{previewUser.username}</span>
+      <div className='flex items-center gap-2 mt-3'>
+        <div className='flex-1 flex items-center gap-2 rounded-full bg-accent px-4 py-1.5'>
+          <span className='text-sm text-muted-foreground'>Add a comment...</span>
+          <PiSmileyStickerLight className='h-5 w-5 text-muted-foreground' />
         </div>
-        <TextPreview text={postData.description} className={{ root: 'text-sm text-white mt-2' }} />
       </div>
     </div>
   )
 }
 
-function StoryPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'story' }; previewUser: PreviewPostProps['previewUser'] }) {
+function MediaCarousel({ media }: { media: PostMedia[] }) {
   return (
-    <div className='relative aspect-[9/16] bg-muted'>
+    <div className='relative'>
+      <Carousel>
+        <CarouselContent>
+          {media.map((item) => (
+            <CarouselItem key={item.id}>
+              <div className='aspect-square relative'>
+                <ResourcePreview resource={item.resource} hideActions className='w-full h-full' />
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        {media.length > 1 && (
+          <>
+            <CarouselPrevious className='absolute left-2 -translate-y-1/2 top-1/2' />
+            <CarouselNext className='absolute right-2 -translate-y-1/2 top-1/2' />
+          </>
+        )}
+      </Carousel>
+    </div>
+  )
+}
+
+function RegularPostPreview({ postData, previewUser }: InstagramPreviewProps<'post'>) {
+  return (
+    <>
+      <PostHeader postData={postData} previewUser={previewUser} />
+      {postData.media.length > 0 && <MediaCarousel media={postData.media} />}
+      <div className='px-4 pt-2'>
+        <TextPreview text={postData.text} platform='instagram' />
+      </div>
+      <PostActions />
+    </>
+  )
+}
+
+function ReelPostPreview({ postData, previewUser }: InstagramPreviewProps<'reel'>) {
+  return (
+    <div className='aspect-[9/16] relative rounded-lg overflow-hidden'>
       {postData.resource && (
-        <ResourcePreview
-          resource={postData.resource}
-          hideActions
-          className='aspect-auto h-full w-auto border-none'
-        />
+        <>
+          <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />
+          <div className='absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40'>
+            <div className='absolute bottom-20 left-4 right-20'>
+              <div className='flex items-center gap-2 mb-4'>
+                <Avatar className='h-10 w-10 ring-2 ring-white'>
+                  <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
+                  <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
+                </Avatar>
+                <span className='text-white font-semibold'>{previewUser.username}</span>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='ml-2 bg-white hover:bg-white/90 text-foreground'
+                >
+                  Follow
+                </Button>
+              </div>
+              <TextPreview
+                text={postData.description}
+                platform='instagram'
+                className={{
+                  root: 'text-white',
+                  text: 'text-white',
+                  mention: 'text-white',
+                  link: 'text-white',
+                }}
+              />
+            </div>
+            <div className='absolute bottom-20 right-2 flex flex-col items-center gap-4'>
+              <Button variant='ghost' size='icon' className='text-white hover:text-white/90'>
+                <PiHeart className='h-7 w-7' />
+              </Button>
+              <Button variant='ghost' size='icon' className='text-white hover:text-white/90'>
+                <PiChatTeardrop className='h-7 w-7' />
+              </Button>
+              <Button variant='ghost' size='icon' className='text-white hover:text-white/90'>
+                <PiPaperPlaneTilt className='h-7 w-7' />
+              </Button>
+              <Button variant='ghost' size='icon' className='text-white hover:text-white/90'>
+                <PiBookmarkSimple className='h-7 w-7' />
+              </Button>
+            </div>
+          </div>
+        </>
       )}
-      <div className='absolute top-4 left-4 flex items-center'>
-        <Avatar className='w-8 h-8 ring-2 ring-white'>
-          <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
-          <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
-        </Avatar>
-        <span className='ml-2 font-semibold text-sm text-white'>{previewUser.username}</span>
-      </div>
     </div>
   )
 }
 
-function CarouselPostPreview({
-  postData,
-  previewUser,
-}: { postData: Post & { type: 'thread' }; previewUser: PreviewPostProps['previewUser'] }) {
-  const combinedText = postData.items.map((item, i) => `${item.text}`).join('\n\n')
-
-  const resources = postData.items.flatMap((item) => item.media).map((m) => m.resource)
-
+function StoryPostPreview({ postData, previewUser }: InstagramPreviewProps<'story'>) {
   return (
-    <div>
-      <PostHeader previewUser={previewUser} />
-      <PostCarousel resources={resources} />
-      <PostFooter />
-      <div className='px-3 pb-3'>
-        <TextPreview text={combinedText} className={{ root: 'text-sm' }} />
-      </div>
+    <div className='aspect-[9/16] relative rounded-lg overflow-hidden'>
+      {postData.resource && (
+        <>
+          <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />
+          <div className='absolute top-0 left-0 right-0 p-4'>
+            <div className='flex items-center gap-2'>
+              <Avatar className='h-8 w-8 ring-2 ring-primary'>
+                <AvatarFallback>{previewUser.name[0]}</AvatarFallback>
+                <AvatarImage src={previewUser.avatar} alt={previewUser.name} />
+              </Avatar>
+              <span className='text-white font-semibold text-sm'>{previewUser.username}</span>
+              <span className='text-white/70 text-xs'>Just now</span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

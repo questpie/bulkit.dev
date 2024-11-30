@@ -1,12 +1,14 @@
 'use client'
 
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
-import { apiClient } from '@bulkit/app/api/api.client'
 import { PLATFORM_ICON } from '@bulkit/app/app/(main)/channels/channels.constants'
+import { FacebookPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/facebook-preview'
 import { InstagramPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/instagram-preview'
+import { LinkedInPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/linkedin-preview'
+import { TiktokPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/tiktok-preview'
 import { XPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/x-preview'
+import { YoutubePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/platforms/youtube-preview'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
-import type { PostChannel } from '@bulkit/shared/modules/posts/posts.schemas'
+import type { Post, PostChannel } from '@bulkit/shared/modules/posts/posts.schemas'
 import { Alert, AlertDescription, AlertTitle } from '@bulkit/ui/components/ui/alert'
 import {
   Select,
@@ -15,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
-import { useQuery } from '@tanstack/react-query'
 import { type ComponentType, useEffect, useState } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import { PiInfo } from 'react-icons/pi'
@@ -23,11 +24,10 @@ import { PiInfo } from 'react-icons/pi'
 const PLATFORM_PREVIEW: Record<Platform, ComponentType<PreviewPostProps>> = {
   x: XPreview,
   instagram: InstagramPreview,
-  // TODO: add more platforms
-  facebook: XPreview,
-  linkedin: XPreview,
-  tiktok: XPreview,
-  youtube: XPreview,
+  facebook: FacebookPreview,
+  linkedin: LinkedInPreview,
+  tiktok: TiktokPreview,
+  youtube: YoutubePreview,
 }
 
 export type PreviewPostProps = {

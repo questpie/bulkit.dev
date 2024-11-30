@@ -27,7 +27,6 @@ import { Input } from '@bulkit/ui/components/ui/input'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { cn } from '@bulkit/ui/lib'
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { LuArchive, LuTrash } from 'react-icons/lu'
 import { PiChartBar, PiPencil } from 'react-icons/pi'
@@ -49,8 +48,9 @@ export function PostsTable(props: PostsTableProps) {
   )
 
   const updateMutation = useMutation({
-    mutationFn: (data: { name: string }) =>
-      apiClient.posts({ id: selectedPost!.id }).rename.patch(data),
+    mutationFn: (data: { name: string; id: string }) => {
+      return apiClient.posts({ id: data.id }).rename.patch(data)
+    },
     onSuccess: (res) => {
       if (!res.error) {
         toast.success('Post renamed')
@@ -86,6 +86,7 @@ export function PostsTable(props: PostsTableProps) {
   })
 
   const allPosts = postsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
+  console.log('allPosts', allPosts)
 
   return (
     <>
@@ -241,7 +242,10 @@ export function PostsTable(props: PostsTableProps) {
               Cancel
             </Button>
             <Button
-              onClick={() => updateMutation.mutate({ name: newName })}
+              onClick={() => {
+                if (!selectedPost) return
+                updateMutation.mutate({ name: newName, id: selectedPost.id })
+              }}
               disabled={!newName || !!(selectedPost && newName === selectedPost.name)}
             >
               Rename

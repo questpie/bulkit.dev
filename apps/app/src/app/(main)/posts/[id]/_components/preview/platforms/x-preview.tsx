@@ -1,30 +1,52 @@
 'use client'
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { PreviewPostProps } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
-import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
 import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
+import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/text-preview'
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
+import type { Post } from '@bulkit/shared/modules/posts/posts.schemas'
 import { getRelativeTimeString } from '@bulkit/shared/utils/date-utils'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { cn } from '@bulkit/ui/lib'
 import { useState, type PropsWithChildren } from 'react'
-import { useFormContext } from 'react-hook-form'
+import { useFormContext, useWatch } from 'react-hook-form'
 import { PiBookmarkSimple, PiChartBar, PiChatTeardrop, PiHeart, PiRepeat } from 'react-icons/pi'
 
 export function XPreview(props: PreviewPostProps) {
-  const { watch } = useFormContext<Post>()
-  const postData = watch()
+  const form = useFormContext<Post>()
+  const postData = useWatch({
+    control: form.control,
+  })
+
+  if (!postData.type) {
+    throw new Error('Post type is required')
+  }
+
   const Icon = POST_TYPE_ICON[postData.type]
 
   const renderPreview = () => {
     switch (postData.type) {
       case 'post':
-        return <RegularPostPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <RegularPostPreview
+            postData={postData as Extract<Post, { type: 'post' }>}
+            previewUser={props.previewUser}
+          />
+        )
       case 'reel':
-        return <ReelPostPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <ReelPostPreview
+            postData={postData as Extract<Post, { type: 'reel' }>}
+            previewUser={props.previewUser}
+          />
+        )
       case 'thread':
-        return <ThreadPostPreview postData={postData} previewUser={props.previewUser} />
+        return (
+          <ThreadPostPreview
+            postData={postData as Extract<Post, { type: 'thread' }>}
+            previewUser={props.previewUser}
+          />
+        )
       default:
         return <div>Unsupported post type</div>
     }

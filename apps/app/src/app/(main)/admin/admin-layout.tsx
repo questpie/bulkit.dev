@@ -20,12 +20,12 @@ const ADMIN_TABS: {
   icon: ReactNode
   description: string
 }[] = [
-  {
-    name: 'Platforms',
-    href: '/admin/platforms',
-    icon: <PiShareNetwork />,
-    description: 'Configure and manage social media platform integrations',
-  },
+  // {
+  //   name: 'Platforms',
+  //   href: '/admin/platforms',
+  //   icon: <PiShareNetwork />,
+  //   description: 'Configure and manage social media platform integrations',
+  // },
   {
     name: 'Organizations',
     href: '/admin/organizations',
