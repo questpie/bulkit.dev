@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.5
+
+### Patch Changes
+
+- chore: add proper ownership to the bun user
+
 ## 0.2.4
 
 ### Patch Changes
