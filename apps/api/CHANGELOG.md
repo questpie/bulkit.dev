@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.6
+
+### Patch Changes
+
+- pino-pretty logger resolution
+
 ## 0.2.5
 
 ### Patch Changes
