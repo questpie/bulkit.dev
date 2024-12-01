@@ -15,7 +15,7 @@ export class ApiKeyManager {
   readonly #ENCRYPTION_KEY: Buffer
 
   constructor() {
-    this.#ENCRYPTION_KEY = Buffer.from(envApi.API_KEY_ENCRYPTION_SECRET, 'hex')
+    this.#ENCRYPTION_KEY = Buffer.from(envApi.ENCRYPTION_SECRET, 'hex')
   }
 
   encrypt(apiKey: string): string {

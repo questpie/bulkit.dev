@@ -11,6 +11,9 @@ import { HttpError } from 'elysia-http-error'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
+  detail: {
+    tags: ['Resources'],
+  },
 })
   .use(
     applyRateLimit({

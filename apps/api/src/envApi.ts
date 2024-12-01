@@ -17,7 +17,7 @@ export const envApi = createEnv({
 
     APP_URL: Type.String(Type.String()),
 
-    API_KEY_ENCRYPTION_SECRET: Type.String({
+    ENCRYPTION_SECRET: Type.String({
       minLength: 64,
       maxLength: 64,
       description:
@@ -48,18 +48,27 @@ export const envApi = createEnv({
 
     // TODO: support for local drive
     // storage
-    DEFAULT_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
+    STORAGE_DRIVER: Type.Union([Type.Literal('s3'), Type.Literal('fs')], {
       default: 's3',
     }),
-    S3_ENDPOINT: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
+
+    S3_ENDPOINT: process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_PORT: Type.Optional(StringInt()),
-    S3_BUCKET: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
+    S3_BUCKET: process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_ACCESS_KEY:
-      process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
+      process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_SECRET_KEY:
-      process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
-    S3_REGION: process.env.DEFAULT_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
+      process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
+    S3_REGION: process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_USE_PATH_STYLE: Type.Optional(StringBoolean({ default: false })),
+
+    // Local storage configuration
+    LOCAL_STORAGE_PATH: Type.String({
+      default: './uploads',
+    }),
+    LOCAL_STORAGE_URL_PATH: Type.String({
+      default: '/uploads',
+    }),
 
     // redis
     REDIS_URL: Type.String(),
@@ -122,7 +131,7 @@ export const envApi = createEnv({
 
     APP_URL: process.env.APP_URL,
 
-    API_KEY_ENCRYPTION_SECRET: process.env.API_KEY_ENCRYPTION_SECRET,
+    ENCRYPTION_SECRET: process.env.ENCRYPTION_SECRET,
 
     DEPLOYMENT_TYPE: process.env.DEPLOYMENT_TYPE,
 
@@ -139,7 +148,7 @@ export const envApi = createEnv({
 
     SERVER_URL: process.env.SERVER_URL,
 
-    DEFAULT_DRIVER: process.env.DEFAULT_DRIVER,
+    STORAGE_DRIVER: process.env.STORAGE_DRIVER,
     S3_ENDPOINT: process.env.S3_ENDPOINT,
     S3_PORT: process.env.S3_PORT,
     S3_BUCKET: process.env.S3_BUCKET,
@@ -147,6 +156,9 @@ export const envApi = createEnv({
     S3_SECRET_KEY: process.env.S3_SECRET_KEY,
     S3_REGION: process.env.S3_REGION,
     S3_USE_PATH_STYLE: process.env.S3_USE_PATH_STYLE,
+
+    LOCAL_STORAGE_PATH: process.env.LOCAL_STORAGE_PATH,
+    LOCAL_STORAGE_URL_PATH: process.env.LOCAL_STORAGE_URL_PATH,
 
     REDIS_URL: process.env.REDIS_URL,
 

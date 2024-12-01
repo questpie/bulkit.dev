@@ -286,9 +286,10 @@ function ResourceDialog({
 
   const stockSaveMutation = useMutation({
     mutationFn: async (image: StockImage) => {
-      const response = await apiClient.resources.stock.save.post({
+      const response = await apiClient.resources.stock.index.post({
         url: image.url,
         caption: image.alt,
+        isPrivate: true,
       })
 
       if (response.error) {

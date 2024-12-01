@@ -3,10 +3,17 @@ import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPlanService } from '@bulkit/api/modules/plans/services/plans.service'
+import { generalEnv } from '@bulkit/shared/env/general.env'
 import { AvailablePlanSchema, PlanSchema } from '@bulkit/shared/modules/plans/plans.schemas'
 import Elysia, { t } from 'elysia'
 
-export const planRoutes = new Elysia({ prefix: '/plans' })
+export const planRoutes = new Elysia({
+  prefix: '/plans',
+  detail: {
+    hide: generalEnv.PUBLIC_NODE_ENV === 'production',
+    tags: ['Plans'],
+  },
+})
   .use(injectDatabase)
   .use(injectPlanService)
   .get(

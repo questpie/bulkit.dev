@@ -15,7 +15,12 @@ import { HttpError } from 'elysia-http-error'
 import { ChannelListItemSchema } from '@bulkit/shared/modules/channels/channels.schemas'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 
-export const channelRoutes = new Elysia({ prefix: '/channels' })
+export const channelRoutes = new Elysia({
+  prefix: '/channels',
+  detail: {
+    tags: ['Channels'],
+  },
+})
   .use(
     applyRateLimit({
       tiers: {

@@ -17,10 +17,7 @@ import {
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
-import {
-  getResourcePublicUrl,
-  isMediaTypeAllowed,
-} from '@bulkit/api/modules/resources/resource.utils'
+import { getResourceUrl, isMediaTypeAllowed } from '@bulkit/api/modules/resources/resource.utils'
 import {
   injectResourcesService,
   type ResourcesService,
@@ -118,7 +115,7 @@ export class PostsService {
             type: reelPost.resources.type,
             createdAt: reelPost.resources.createdAt,
             isExternal: reelPost.resources.isExternal,
-            url: await getResourcePublicUrl(reelPost.resources),
+            url: await getResourceUrl(reelPost.resources),
           },
         } satisfies PostWithType<'reel'> as unknown as PReturn
       }
@@ -154,7 +151,7 @@ export class PostsService {
                     type: p.resources!.type,
                     createdAt: p.resources!.createdAt,
                     isExternal: p.resources!.isExternal,
-                    url: await getResourcePublicUrl(p.resources!),
+                    url: await getResourceUrl(p.resources!),
                   },
                 } satisfies Extract<Post, { type: 'post' }>['media'][number]
               })
@@ -203,7 +200,7 @@ export class PostsService {
                       type: p.resources!.type,
                       createdAt: p.resources!.createdAt,
                       isExternal: p.resources!.isExternal,
-                      url: await getResourcePublicUrl(p.resources!),
+                      url: await getResourceUrl(p.resources!),
                     },
                   }
                 })
@@ -240,7 +237,7 @@ export class PostsService {
             type: storyPosts.resource.type,
             createdAt: storyPosts.resource.createdAt,
             isExternal: storyPosts.resource.isExternal,
-            url: await getResourcePublicUrl(storyPosts.resource),
+            url: await getResourceUrl(storyPosts.resource),
           },
         } satisfies PostWithType<'story'> as unknown as PReturn
       }
@@ -648,7 +645,7 @@ export class PostsService {
             isExternal: m.resources.isExternal,
             location: m.resources.location,
             type: m.resources.type,
-            url: await getResourcePublicUrl(m.resources),
+            url: await getResourceUrl(m.resources),
           },
         }))
       ),

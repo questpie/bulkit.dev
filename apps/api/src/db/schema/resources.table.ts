@@ -6,9 +6,8 @@ import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 export const resourcesTable = pgTable('resources', {
   id: primaryKeyCol('id'),
   isExternal: boolean('is_external').notNull().default(false),
-  location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
-  type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
-  isPrivate: boolean('is_private').notNull().default(true),
+  location: text('location').notNull(), // URL if external, or path like 'private/org-id/file.jpg' or 'public/org-id/file.jpg'
+  type: text('type').notNull(),
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {

@@ -3,7 +3,7 @@ import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
-import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
+import { getResourceUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
 import { extractPathExt } from '@bulkit/shared/utils/string'
 import cuid2 from '@paralleldrive/cuid2'
@@ -43,7 +43,7 @@ export class ResourcesService {
       data: await Promise.all(
         results.map(async (resource, i) => ({
           ...resource,
-          url: await getResourcePublicUrl(resource),
+          url: await getResourceUrl(resource),
         }))
       ),
       nextCursor,
@@ -75,7 +75,7 @@ export class ResourcesService {
 
     return {
       ...resource,
-      url: await getResourcePublicUrl(resource),
+      url: await getResourceUrl(resource),
     }
   }
 
@@ -112,21 +112,26 @@ export class ResourcesService {
     opts: { organizationId: string; files: File[]; isPrivate?: boolean }
   ): Promise<Resource[]> {
     return db.transaction(async (trx) => {
-      const payload = opts.files.map((file) => ({
-        fileName: `${opts.organizationId}/${Date.now()}-${cuid2.createId()}${extractPathExt(file.name)}`,
-        content: file,
-      }))
+      const payload = opts.files.map((file) => {
+        const prefix = opts.isPrivate ? 'private' : 'public'
+        const fileName =
+          [prefix, opts.organizationId, Date.now(), cuid2.createId()].join('/') +
+          extractPathExt(file.name)
+        return {
+          fileName,
+          content: file,
+        }
+      })
 
       const resources = await trx
         .insert(resourcesTable)
         .values(
-          payload.map((item, i) => ({
+          payload.map((item) => ({
             organizationId: opts.organizationId,
             type: item.content.type,
             location: item.fileName,
             isExternal: false,
-            cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
-            isPrivate: opts.isPrivate ?? true,
+            cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(),
           }))
         )
         .returning({
@@ -152,7 +157,7 @@ export class ResourcesService {
       return Promise.all(
         resources.map(async (resource) => ({
           ...resource,
-          url: await getResourcePublicUrl(resource),
+          url: await getResourceUrl(resource),
         }))
       )
     })
@@ -223,9 +228,12 @@ export class ResourcesService {
       const contentType = response.headers.get('content-type') || 'image/jpeg'
       const buffer = await response.arrayBuffer()
 
-      const fileName = `${opts.organizationId}/${Date.now()}-${cuid2.createId()}.${
-        contentType.split('/')[1]
-      }`
+      const prefix = opts.isPrivate ? 'private' : 'public'
+
+      const fileName = [
+        [prefix, opts.organizationId, Date.now(), cuid2.createId()].join('/'),
+        contentType.split('/')[1],
+      ].join('.')
 
       // Upload to storage
       await this.drive.put(fileName, Buffer.from(buffer), {
@@ -239,7 +247,6 @@ export class ResourcesService {
           organizationId: opts.organizationId,
           type: contentType,
           location: fileName,
-          isPrivate: opts.isPrivate,
           isExternal: false,
           caption: opts.caption,
         })
@@ -254,7 +261,7 @@ export class ResourcesService {
 
       return {
         ...resource,
-        url: await getResourcePublicUrl(resource),
+        url: await getResourceUrl(resource),
       }
     })
   }

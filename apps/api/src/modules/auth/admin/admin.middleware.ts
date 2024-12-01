@@ -1,11 +1,14 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { superAdminsTable } from '@bulkit/api/db/db.schema'
+import { envApi } from '@bulkit/api/envApi'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { eq } from 'drizzle-orm'
 import Elysia from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
-export const adminMiddleware = new Elysia({ name: 'admin.middleware' })
+export const adminMiddleware = new Elysia({
+  name: 'admin.middleware',
+})
   .use(injectDatabase)
   .use(protectedMiddleware)
   .onBeforeHandle(async (ctx) => {

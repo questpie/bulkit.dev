@@ -4,6 +4,7 @@ import { organizationMiddleware } from '@bulkit/api/modules/organizations/organi
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { injectStockImageService } from '@bulkit/api/modules/resources/stock-image/stock-image.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
+import { Type, type Static, type StaticEncode, type TObject, type TSchema } from '@sinclair/typebox'
 import Elysia, { t } from 'elysia'
 
 export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
@@ -41,7 +42,7 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
     }
   )
   .post(
-    '/save',
+    '/',
     async (ctx) => {
       return ctx.db.transaction(async (trx) => {
         return ctx.resourcesService.createFromUrl(trx, {
@@ -56,7 +57,7 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
       body: t.Object({
         url: t.String({ format: 'uri' }),
         caption: t.String(),
-        isPrivate: t.Optional(t.Boolean({ default: true })),
+        isPrivate: t.Boolean({ default: true }),
       }),
       response: {
         200: ResourceSchema,

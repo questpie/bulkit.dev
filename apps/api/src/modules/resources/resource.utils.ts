@@ -1,28 +1,28 @@
 import { injectDrive } from '@bulkit/api/drive/drive'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
-import ms from 'ms'
 
-// TODO: think about when is fine to use this and when to use signed urls and implements the signed urls
-export async function getResourcePublicUrl(resource: {
+/**
+ * Automatically handles the URL generation based on the path prefix
+ * @param forceSignedUrl If true, always returns a signed URL
+ */
+export async function getResourceUrl(props: {
   isExternal: boolean
   location: string
-  isPrivate?: boolean
-  /**
-   * Default is 1 day
-   */
   expiresInSeconds?: number
+  forceSignedUrl?: boolean
 }) {
   const { drive } = iocResolve(ioc.use(injectDrive))
 
-  const isPrivate = resource.isPrivate ?? true
+  if (props.isExternal) {
+    return props.location
+  }
 
-  return resource.isExternal
-    ? resource.location
-    : isPrivate
-      ? drive.getSignedUrl(resource.location, {
-          expiresIn: resource.expiresInSeconds || ms('1d') / 1000,
-        })
-      : drive.getUrl(resource.location)
+  const isPrivate = props.forceSignedUrl ?? props.location.startsWith('private/')
+
+  // Let the driver handle the URL generation based on the path prefix
+  return isPrivate
+    ? drive.getSignedUrl(props.location, { expiresIn: props.expiresInSeconds })
+    : drive.getUrl(props.location)
 }
 
 export function isMediaTypeAllowed(allowedMediaTypes: string[], mediaType: string): boolean {
