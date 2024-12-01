@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.10
+
+### Patch Changes
+
+- fix: app entrypoint
+
 ## 0.2.9
 
 ### Patch Changes
