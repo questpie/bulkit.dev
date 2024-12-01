@@ -1,4 +1,5 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
+import { envApi } from '@bulkit/api/envApi'
 import { injectGoogleOAuthClient } from '@bulkit/api/modules/auth/lucia'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
@@ -41,6 +42,16 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
           path: '/',
         })
       }
+
+      if (query.redirectToOnError) {
+        cookie.redirectToOnError!.set({
+          value: query.redirectToOnError,
+          httpOnly: true,
+          secure: generalEnv.PUBLIC_NODE_ENV === 'production',
+          path: '/',
+        })
+      }
+
       const url = googleOAuthClient.createAuthorizationURL(state, codeVerifier, [
         'profile',
         'email',
@@ -51,6 +62,7 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
     {
       query: t.Object({
         redirectTo: t.Optional(t.String()),
+        redirectToOnError: t.Optional(t.String()),
       }),
     }
   )
@@ -64,9 +76,21 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
       const storedState = cookie.state!.value
       const storedCodeVerifier = cookie.code_verifier!.value
       const cookieRedirectTo = cookie.redirectTo!.value
+      const cookieRedirectToOnError = cookie.redirectToOnError!.value
+
+      if (query.error) {
+        const url = new URL(cookieRedirectToOnError || envApi.APP_URL)
+        url.searchParams.set('error', query.error)
+
+        return redirect(url.toString())
+      }
 
       if (!storedState || !storedCodeVerifier || !query.state || storedState !== query.state) {
         return error(400, 'Invalid state')
+      }
+
+      if (!query.code) {
+        return error(400, 'Code is required')
       }
 
       try {
@@ -76,7 +100,7 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
         )
         const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
           headers: {
-            Authorization: `Bearer ${tokens.accessToken}`,
+            Authorization: `Bearer ${tokens.accessToken()}`,
           },
         })
         const googleUser = (await response.json()) as {
@@ -129,8 +153,9 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
         cookie.redirectTo!.remove()
       },
       query: t.Object({
-        code: t.String(),
-        state: t.String(),
+        code: t.Optional(t.String()),
+        state: t.Optional(t.String()),
+        error: t.Optional(t.String()),
       }),
     }
   )
