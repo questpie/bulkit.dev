@@ -43,6 +43,13 @@
       "when": 1732651195782,
       "tag": "20241126195955_illegal_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1733092081048,
+      "tag": "20241201222801_chief_rumiko_fujikawa",
+      "breakpoints": true
     }
   ]
 }
