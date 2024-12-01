@@ -26,11 +26,11 @@ export const envApi = createEnv({
 
     // database
     DB_HOST: Type.String(),
-    DB_PORT: StringInt(),
+    DB_PORT: Type.Optional(StringInt()),
     DB_USER: Type.String(),
     DB_PASSWORD: Type.String(),
     DB_NAME: Type.String(),
-    DB_AUTO_MIGRATE: StringBoolean({ default: false }),
+    DB_AUTO_MIGRATE: StringBoolean({ default: 'false' }),
 
     // server
     SERVER_URL: Type.String(),
@@ -60,7 +60,7 @@ export const envApi = createEnv({
     S3_SECRET_KEY:
       process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
     S3_REGION: process.env.STORAGE_DRIVER === 's3' ? Type.String() : Type.Optional(Type.String()),
-    S3_USE_PATH_STYLE: Type.Optional(StringBoolean({ default: false })),
+    S3_USE_PATH_STYLE: Type.Optional(StringBoolean({ default: 'false' })),
 
     // Local storage configuration
     LOCAL_STORAGE_PATH: Type.String({
@@ -76,38 +76,38 @@ export const envApi = createEnv({
     // OAuth providers
     GOOGLE_CLIENT_ID: Type.Optional(Type.String()),
     GOOGLE_CLIENT_SECRET: Type.Optional(Type.String()),
-    GOOGLE_LOGIN_ENABLED: StringBoolean({ default: false }),
+    GOOGLE_LOGIN_ENABLED: StringBoolean({ default: 'false' }),
 
     GITHUB_CLIENT_ID: Type.Optional(Type.String()),
     GITHUB_CLIENT_SECRET: Type.Optional(Type.String()),
-    GITHUB_ENABLED: StringBoolean({ default: false }),
+    GITHUB_ENABLED: StringBoolean({ default: 'false' }),
 
     FACEBOOK_APP_ID: Type.Optional(Type.String()),
     FACEBOOK_APP_SECRET: Type.Optional(Type.String()),
-    FACEBOOK_ENABLED: StringBoolean({ default: false }),
+    FACEBOOK_ENABLED: StringBoolean({ default: 'false' }),
 
     // Integrations
     // X_CLIENT_ID: Type.Optional(Type.String()),
     // X_CLIENT_SECRET: Type.Optional(Type.String()),
     X_APP_KEY: Type.Optional(Type.String()),
     X_APP_SECRET: Type.Optional(Type.String()),
-    X_ENABLED: StringBoolean({ default: false }),
+    X_ENABLED: StringBoolean({ default: 'false' }),
 
     INSTAGRAM_APP_ID: Type.Optional(Type.String()),
     INSTAGRAM_APP_SECRET: Type.Optional(Type.String()),
-    INSTAGRAM_ENABLED: StringBoolean({ default: false }),
+    INSTAGRAM_ENABLED: StringBoolean({ default: 'false' }),
 
     YOUTUBE_CLIENT_ID: Type.Optional(Type.String()),
     YOUTUBE_CLIENT_SECRET: Type.Optional(Type.String()),
-    YOUTUBE_ENABLED: StringBoolean({ default: false }),
+    YOUTUBE_ENABLED: StringBoolean({ default: 'false' }),
 
     TIKTOK_CLIENT_ID: Type.Optional(Type.String()),
     TIKTOK_CLIENT_SECRET: Type.Optional(Type.String()),
-    TIKTOK_ENABLED: StringBoolean({ default: false }),
+    TIKTOK_ENABLED: StringBoolean({ default: 'false' }),
 
     LINKEDIN_CLIENT_ID: Type.Optional(Type.String()),
     LINKEDIN_CLIENT_SECRET: Type.Optional(Type.String()),
-    LINKEDIN_ENABLED: StringBoolean({ default: false }),
+    LINKEDIN_ENABLED: StringBoolean({ default: 'false' }),
 
     // Pusher/Soketi -> if no ws needed, remove this
     PUSHER_APP_ID: Type.String(),
@@ -115,7 +115,7 @@ export const envApi = createEnv({
     PUSHER_SECRET: Type.String(),
     PUSHER_HOST: Type.String(),
     PUSHER_PORT: StringInt(),
-    PUSHER_USE_TLS: StringBoolean({ default: false }),
+    PUSHER_USE_TLS: StringBoolean({ default: 'false' }),
 
     // mail
     RESEND_API_KEY:
