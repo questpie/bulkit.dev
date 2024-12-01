@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.4
+
+### Patch Changes
+
+- fix: wrong api .env file docoding
+
 ## 0.2.3
 
 ### Patch Changes
