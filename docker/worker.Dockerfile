@@ -7,7 +7,6 @@ WORKDIR /usr/src/app
 RUN groupadd -r bunuser && useradd -r -g bunuser bunuser
 
 FROM base AS build
-ARG DATABASE_URL
 COPY . .
 RUN bun install --frozen-lockfile
 

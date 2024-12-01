@@ -10,7 +10,6 @@ export default defineConfig({
     prefix: 'timestamp',
   },
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
     host: process.env.DB_HOST!,
     port: Number(process.env.DB_PORT),
     user: process.env.DB_USER!,
