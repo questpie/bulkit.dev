@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.8
+
+### Patch Changes
+
+- Add db ssl to env vars
+
 ## 0.2.7
 
 ### Patch Changes
