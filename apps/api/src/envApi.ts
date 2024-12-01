@@ -30,7 +30,7 @@ export const envApi = createEnv({
     DB_USER: Type.String(),
     DB_PASSWORD: Type.String(),
     DB_NAME: Type.String(),
-    DB_SSL: Type.Optional(StringBoolean({ default: 'false' })),
+    DB_SSL: Type.Optional(Type.String()),
     DB_AUTO_MIGRATE: StringBoolean({ default: 'false' }),
 
     // server
