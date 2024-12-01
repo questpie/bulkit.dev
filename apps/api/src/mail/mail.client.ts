@@ -11,7 +11,7 @@ import { createTestAccount, getTestMessageUrl } from 'nodemailer'
 // Global binding for development mode
 export const injectMailClient = iocRegister('mailClient', () => {
   const adapterPromise = async (): Promise<MailAdapter> => {
-    if (generalEnv.PUBLIC_NODE_ENV === 'production') {
+    if (envApi.RESEND_API_KEY) {
       return new ResendAdapter({ apiKey: envApi.RESEND_API_KEY })
     }
     const testAccount = await createTestAccount()
@@ -26,8 +26,8 @@ export const injectMailClient = iocRegister('mailClient', () => {
         },
       },
       afterSendCallback: async (info) => {
-        appLogger.debug(`Message sent: ${info.messageId}`)
-        appLogger.info(`Preview URL: ${getTestMessageUrl(info)}`)
+        appLogger.debug('Message sent:', info.messageId)
+        appLogger.info('Preview URL:', getTestMessageUrl(info))
       },
     })
   }
