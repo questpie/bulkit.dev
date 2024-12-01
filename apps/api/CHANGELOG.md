@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.9
+
+### Patch Changes
+
+- fix: ssl require problems for db
+
 ## 0.2.8
 
 ### Patch Changes
