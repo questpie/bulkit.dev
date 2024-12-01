@@ -10,8 +10,7 @@ import Elysia, { t } from 'elysia'
 export const planRoutes = new Elysia({
   prefix: '/plans',
   detail: {
-    hide: generalEnv.PUBLIC_NODE_ENV === 'production',
-    tags: ['Plans'],
+    hide: true,
   },
 })
   .use(injectDatabase)

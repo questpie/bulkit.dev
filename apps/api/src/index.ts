@@ -77,14 +77,6 @@ export const api = new Elysia()
             description: 'Endpoints for open graph',
           },
           {
-            name: 'Lemon Squeezy',
-            description: 'Endpoints for lemon squeezy',
-          },
-          {
-            name: 'Plans',
-            description: 'Endpoints for plans',
-          },
-          {
             name: 'Admin',
             description: 'Admin endpoints',
           },

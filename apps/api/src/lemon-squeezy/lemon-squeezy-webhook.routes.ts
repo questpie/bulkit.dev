@@ -17,8 +17,7 @@ export const lemonSqueezyWebhookRoutes =
     : new Elysia({
         prefix: '/lemon-squeezy',
         detail: {
-          hide: generalEnv.PUBLIC_NODE_ENV === 'production',
-          tags: ['Lemon Squeezy'],
+          hide: true,
         },
       })
         .use(injectLemonSqueezy)
