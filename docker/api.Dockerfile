@@ -22,6 +22,8 @@ FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
 COPY --from=build /usr/src/app/apps/api/src/db/migrations/ ./migrations/
 
+RUN chown -R bunuser:bunuser /usr/src/app
+
 USER bunuser
 
 EXPOSE 3333/tcp

@@ -16,6 +16,8 @@ RUN cd apps/api && bun build:worker
 FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
 
+RUN chown -R bunuser:bunuser /usr/src/app
+
 USER bunuser
 
 EXPOSE 3333/tcp
