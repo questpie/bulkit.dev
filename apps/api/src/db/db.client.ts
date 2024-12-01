@@ -27,8 +27,8 @@ export function createDbClient(dbNameOverride?: string) {
         max: maxConnections,
       },
       logger: {
-        logQuery: (query, time) => {
-          appLogger.debug(`${query} - ${time}ms`)
+        logQuery: (query) => {
+          appLogger.debug(query)
         },
       },
     })
