@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.11
+
+### Patch Changes
+
+- fix: migrator runners
+
 ## 0.2.10
 
 ### Patch Changes
