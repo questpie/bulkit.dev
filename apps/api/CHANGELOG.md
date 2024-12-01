@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.3
+
+### Patch Changes
+
+- Resend adapter problems fixed
+
 ## 0.2.2
 
 ### Patch Changes
