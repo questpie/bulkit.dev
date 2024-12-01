@@ -6,6 +6,7 @@ import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
 import { Google } from 'arctic'
 import { Lucia } from 'lucia'
+import { envApi } from '@bulkit/api/envApi'
 
 const adapter = new DrizzlePostgreSQLAdapter(
   iocResolve(ioc.use(injectDatabase)).db,
@@ -35,12 +36,10 @@ export const lucia = new Lucia(adapter, {
 })
 
 export const googleOAuthClient = new Google(
-  process.env.GOOGLE_CLIENT_ID!,
-  process.env.GOOGLE_CLIENT_SECRET!,
-  process.env.GOOGLE_REDIRECT_URI!
+  envApi.GOOGLE_CLIENT_ID!,
+  envApi.GOOGLE_CLIENT_SECRET!,
+  `${envApi.SERVER_URL}/auth/google/callback`
 )
-
-// TODO: Add oauth providers here
 
 declare module 'lucia' {
   interface Register {

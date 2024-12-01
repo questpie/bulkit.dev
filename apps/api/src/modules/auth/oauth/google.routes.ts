@@ -1,12 +1,12 @@
-import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
+import { envApi } from '@bulkit/api/envApi'
 import { googleOAuthClient } from '@bulkit/api/modules/auth/lucia'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { generateCodeVerifier, generateState } from 'arctic'
 import { Elysia, t } from 'elysia'
 
-export const googleRoutes = new Elysia({ prefix: '/google' })
+const routes = new Elysia({ prefix: '/google' })
   .use(injectDatabase)
   .use(injectAuthService)
   .get(
@@ -36,9 +36,10 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
           path: '/',
         })
       }
-      const url = await googleOAuthClient.createAuthorizationURL(state, codeVerifier, {
-        scopes: ['profile', 'email'],
-      })
+      const url = await googleOAuthClient.createAuthorizationURL(state, codeVerifier, [
+        'profile',
+        'email',
+      ])
 
       return { authUrl: url.toString() }
     },
@@ -124,3 +125,5 @@ export const googleRoutes = new Elysia({ prefix: '/google' })
       }),
     }
   )
+
+export const googleRoutes = envApi.GOOGLE_ENABLED ? routes : new Elysia({})

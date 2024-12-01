@@ -8,8 +8,13 @@ import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
 import { useState } from 'react'
 import { PiPaperPlane } from 'react-icons/pi'
+import { FaGoogle } from 'react-icons/fa'
 
-export default function AuthPage() {
+type Props = {
+  searchParams: Record<string, string>
+}
+
+export default function AuthPage(props: Props) {
   const [email, setEmail] = useState('')
 
   const magicLinkMutation = useMutation({
@@ -28,6 +33,20 @@ export default function AuthPage() {
       success: 'Magic link sent',
       error: 'Failed to send magic link',
     })
+  }
+
+  const handleGoogleLogin = async () => {
+    const response = await apiClient.auth.google.index.get({
+      query: {
+        redirectTo:
+          props.searchParams.redirectTo ||
+          `${window.location.origin}/login/callback?token={{token}}`,
+      },
+    })
+
+    if (response.data?.authUrl) {
+      window.location.href = response.data.authUrl
+    }
   }
 
   return (
@@ -62,24 +81,12 @@ export default function AuthPage() {
                 Sign in with Email
               </Button>
             </form>
-            {/* <div className='relative'>
-              <div className='absolute inset-0 flex items-center'>
-                <span className='w-full border-t border-border' />
-              </div>
-              <div className='relative flex justify-center text-xs uppercase'>
-                <span className='bg-background px-2 text-muted-foreground'>Or continue with</span>
-              </div>
-            </div> */}
-            {/* <div className='grid grid-cols-2 gap-4'>
-              <Button variant='outline' className='gap-2'>
-                <FaGithub />
-                GitHub
-              </Button>
-              <Button variant='outline' className='gap-2'>
+            <div className='grid grid-cols-2 gap-4'>
+              <Button variant='outline' className='gap-2' onClick={handleGoogleLogin}>
                 <FaGoogle />
                 Google
               </Button>
-            </div> */}
+            </div>
           </div>
           <p className='text-xs text-center text-muted-foreground'>
             By signing in, you agree to our{' '}
