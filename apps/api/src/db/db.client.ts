@@ -14,12 +14,8 @@ export function createDbClient(dbNameOverride?: string) {
   const dbName = dbNameOverride ?? envApi.DB_NAME
   let dbInstance: PostgresJsDatabase<typeof schema>
 
-  const getDbInstance = () => {
-    if (dbInstance) {
-      return dbInstance
-    }
-
-    dbInstance = drizzle({
+  const createDrizzleClient = (maxConnections?: number) => {
+    return drizzle({
       schema,
       connection: {
         user: envApi.DB_USER,
@@ -28,6 +24,7 @@ export function createDbClient(dbNameOverride?: string) {
         database: dbName,
         ssl: envApi.DB_SSL as any,
         host: envApi.DB_HOST,
+        max: maxConnections,
       },
       logger: {
         logQuery: (query, time) => {
@@ -35,16 +32,21 @@ export function createDbClient(dbNameOverride?: string) {
         },
       },
     })
+  }
+
+  const getDbInstance = () => {
+    if (dbInstance) {
+      return dbInstance
+    }
+
+    dbInstance = createDrizzleClient()
 
     return dbInstance
   }
 
   const runMigrations = async () => {
-    if (!dbInstance) {
-      dbInstance = getDbInstance()
-    }
     appLogger.info(`Running migrations inside ${dbName}`)
-    await migrate(dbInstance, { migrationsFolder: './migrations' })
+    await migrate(createDrizzleClient(1), { migrationsFolder: './migrations' })
   }
 
   const injectDatabase = iocRegister('db', () => getDbInstance())
