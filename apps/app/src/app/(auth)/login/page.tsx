@@ -6,16 +6,14 @@ import { Label } from '@bulkit/ui/components/ui/label'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useMutation } from '@tanstack/react-query'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
-import { PiPaperPlane } from 'react-icons/pi'
-import { FaGoogle } from 'react-icons/fa'
+import { PiPaperPlane, PiGoogleLogo } from 'react-icons/pi'
 
-type Props = {
-  searchParams: Record<string, string>
-}
-
-export default function AuthPage(props: Props) {
+export default function AuthPage() {
   const [email, setEmail] = useState('')
+
+  const searchParams = useSearchParams()
 
   const magicLinkMutation = useMutation({
     mutationFn: async (email: string) => {
@@ -39,7 +37,7 @@ export default function AuthPage(props: Props) {
     const response = await apiClient.auth.google.index.get({
       query: {
         redirectTo:
-          props.searchParams.redirectTo ||
+          searchParams.get('redirectTo') ||
           `${window.location.origin}/login/callback?token={{token}}`,
       },
     })
@@ -50,7 +48,7 @@ export default function AuthPage(props: Props) {
   }
 
   return (
-    <div className='flex justify-center items-center min-h-screen'>
+    <div className='flex justify-center items-center min-h-screen bg-background'>
       <div className='w-full max-w-md p-8'>
         <div className='flex flex-col gap-8'>
           <div className='space-y-2 text-center'>
@@ -81,9 +79,19 @@ export default function AuthPage(props: Props) {
                 Sign in with Email
               </Button>
             </form>
-            <div className='grid grid-cols-2 gap-4'>
-              <Button variant='outline' className='gap-2' onClick={handleGoogleLogin}>
-                <FaGoogle />
+
+            <div className='relative'>
+              <div className='absolute inset-0 flex items-center'>
+                <span className='w-full border-t' />
+              </div>
+              <div className='relative flex justify-center text-xs uppercase'>
+                <span className='bg-background px-2 text-muted-foreground'>Or continue with</span>
+              </div>
+            </div>
+
+            <div className='flex flex-row gap-4'>
+              <Button variant='secondary' className='gap-2 flex-1' onClick={handleGoogleLogin}>
+                <PiGoogleLogo className='size-5' />
                 Google
               </Button>
             </div>

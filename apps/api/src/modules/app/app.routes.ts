@@ -43,7 +43,7 @@ export const appRoutes = new Elysia({
         tiktok: envApi.TIKTOK_ENABLED,
         linkedin: envApi.LINKEDIN_ENABLED,
         instagram: envApi.INSTAGRAM_ENABLED,
-        youtube: envApi.GOOGLE_ENABLED,
+        youtube: envApi.YOUTUBE_ENABLED,
         x: envApi.X_ENABLED,
       }
 

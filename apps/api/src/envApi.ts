@@ -76,7 +76,7 @@ export const envApi = createEnv({
     // OAuth providers
     GOOGLE_CLIENT_ID: Type.Optional(Type.String()),
     GOOGLE_CLIENT_SECRET: Type.Optional(Type.String()),
-    GOOGLE_ENABLED: StringBoolean({ default: false }),
+    GOOGLE_LOGIN_ENABLED: StringBoolean({ default: false }),
 
     GITHUB_CLIENT_ID: Type.Optional(Type.String()),
     GITHUB_CLIENT_SECRET: Type.Optional(Type.String()),
@@ -164,7 +164,7 @@ export const envApi = createEnv({
 
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-    GOOGLE_ENABLED: process.env.GOOGLE_ENABLED,
+    GOOGLE_LOGIN_ENABLED: process.env.GOOGLE_LOGIN_ENABLED,
 
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,

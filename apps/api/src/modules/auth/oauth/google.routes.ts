@@ -1,17 +1,22 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
-import { envApi } from '@bulkit/api/envApi'
-import { googleOAuthClient } from '@bulkit/api/modules/auth/lucia'
+import { injectGoogleOAuthClient } from '@bulkit/api/modules/auth/lucia'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { generateCodeVerifier, generateState } from 'arctic'
 import { Elysia, t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
 
-const routes = new Elysia({ prefix: '/google' })
+export const googleRoutes = new Elysia({ prefix: '/google' })
   .use(injectDatabase)
   .use(injectAuthService)
+  .use(injectGoogleOAuthClient)
   .get(
     '/',
-    async ({ cookie, query }) => {
+    async ({ cookie, query, googleOAuthClient }) => {
+      if (!googleOAuthClient) {
+        throw HttpError.BadRequest('Google OAuth is not enabled')
+      }
+
       const state = generateState()
       const codeVerifier = generateCodeVerifier()
 
@@ -36,7 +41,7 @@ const routes = new Elysia({ prefix: '/google' })
           path: '/',
         })
       }
-      const url = await googleOAuthClient.createAuthorizationURL(state, codeVerifier, [
+      const url = googleOAuthClient.createAuthorizationURL(state, codeVerifier, [
         'profile',
         'email',
       ])
@@ -51,7 +56,11 @@ const routes = new Elysia({ prefix: '/google' })
   )
   .get(
     '/callback',
-    async ({ query, cookie, error, redirect, db, authService }) => {
+    async ({ query, cookie, error, redirect, db, authService, googleOAuthClient }) => {
+      if (!googleOAuthClient) {
+        throw HttpError.BadRequest('Google OAuth is not enabled')
+      }
+
       const storedState = cookie.state!.value
       const storedCodeVerifier = cookie.code_verifier!.value
       const cookieRedirectTo = cookie.redirectTo!.value
@@ -125,5 +134,3 @@ const routes = new Elysia({ prefix: '/google' })
       }),
     }
   )
-
-export const googleRoutes = envApi.GOOGLE_ENABLED ? routes : new Elysia({})

@@ -1,5 +1,4 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
-import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
@@ -176,7 +175,6 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
                 deviceInfo: t.Object({
                   browser: t.String(),
                   os: t.String(),
-                  country: t.String(),
                   device: t.String(),
                 }),
                 expiresAt: t.String(),
