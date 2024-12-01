@@ -26,6 +26,7 @@ export function createDbClient(dbNameOverride?: string) {
         port: envApi.DB_PORT,
         password: envApi.DB_PASSWORD,
         database: dbName,
+        ssl: envApi.DB_SSL,
         host: envApi.DB_HOST,
       },
       logger: {

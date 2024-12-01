@@ -30,6 +30,7 @@ export const envApi = createEnv({
     DB_USER: Type.String(),
     DB_PASSWORD: Type.String(),
     DB_NAME: Type.String(),
+    DB_SSL: Type.Optional(StringBoolean({ default: 'false' })),
     DB_AUTO_MIGRATE: StringBoolean({ default: 'false' }),
 
     // server
@@ -144,6 +145,7 @@ export const envApi = createEnv({
     DB_USER: process.env.DB_USER,
     DB_PASSWORD: process.env.DB_PASSWORD,
     DB_NAME: process.env.DB_NAME,
+    DB_SSL: process.env.DB_SSL,
     DB_AUTO_MIGRATE: process.env.DB_AUTO_MIGRATE,
 
     SERVER_URL: process.env.SERVER_URL,
