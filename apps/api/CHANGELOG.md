@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.7
+
+### Patch Changes
+
+- fix: db.client migrations resolution
+
 ## 0.2.6
 
 ### Patch Changes
