@@ -187,6 +187,7 @@ function useResourceUploader({
         toast.promise(
           mutation.mutateAsync({
             files: acceptedFiles as any,
+            isPrivate: true,
           }),
           {
             loading: 'Uploading files...',

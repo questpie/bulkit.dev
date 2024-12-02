@@ -72,7 +72,7 @@ export const resourceRoutes = new Elysia({
           return ctx.resourcesService.create(trx, {
             organizationId: ctx.organization!.id,
             files: ctx.body.files,
-            isPrivate: ctx.body.isPrivate,
+            isPrivate: ctx.body.isPrivate ?? true,
           })
         })
         .catch((err) => {
