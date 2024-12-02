@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.17
+
+### Patch Changes
+
+- fix: flawed organization guards
+
 ## 0.2.16
 
 ### Patch Changes
