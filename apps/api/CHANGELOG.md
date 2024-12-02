@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.12
+
+### Patch Changes
+
+- temporarily disable rate limits
+
 ## 0.2.11
 
 ### Patch Changes
