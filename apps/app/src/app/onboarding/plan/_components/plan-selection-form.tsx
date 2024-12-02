@@ -1,8 +1,8 @@
 'use client'
 
 import { apiClient } from '@bulkit/app/api/api.client'
+import { buildOrganizationHeaders } from '@bulkit/app/app/(main)/organizations/_utils/organizations.utils'
 import { PlanSelection } from '@bulkit/app/app/onboarding/organization/_components/plan-selection'
-import { env } from '@bulkit/app/env'
 import type { AvailablePlan } from '@bulkit/shared/modules/plans/plans.schemas'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Form } from '@bulkit/ui/components/ui/form'
@@ -43,10 +43,15 @@ export function PlanSelectionForm(props: PlanSelectionFormProps) {
         throw new Error('Selected plan not found')
       }
 
-      const resp = await apiClient.plans.checkout.post({
-        planId: selectedPlan.id,
-        variantId: data.variantId,
-      })
+      const resp = await apiClient.plans.checkout.post(
+        {
+          planId: selectedPlan.id,
+          variantId: data.variantId,
+        },
+        {
+          headers: buildOrganizationHeaders(props.organizationId),
+        }
+      )
 
       if (resp.error) {
         throw new Error(resp.error.value.message)
