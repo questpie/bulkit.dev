@@ -1,8 +1,8 @@
-import { sql } from 'drizzle-orm'
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { appLogger } from '@bulkit/shared/utils/logger'
+import { sql } from 'drizzle-orm'
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 
-export type DbLike = PostgresJsDatabase
+export type DbLike = NodePgDatabase
 
 type Seeder<TDbLike extends DbLike, TName extends string> = {
   name: TName
@@ -33,11 +33,11 @@ export function createSeedRunner<const T extends Seeder<any, any>>(seeders: T[])
   }
 
   async function checkSeeder(db: DbLike, name: T['name']) {
-    const rows = await db.execute(
+    const res = await db.execute(
       sql`SELECT * FROM ${sql.identifier(SCHEMA_NAME)}.seeders WHERE name = ${name};`
     )
 
-    return rows.length > 0
+    return res.rows.length > 0
   }
 
   async function markSeederAsSeeded(db: DbLike, name: T['name']) {

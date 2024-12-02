@@ -27,13 +27,11 @@ import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform
 import type {
   Post,
   PostChannel,
-  PostSchema,
   PostValidationErrorSchema,
   PostValidationResultSchema,
   PostWithType,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
-import type { ScheduledPost } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { addSeconds, isBefore, max } from 'date-fns'
 import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
@@ -464,33 +462,27 @@ export class PostsService {
     const promises: Promise<any>[] = []
     if (channelsToRemove.length > 0) {
       promises.push(
-        db
-          .delete(scheduledPostsTable)
-          .where(
-            and(
-              eq(scheduledPostsTable.postId, opts.postId),
-              inArray(
-                scheduledPostsTable.channelId,
-                channelsToRemove.map((c) => c.id)
-              )
+        db.delete(scheduledPostsTable).where(
+          and(
+            eq(scheduledPostsTable.postId, opts.postId),
+            inArray(
+              scheduledPostsTable.channelId,
+              channelsToRemove.map((c) => c.id)
             )
           )
-          .execute()
+        )
       )
     }
 
     if (channelsToAdd.length > 0) {
       promises.push(
-        db
-          .insert(scheduledPostsTable)
-          .values(
-            channelsToAdd.map((c) => ({
-              postId: opts.postId,
-              channelId: c.id,
-              organizationId: opts.orgId,
-            }))
-          )
-          .execute()
+        db.insert(scheduledPostsTable).values(
+          channelsToAdd.map((c) => ({
+            postId: opts.postId,
+            channelId: c.id,
+            organizationId: opts.orgId,
+          }))
+        )
       )
     }
 
@@ -512,7 +504,6 @@ export class PostsService {
               eq(scheduledPostsTable.channelId, channel.id)
             )
           )
-          .execute()
       )
     }
 
@@ -826,7 +817,7 @@ export class PostsService {
     await this.deleteAssociatedResources(db, opts.postId, opts.orgId)
 
     // Delete the post
-    await db.delete(postsTable).where(eq(postsTable.id, opts.postId)).execute()
+    await db.delete(postsTable).where(eq(postsTable.id, opts.postId))
 
     return post
   }
@@ -1180,7 +1171,6 @@ export class PostsService {
         scheduledAt: null,
       })
       .where(eq(scheduledPostsTable.postId, opts.postId))
-      .execute()
 
     await Promise.all(
       scheduledPostIds.map(
@@ -1216,7 +1206,6 @@ export class PostsService {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(postsTable.id, opts.postId))
-      .then((r) => r[0]!)
 
     return {
       ...post,
