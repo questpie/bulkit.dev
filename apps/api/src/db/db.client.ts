@@ -46,8 +46,8 @@ export function createDbClient(dbNameOverride?: string) {
   }
 
   const runMigrations = async () => {
-    appLogger.info(`Running migrations inside ${dbName}`)
-    const migrationsPath = path.join(__dirname, 'migrations')
+    const migrationsPath = path.join(process.cwd(), 'apps/api/src/db/migrations')
+    appLogger.info(`Running migrations inside ${dbName} from ${migrationsPath}`)
     await migrate(createDrizzleClient(1), { migrationsFolder: migrationsPath })
   }
 
