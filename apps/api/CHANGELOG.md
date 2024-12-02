@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.14
+
+### Patch Changes
+
+- fix db migrations path resolution
+
 ## 0.2.13
 
 ### Patch Changes
