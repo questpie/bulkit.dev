@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.15
+
+### Patch Changes
+
+- switch to node postgres
+
 ## 0.2.14
 
 ### Patch Changes
