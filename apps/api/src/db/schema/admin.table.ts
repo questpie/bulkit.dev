@@ -1,15 +1,16 @@
+import { AI_CAPABILITIES } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
 import {
   AI_TEXT_PROVIDER_TYPES,
   STOCK_IMAGE_PROVIDER_TYPES,
 } from '@bulkit/shared/modules/app/app-constants'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   integer,
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
+  real,
   text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
@@ -90,13 +91,32 @@ export const appSettingsTable = pgTable('app_settings', {
     .default(DEFAULT_INTERVALS),
 })
 
-export const aiTextProvidersTable = pgTable('ai_text_provider', {
-  id: primaryKeyCol(),
-  name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
-  model: text('model').notNull(),
-  apiKey: text('api_key').notNull(),
-  ...timestampCols(),
-})
+export const aiTextProvidersTable = pgTable(
+  'ai_text_provider',
+  {
+    id: primaryKeyCol(),
+    name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
+    model: text('model').notNull(),
+    apiKey: text('api_key').notNull(),
+    promptTokenToCreditCoefficient: real('prompt_token_to_credit_coefficient')
+      .notNull()
+      .default(0.0001),
+    outputTokenToCreditCoefficient: real('output_token_to_credit_coefficient')
+      .notNull()
+      .default(0.0002),
+
+    capabilities: text('capabilities', { enum: AI_CAPABILITIES }).array().notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    isDefaultFor: text('is_default_for', { enum: AI_CAPABILITIES }).array().notNull().default([]),
+
+    ...timestampCols(),
+  },
+  (table) => [
+    uniqueIndex()
+      .on(table.isDefaultFor)
+      .where(sql`cardinality(${table.isDefaultFor}) > 0`), // Only apply when isDefaultFor is not empty
+  ]
+)
 
 export type AITextProvider = typeof aiTextProvidersTable.$inferSelect
 
@@ -120,4 +140,4 @@ export const superAdminsRelations = relations(superAdminsTable, ({ one }) => ({
 
 export const appSettingsRelations = relations(appSettingsTable, ({ one }) => ({}))
 
-export const aiTextProvidersRelations = relations(aiTextProvidersTable, ({ many }) => ({}))
+export const aiTextProvidersRelations = relations(aiTextProvidersTable, ({ many, one }) => ({}))

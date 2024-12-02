@@ -1,15 +1,19 @@
 'use client'
 
 import { apiClient } from '@bulkit/app/api/api.client'
+import { calculateCostPerMillion } from '@bulkit/app/app/(main)/admin/ai-providers/ai-proivders.utils'
 import { aiProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-providers/ai-providers.queries'
+import { useAppSettings } from '@bulkit/app/app/_components/app-settings-provider'
 import {
   AddAIProviderSchema,
+  AI_CAPABILITIES,
   UpdateAIProviderSchema,
   type AddAIProvider,
   type UpdateAIProvider,
 } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
 import { AI_TEXT_PROVIDER_TYPES } from '@bulkit/shared/modules/app/app-constants'
 import { Button } from '@bulkit/ui/components/ui/button'
+import { Checkbox } from '@bulkit/ui/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -43,7 +47,7 @@ import { useForm } from 'react-hook-form'
 type AIProviderFormProps = {
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  defaultValues?: Partial<AddAIProvider>
+  defaultValues?: Partial<AddAIProvider | UpdateAIProvider>
   mode?: 'add' | 'edit'
 }
 
@@ -54,11 +58,20 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
     value: props.open,
   })
 
+  const appSettings = useAppSettings()
+
+  const isCloud = appSettings.deploymentType === 'cloud'
+
   const form = useForm<UpdateAIProvider | AddAIProvider>({
     resolver: typeboxResolver(props.mode === 'edit' ? UpdateAIProviderSchema : AddAIProviderSchema),
     defaultValues: props.defaultValues || {
       name: 'anthropic',
       model: '',
+      capabilities: [],
+      isActive: true,
+      isDefaultFor: [],
+      promptTokenToCreditCoefficient: 0.0001,
+      outputTokenToCreditCoefficient: 0.0002,
     },
   })
 
@@ -186,6 +199,144 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name='capabilities'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Capabilities</FormLabel>
+                  <div className='space-y-2'>
+                    {AI_CAPABILITIES.map((capability) => (
+                      <FormControl key={capability}>
+                        <div className='flex items-center space-x-2'>
+                          <Checkbox
+                            checked={field.value.includes(capability)}
+                            onCheckedChange={(checked) => {
+                              const newValue = checked
+                                ? [...field.value, capability]
+                                : field.value.filter((v) => v !== capability)
+                              field.onChange(newValue)
+                            }}
+                          />
+                          <span className='text-sm'>{capability}</span>
+                        </div>
+                      </FormControl>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='isActive'
+              render={({ field }) => (
+                <FormItem>
+                  <div className='flex items-center space-x-2'>
+                    <FormControl>
+                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className='!mt-0'>Active</FormLabel>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='isDefaultFor'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default For</FormLabel>
+                  <div className='space-y-2'>
+                    {AI_CAPABILITIES.map((capability) => (
+                      <FormControl key={capability}>
+                        <div className='flex items-center space-x-2'>
+                          <Checkbox
+                            checked={field.value.includes(capability)}
+                            onCheckedChange={(checked) => {
+                              const newValue = checked
+                                ? [...field.value, capability]
+                                : field.value.filter((v) => v !== capability)
+                              field.onChange(newValue)
+                            }}
+                          />
+                          <span className='text-sm'>{capability}</span>
+                        </div>
+                      </FormControl>
+                    ))}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {isCloud && (
+              <>
+                <FormField
+                  control={form.control}
+                  name='promptTokenToCreditCoefficient'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Prompt Token Credit Cost</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='number'
+                          min={0}
+                          step='0.00001'
+                          placeholder='Enter credit cost per prompt token'
+                          {...field}
+                          onChange={(e) => field.onChange(Number.parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <p className='text-xs text-muted-foreground'>
+                        Number of credits charged per token in the prompt
+                        {field.value && (
+                          <span className='block mt-1'>
+                            Cost per million tokens:{' '}
+                            {calculateCostPerMillion(field.value, appSettings.currency)}
+                          </span>
+                        )}
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name='outputTokenToCreditCoefficient'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Output Token Credit Cost</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='number'
+                          min={0}
+                          step='0.00001'
+                          placeholder='Enter credit cost per output token'
+                          {...field}
+                          onChange={(e) => field.onChange(Number.parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <p className='text-xs text-muted-foreground'>
+                        Number of credits charged per token in the response
+                        {field.value && (
+                          <span className='block mt-1'>
+                            Cost per million tokens:{' '}
+                            {calculateCostPerMillion(field.value, appSettings.currency)}
+                          </span>
+                        )}
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
 
             <Button type='submit' className='w-full'>
               {props.mode === 'edit' ? 'Update' : 'Save'} Provider

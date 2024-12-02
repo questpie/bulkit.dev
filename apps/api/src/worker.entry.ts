@@ -11,6 +11,7 @@ import { injectProcessWebhookJob } from '@bulkit/api/modules/plans/jobs/process-
 import { injectCollectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectResourceCleanupJob } from '@bulkit/api/modules/resources/jobs/resource-cleanup.job'
+import { injectAllocateMonthlyCreditsJob } from '@bulkit/api/modules/credits/jobs/allocate-monthly-credits.job'
 export async function bootWorker() {
   const container = iocResolve(
     ioc
@@ -19,6 +20,7 @@ export async function bootWorker() {
       .use(injectPublishPostJob)
       .use(injectCollectMetricsJob)
       .use(injectProcessWebhookJob)
+      .use(injectAllocateMonthlyCreditsJob)
   )
 
   // mails
@@ -32,6 +34,9 @@ export async function bootWorker() {
 
   // lemon squeezy webhook
   container.jobProcessLemonSqueezyWebhook.registerWorker()
+
+  // monthly credits
+  container.jobAllocateMonthlyCredits.registerWorker()
 
   appLogger.info('Workers instances running')
 }

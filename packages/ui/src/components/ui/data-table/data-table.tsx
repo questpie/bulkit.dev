@@ -19,14 +19,17 @@ type HideBelowBreakPoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 type TableColumn<T> = {
   id: string
   header: string
-  accessorKey: keyof T | ((row: T) => any)
+  accessorKey?: keyof T | ((row: T) => any)
   cell?: (row: T) => React.ReactNode
   enableSorting?: boolean
   className?: string
   headerClassName?: string
   cellClassName?: string
   hideBelow?: HideBelowBreakPoint
-}
+} & (
+  | { accessorKey: keyof T | ((row: T) => any); cell?: (row: T) => React.ReactNode }
+  | { accessorKey?: never; cell: (row: T) => React.ReactNode }
+)
 
 type TableProps<T> = {
   data: T[]
@@ -237,7 +240,7 @@ export function DataTable<T extends Record<string, any>>({
                     {column.cell?.(row) ??
                       (typeof column.accessorKey === 'function'
                         ? column.accessorKey(row)
-                        : row[column.accessorKey])}
+                        : row[column.accessorKey as keyof T])}
                   </TableCell>
                 ))}
                 {actions && (

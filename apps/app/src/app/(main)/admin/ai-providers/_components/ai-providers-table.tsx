@@ -1,8 +1,11 @@
 'use client'
 
 import { apiClient } from '@bulkit/app/api/api.client'
+import { calculateCostPerMillion } from '@bulkit/app/app/(main)/admin/ai-providers/ai-proivders.utils'
 import { aiProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-providers/ai-providers.queries'
+import { useAppSettings } from '@bulkit/app/app/_components/app-settings-provider'
 import type { AIProvider } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
+import { Badge } from '@bulkit/ui/components/ui/badge'
 import { DataTable } from '@bulkit/ui/components/ui/data-table/data-table'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -17,6 +20,8 @@ type AIProvidersTableProps = {
 export function AIProvidersTable(props: AIProvidersTableProps) {
   const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(null)
   const queryClient = useQueryClient()
+  const isCloud = useAppSettings().deploymentType === 'cloud'
+  const appSettings = useAppSettings()
 
   const providersQuery = useQuery(
     aiProvidersQueryOptions({
@@ -59,11 +64,83 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
             accessorKey: 'model',
           },
           {
-            id: 'createdAt',
-            header: 'Added',
-            accessorKey: 'createdAt',
-            cell: (row) => new Date(row.createdAt).toLocaleDateString(),
+            id: 'capabilities',
+            header: 'Capabilities',
+            accessorKey: 'capabilities',
+            cell: (row) => (
+              <div className='flex flex-wrap gap-1'>
+                {row.capabilities.map((capability) => (
+                  <Badge key={capability} variant='secondary' size='sm'>
+                    {capability}
+                  </Badge>
+                ))}
+              </div>
+            ),
           },
+          {
+            id: 'isActive',
+            header: 'Status',
+            accessorKey: 'isActive',
+            cell: (row) => (
+              <Badge variant={row.isActive ? 'default' : 'secondary'} size='sm'>
+                {row.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            ),
+          },
+          {
+            id: 'isDefaultFor',
+            header: 'Default For',
+            accessorKey: 'isDefaultFor',
+            cell: (row) => (
+              <div className='flex flex-wrap gap-1 justify-start'>
+                {row.isDefaultFor.map((capability) => (
+                  <Badge key={capability} variant='outline' size='sm'>
+                    {capability}
+                  </Badge>
+                ))}
+              </div>
+            ),
+          },
+          // {
+          //   id: 'createdAt',
+          //   header: 'Added',
+          //   accessorKey: 'createdAt',
+          //   cell: (row) => new Date(row.createdAt).toLocaleDateString(),
+          // },
+          ...(isCloud
+            ? [
+                {
+                  id: 'tokenCosts',
+                  header: 'Token Costs',
+                  cell: (row: AIProvider) => (
+                    <div className='space-y-1'>
+                      <div className='text-sm'>
+                        <span className='font-medium'>Prompt:</span>{' '}
+                        {row.promptTokenToCreditCoefficient} credits
+                        <span className='block text-xs text-muted-foreground'>
+                          {calculateCostPerMillion(
+                            row.promptTokenToCreditCoefficient,
+                            appSettings.currency
+                          )}
+                          /million tokens
+                        </span>
+                      </div>
+                      <div className='text-sm'>
+                        <span className='font-medium'>Output:</span>{' '}
+                        {row.outputTokenToCreditCoefficient} credits
+                        <span className='block text-xs text-muted-foreground'>
+                          {calculateCostPerMillion(
+                            row.outputTokenToCreditCoefficient,
+                            appSettings.currency
+                          )}
+                          /million tokens
+                        </span>
+                      </div>
+                    </div>
+                  ),
+                },
+              ]
+            : []),
         ]}
         actions={(row) => ({
           options: [
@@ -100,10 +177,22 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
         defaultValues={
           selectedProvider
             ? {
+                id: selectedProvider.id,
                 name: selectedProvider.name,
                 model: selectedProvider.model,
+                capabilities: selectedProvider.capabilities,
+                isActive: selectedProvider.isActive,
+                isDefaultFor: selectedProvider.isDefaultFor,
+                promptTokenToCreditCoefficient: selectedProvider.promptTokenToCreditCoefficient,
+                outputTokenToCreditCoefficient: selectedProvider.outputTokenToCreditCoefficient,
               }
-            : undefined
+            : {
+                promptTokenToCreditCoefficient: 1,
+                outputTokenToCreditCoefficient: 1,
+                capabilities: [],
+                isActive: true,
+                isDefaultFor: [],
+              }
         }
         mode='edit'
       />

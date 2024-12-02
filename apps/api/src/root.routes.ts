@@ -1,5 +1,6 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { lemonSqueezyWebhookRoutes } from '@bulkit/api/lemon-squeezy/lemon-squeezy-webhook.routes'
+import { aiRoutes } from '@bulkit/api/modules/ai/ai.routes'
 import { appRoutes } from '@bulkit/api/modules/app/app.routes'
 import { adminRoutes } from '@bulkit/api/modules/auth/admin/admin.routes'
 import { authRoutes } from '@bulkit/api/modules/auth/auth.routes'
@@ -17,6 +18,7 @@ import { Elysia } from 'elysia'
 export const rootRoutes = new Elysia()
   .use(adminRoutes)
   .use(appRoutes)
+  .use(aiRoutes)
   .use(authRoutes)
   .use(channelRoutes)
   .use(organizationRoutes)

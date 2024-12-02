@@ -1,12 +1,14 @@
+import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
+import { injectAIProvidersService } from '@bulkit/api/modules/ai/services/ai-providers.service'
 import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
-import Elysia from 'elysia'
+import { AI_CAPABILITIES } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
 import { AppSettingsResponseSchema } from '@bulkit/shared/modules/app/app-schemas'
-import { applyRateLimit } from '@bulkit/api/common/rate-limit'
+import Elysia from 'elysia'
 
 export const appRoutes = new Elysia({
   prefix: '/app',
@@ -35,6 +37,7 @@ export const appRoutes = new Elysia({
   })
   .use(injectAppSettingsService)
   .use(injectDatabase)
+  .use(injectAIProvidersService)
   .get(
     '/settings',
     async (ctx) => {
@@ -57,10 +60,17 @@ export const appRoutes = new Elysia({
           .catch(() => 'USD')
       }
 
+      const activeProvider = await ctx.aiProvidersService.getActiveProviders(ctx.db)
+
+      const enabledAICapabilities = AI_CAPABILITIES.filter((capability) =>
+        activeProvider.some((p) => p.capabilities.includes(capability))
+      )
+
       return {
         platforms,
         deploymentType: envApi.DEPLOYMENT_TYPE,
         currency,
+        aiCapabilities: enabledAICapabilities,
       }
     },
     {
