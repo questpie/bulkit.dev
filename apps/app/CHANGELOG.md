@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.18
+
+### Patch Changes
+
+- Add AI capabilities
+
 ## 0.2.17
 
 ### Patch Changes
