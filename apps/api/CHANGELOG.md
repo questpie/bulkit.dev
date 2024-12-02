@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.2.13
+
+### Patch Changes
+
+- build erros fix
+
 ## 0.2.12
 
 ### Patch Changes
