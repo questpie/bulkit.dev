@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.16
+
+### Patch Changes
+
+- fix: remove default org creation
+
 ## 0.2.15
 
 ### Patch Changes
