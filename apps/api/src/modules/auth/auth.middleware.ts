@@ -1,4 +1,4 @@
-import { lucia } from '@bulkit/api/modules/auth/lucia'
+import { injectLucia, type LuciaType } from '@bulkit/api/modules/auth/lucia'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
@@ -11,7 +11,8 @@ import type { Session, User } from 'lucia'
 export const authMiddleware = new Elysia({
   name: 'auth.middleware',
 })
-  .resolve(async ({ headers }) => {
+  .use(injectLucia)
+  .resolve(async ({ headers, lucia }) => {
     const authorizationHeader = headers.authorization
     const sessionId = authorizationHeader ? lucia.readBearerToken(authorizationHeader) : null
 
@@ -67,7 +68,7 @@ export const protectedMiddleware = new Elysia({
  */
 export function buildAuthObject(
   validatedSession: Extract<
-    Awaited<ReturnType<typeof lucia.validateSession>>,
+    Awaited<ReturnType<LuciaType['validateSession']>>,
     { user: User; session: Session }
   >
 ) {

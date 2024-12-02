@@ -7,6 +7,7 @@ import { iocRegister } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import path from 'node:path'
 import * as schema from './db.schema'
 
 // for query purposes
@@ -27,8 +28,8 @@ export function createDbClient(dbNameOverride?: string) {
         max: maxConnections,
       },
       logger: {
-        logQuery: (query) => {
-          appLogger.debug(query)
+        logQuery: (query, params) => {
+          appLogger.debug(`${query} [${params.join(', ')}]`)
         },
       },
     })
@@ -46,7 +47,8 @@ export function createDbClient(dbNameOverride?: string) {
 
   const runMigrations = async () => {
     appLogger.info(`Running migrations inside ${dbName}`)
-    await migrate(createDrizzleClient(1), { migrationsFolder: './migrations' })
+    const migrationsPath = path.join(__dirname, 'migrations')
+    await migrate(createDrizzleClient(1), { migrationsFolder: migrationsPath })
   }
 
   const injectDatabase = iocRegister('db', () => getDbInstance())

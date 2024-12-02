@@ -20,7 +20,7 @@ RUN cd apps/api && bun build:api
 
 FROM base AS release
 COPY --from=build /usr/src/app/apps/api/out .
-COPY --from=build /usr/src/app/apps/api/src/db/migrations/ ./migrations/
+COPY --from=build /usr/src/app/apps/api/src/db/migrations/ ./apps/api/src/db/migrations/
 
 RUN chown -R bunuser:bunuser /usr/src/app
 

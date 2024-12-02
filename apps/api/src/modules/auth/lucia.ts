@@ -8,31 +8,33 @@ import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
 import { Google } from 'arctic'
 import { Lucia } from 'lucia'
 
-const adapter = new DrizzlePostgreSQLAdapter(
-  iocResolve(ioc.use(injectDatabase)).db,
-  sessionsTable,
-  usersTable
-)
+export const injectLucia = iocRegister('lucia', () => {
+  const adapter = new DrizzlePostgreSQLAdapter(
+    iocResolve(ioc.use(injectDatabase)).db,
+    sessionsTable,
+    usersTable
+  )
 
-export const lucia = new Lucia(adapter, {
-  sessionCookie: {
-    expires: false,
-    attributes: {
-      secure: generalEnv.PUBLIC_NODE_ENV === 'production',
+  return new Lucia(adapter, {
+    sessionCookie: {
+      expires: false,
+      attributes: {
+        secure: generalEnv.PUBLIC_NODE_ENV === 'production',
+      },
     },
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      email: attributes.email,
-      name: attributes.name,
-    }
-  },
-  getSessionAttributes: (attributes) => {
-    return {
-      deviceFingerprint: attributes.deviceFingerprint,
-      deviceInfo: attributes.deviceInfo,
-    }
-  },
+    getUserAttributes: (attributes) => {
+      return {
+        email: attributes.email,
+        name: attributes.name,
+      }
+    },
+    getSessionAttributes: (attributes) => {
+      return {
+        deviceFingerprint: attributes.deviceFingerprint,
+        deviceInfo: attributes.deviceInfo,
+      }
+    },
+  })
 })
 
 export const injectGoogleOAuthClient = iocRegister('googleOAuthClient', () => {
@@ -53,9 +55,11 @@ export const injectGoogleOAuthClient = iocRegister('googleOAuthClient', () => {
   )
 })
 
+export type LuciaType = ReturnType<typeof injectLucia>['decorator']['lucia']
+
 declare module 'lucia' {
   interface Register {
-    Lucia: typeof lucia
+    Lucia: LuciaType
     DatabaseUserAttributes: {
       email: string
       name: string
