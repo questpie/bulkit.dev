@@ -86,7 +86,6 @@ export function PostsTable(props: PostsTableProps) {
   })
 
   const allPosts = postsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
-  console.log('allPosts', allPosts)
 
   return (
     <>

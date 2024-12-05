@@ -4,8 +4,16 @@ import { organizationMiddleware } from '@bulkit/api/modules/organizations/organi
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { injectStockImageService } from '@bulkit/api/modules/resources/stock-image/stock-image.service'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
-import { Type, type Static, type StaticEncode, type TObject, type TSchema } from '@sinclair/typebox'
+import { Type, type Static } from '@sinclair/typebox'
 import Elysia, { t } from 'elysia'
+
+type StockImageSearchResult = {
+  id: string
+  url: string
+  thumbnailUrl: string
+  alt: string
+  author: string
+}
 
 export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
   .use(injectDatabase)
@@ -18,14 +26,15 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
   .get(
     '/search',
     async (ctx) => {
-      const { query, provider = 'pixabay', per_page = 30 } = ctx.query
-      return ctx.stockImageService.search(ctx.db, provider, query, per_page)
+      const { query, provider = 'pixabay', per_page = 30, page = 1 } = ctx.query
+      return ctx.stockImageService.search(ctx.db, provider, query, per_page, page)
     },
     {
       query: t.Object({
         query: t.String({ minLength: 1 }),
         provider: t.Optional(t.String()),
         per_page: t.Optional(t.Number()),
+        page: t.Optional(t.Number()),
       }),
       response: {
         200: t.Array(
@@ -57,7 +66,7 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
       body: t.Object({
         url: t.String({ format: 'uri' }),
         caption: t.String(),
-        isPrivate: t.Boolean({ default: true }),
+        isPrivate: t.Optional(t.BooleanString({ default: true })),
       }),
       response: {
         200: ResourceSchema,

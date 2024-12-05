@@ -10,10 +10,10 @@ import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
 import { cn } from '@bulkit/ui/lib'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { LuImage, LuSparkles, LuUploadCloud } from 'react-icons/lu'
+import { PiImage, PiSparkle, PiMagnifyingGlass, PiUploadSimple } from 'react-icons/pi'
 import {
   Select,
   SelectContent,
@@ -78,7 +78,7 @@ function StockImageGrid({
   )
 }
 
-function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }) {
+function StockTabContent(props: { onSelect: (image: StockImage) => void }) {
   const [search, setSearch] = useState('nature landscape')
   const debouncedSearch = useDebouncedValue(search, 500)
 
@@ -93,13 +93,14 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
 
   const [activeProvider, setActiveProvider] = useState<string | undefined>(providers[0]?.id)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['stock-images', debouncedSearch, activeProvider],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 1 }) => {
       const response = await apiClient.resources.stock.search.get({
         query: {
           query: debouncedSearch,
           per_page: 30,
+          page: pageParam,
           provider: activeProvider,
         },
       })
@@ -110,13 +111,19 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
 
       return response.data
     },
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 30 ? allPages.length + 1 : undefined
+    },
+    initialPageParam: 1,
     enabled: search.length > 0 && !!activeProvider,
   })
+
+  const images = data?.pages.flat() ?? []
 
   if (providers.length === 0) {
     return (
       <div className='h-full flex flex-col items-center justify-center text-center p-4'>
-        <LuImage className='w-12 h-12 text-muted-foreground/40' />
+        <PiImage className='w-12 h-12 text-muted-foreground/40' />
         <h3 className='mt-4 text-sm font-bold'>Stock images not configured</h3>
         <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
           Contact your administrator to configure stock image providers.
@@ -133,11 +140,14 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
           value={search}
           placeholder='Search stock images...'
           onChange={(e) => setSearch(e.target.value)}
+          before={<PiMagnifyingGlass className='ml-3 text-muted-foreground' />}
         />
         {providers.length > 1 && (
           <Select value={activeProvider} onValueChange={setActiveProvider}>
-            <SelectTrigger className='h-7 text-xs'>
-              <SelectValue />
+            <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2  shadow-none text-xs'>
+              <p className='text-xs'>
+                Using <SelectValue />
+              </p>
             </SelectTrigger>
             <SelectContent>
               {providers.map((provider) => (
@@ -148,12 +158,23 @@ function StockTabContent({ onSelect }: { onSelect: (image: StockImage) => void }
             </SelectContent>
           </Select>
         )}
-        {providers.length === 1 && (
-          <p className='text-[10px] text-primary'>Using {providers[0]!.id}</p>
-        )}
+        {providers.length === 1 && <p className='text-xs'>Using {providers[0]!.id}</p>}
       </div>
-      <div className='overflow-y-auto flex-1'>
-        <StockImageGrid images={data ?? []} onSelect={onSelect} isLoading={isLoading} />
+      <div className='overflow-y-auto flex-1 space-y-4'>
+        <StockImageGrid images={images} onSelect={props.onSelect} isLoading={isLoading} />
+
+        {hasNextPage && (
+          <div className='flex justify-center pb-4'>
+            <Button
+              variant='outline'
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              size='sm'
+            >
+              {isFetchingNextPage ? 'Loading...' : 'Load More'}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -251,7 +272,7 @@ export function ResourceDropzone(
         props.className
       )}
     >
-      <LuUploadCloud className='h-12 w-12 mx-auto' />
+      <PiUploadSimple className='h-12 w-12 mx-auto' />
 
       <input {...getInputProps()} />
       {isDragActive ? (
@@ -330,7 +351,7 @@ function ResourceDialog({
               asChild
             >
               <button type='button'>
-                <LuUploadCloud className='h-5 w-5' />
+                <PiUploadSimple className='h-5 w-5' />
                 <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Upload</span>
               </button>
             </Card>
@@ -344,7 +365,7 @@ function ResourceDialog({
               asChild
             >
               <button type='button'>
-                <LuImage className='h-5 w-5' />
+                <PiImage className='h-5 w-5' />
                 <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Stock</span>
               </button>
             </Card>
@@ -353,7 +374,7 @@ function ResourceDialog({
               asChild
             >
               <button type='button' disabled>
-                <LuSparkles className='h-5 w-5' />
+                <PiSparkle className='h-5 w-5' />
                 <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>
                   AI Image
                 </span>
@@ -406,7 +427,7 @@ export function ResourceButtonUpload(
         onClick={() => setOpen(true)}
         className={cn('border', props.buttonProps?.className)}
       >
-        <LuUploadCloud className='mr-2' />
+        <PiUploadSimple className='mr-2' />
         Upload files
       </Button>
 

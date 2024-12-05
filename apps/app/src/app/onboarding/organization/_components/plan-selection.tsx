@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { BillingPeriodToggle } from './billing-period-toggle'
 import { PlanCard } from './plan-card'
+import { OrganizationSelect } from '@bulkit/app/app/(main)/_components/organizations-select'
 
 type PlanSelectionProps = {
   selectedVariantId?: string
@@ -53,6 +54,10 @@ export function PlanSelection(props: PlanSelectionProps) {
 
   return (
     <div className='space-y-8'>
+      <div className='flex flex-col gap-1 max-w-sm mx-auto'>
+        <h3 className='text-sm font-medium'>Your organization</h3>
+        <OrganizationSelect />
+      </div>
       <BillingPeriodToggle value={billingPeriod} onChange={setBillingPeriod} />
       <div className='flex flex-row justify-center gap-8 w-full flex-wrap'>
         {props.plans.map((plan) => (

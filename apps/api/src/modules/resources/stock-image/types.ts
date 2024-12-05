@@ -7,5 +7,5 @@ export interface StockImageSearchResult {
 }
 
 export interface StockImageProviderAdapter {
-  search(query: string, perPage: number): Promise<StockImageSearchResult[]>
+  search(query: string, perPage: number, page: number): Promise<StockImageSearchResult[]>
 }
