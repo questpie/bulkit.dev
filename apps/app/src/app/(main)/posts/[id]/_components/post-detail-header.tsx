@@ -1,10 +1,10 @@
 'use client'
 
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { apiClient } from '@bulkit/app/api/api.client'
 import { Header, HeaderButton } from '@bulkit/app/app/(main)/_components/header'
 import { PostPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/post-preview'
 import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils'
+import type { Post } from '@bulkit/shared/modules/posts/posts.schemas'
 import { isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { DialogFooter } from '@bulkit/ui/components/ui/dialog'
