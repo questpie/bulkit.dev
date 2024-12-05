@@ -39,7 +39,13 @@ export class StockImageService {
     this.initialized = true
   }
 
-  async search(db: TransactionLike, provider: string, query: string, perPage: number) {
+  async search(
+    db: TransactionLike,
+    provider: string,
+    query: string,
+    perPage: number,
+    page: number
+  ) {
     await this.initializeProviders(db)
 
     const service = this.providers.get(provider)
@@ -47,7 +53,7 @@ export class StockImageService {
       throw HttpError.BadRequest(`Unsupported stock image provider: ${provider}`)
     }
 
-    return service.search(query, perPage)
+    return service.search(query, perPage, page)
   }
 
   async getAvailableProviders(db: TransactionLike) {

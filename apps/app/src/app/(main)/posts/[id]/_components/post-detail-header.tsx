@@ -22,6 +22,13 @@ import {
   ResponsiveDialogTitle,
   ResponsiveDialogTrigger,
 } from '@bulkit/ui/components/ui/responsive-dialog'
+import {
+  Sheet,
+  SheetTitle,
+  SheetHeader,
+  SheetContent,
+  SheetTrigger,
+} from '@bulkit/ui/components/ui/sheet'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { cn } from '@bulkit/ui/lib'
 import { useMutation } from '@tanstack/react-query'
@@ -142,27 +149,27 @@ export function PostDetailHeader({ post }: PostDetailHeaderProps) {
             />
           )}
 
-          <ResponsiveDialog>
-            <ResponsiveDialogTrigger asChild>
+          <Sheet>
+            <SheetTrigger asChild>
               {post.status === 'draft' && (
                 <HeaderButton
                   variant='outline'
                   icon={<PiEye />}
                   label='Preview'
-                  className='md:hidden'
+                  className='xl:hidden'
                 />
               )}
-            </ResponsiveDialogTrigger>
-            <ResponsiveDialogContent mobileProps={{ className: 'flex flex-col h-[95dvh]' }}>
-              <ResponsiveDialogHeader className='px-4'>
-                <ResponsiveDialogTitle>Preview</ResponsiveDialogTitle>
-              </ResponsiveDialogHeader>
+            </SheetTrigger>
+            <SheetContent className='w-[500px] px-0  max-w-full sm:max-w-full'>
+              <SheetHeader className='px-4'>
+                <SheetTitle>Preview</SheetTitle>
+              </SheetHeader>
 
               <div className='flex-1 pb-2 px-4 overflow-auto relative'>
                 <PostPreview />
               </div>
-            </ResponsiveDialogContent>
-          </ResponsiveDialog>
+            </SheetContent>
+          </Sheet>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

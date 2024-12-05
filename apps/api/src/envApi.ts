@@ -1,7 +1,7 @@
 import { createEnv } from '@bulkit/shared/env/create-env'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DEPLOYMENT_TYPES, type DeploymentType } from '@bulkit/shared/modules/app/app-constants'
-import { StringBoolean, StringInt, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { HexString, StringBoolean, StringInt, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type TSchema } from '@sinclair/typebox'
 
 function cloudEnv<Schema extends TSchema>(schema: Schema) {
@@ -17,9 +17,8 @@ export const envApi = createEnv({
 
     APP_URL: Type.String(Type.String()),
 
-    ENCRYPTION_SECRET: Type.String({
-      minLength: 64,
-      maxLength: 64,
+    ENCRYPTION_SECRET: HexString({
+      length: 64,
       description:
         'The secret key used to encrypt and decrypt API keys. Must be 64 characters long.',
     }),

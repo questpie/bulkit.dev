@@ -7,9 +7,9 @@ const PIXABAY_BASE_URL = 'https://pixabay.com/api/'
 export class PixabayProvider implements StockImageProviderAdapter {
   constructor(private readonly apiKey: string) {}
 
-  async search(query: string, perPage: number): Promise<StockImageSearchResult[]> {
+  async search(query: string, perPage: number, page: number): Promise<StockImageSearchResult[]> {
     const response = await fetch(
-      `${PIXABAY_BASE_URL}?q=${encodeURIComponent(query)}&key=${this.apiKey}&per_page=${perPage}&safesearch=true&image_type=photo`
+      `${PIXABAY_BASE_URL}?q=${encodeURIComponent(query)}&key=${this.apiKey}&per_page=${perPage}&page=${page}&safesearch=true&image_type=photo`
     )
 
     if (!response.ok) {

@@ -46,6 +46,8 @@ export class ApiKeyManager {
       })
     }
 
+    console.log('encryptedApiKey', encryptedApiKey, this.#ENCRYPTION_KEY, envApi.ENCRYPTION_SECRET)
+
     try {
       const [ivHex, encryptedHex] = encryptedApiKey.split(':')
       const iv = Buffer.from(ivHex!, 'hex')

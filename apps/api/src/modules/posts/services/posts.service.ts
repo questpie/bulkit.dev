@@ -508,7 +508,7 @@ export class PostsService {
     }
 
     // Remove channels post connections
-    await Promise.all([promises])
+    await Promise.all(promises)
 
     return this.getPostChannels(db, opts.postId)
   }

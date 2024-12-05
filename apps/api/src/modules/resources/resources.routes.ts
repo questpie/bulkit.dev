@@ -92,7 +92,7 @@ export const resourceRoutes = new Elysia({
           types: ['image/*', 'video/*', 'audio/*'],
         }),
         isPrivate: t.Optional(
-          t.Boolean({
+          t.BooleanString({
             default: true,
           })
         ),

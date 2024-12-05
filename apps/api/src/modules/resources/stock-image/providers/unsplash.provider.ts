@@ -7,11 +7,9 @@ const UNSPLASH_BASE_URL = 'https://api.unsplash.com'
 export class UnsplashProvider implements StockImageProviderAdapter {
   constructor(private readonly apiKey: string) {}
 
-  async search(query: string, perPage: number): Promise<StockImageSearchResult[]> {
+  async search(query: string, perPage: number, page: number): Promise<StockImageSearchResult[]> {
     const response = await fetch(
-      `${UNSPLASH_BASE_URL}/search/photos?query=${encodeURIComponent(
-        query
-      )}&per_page=${perPage}&client_id=${this.apiKey}`
+      `${UNSPLASH_BASE_URL}/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&client_id=${this.apiKey}`
     )
 
     if (!response.ok) {
