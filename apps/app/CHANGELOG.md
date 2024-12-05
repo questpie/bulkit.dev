@@ -1,5 +1,11 @@
 # @bulkit/app
 
+## 0.2.19
+
+### Patch Changes
+
+- feat: unsplash image provider, change data type for credit
+
 ## 0.2.18
 
 ### Patch Changes
