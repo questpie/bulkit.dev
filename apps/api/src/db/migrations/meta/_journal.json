@@ -57,6 +57,13 @@
       "when": 1733170378552,
       "tag": "20241202201258_misty_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1733421395686,
+      "tag": "20241205175635_strange_sprite",
+      "breakpoints": true
     }
   ]
 }
