@@ -1,19 +1,12 @@
-'use client'
-import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { apiClient } from '@bulkit/app/api/api.client'
+import { mediaInfiniteQueryOptions } from '@bulkit/app/app/(main)/media/media.queries'
+import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
+import type { Resource } from '@bulkit/shared/modules/resources/resources.schemas'
 import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@bulkit/ui/components/ui/dialog'
 import { Input } from '@bulkit/ui/components/ui/input'
-import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
-import { toast } from '@bulkit/ui/components/ui/sonner'
-import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
-import { cn } from '@bulkit/ui/lib'
-import { useMutation, useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { PiImage, PiSparkle, PiMagnifyingGlass, PiUploadSimple } from 'react-icons/pi'
 import {
   Select,
   SelectContent,
@@ -21,6 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@bulkit/ui/components/ui/select'
+import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
+import { toast } from '@bulkit/ui/components/ui/sonner'
+import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
+import { cn } from '@bulkit/ui/lib'
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
+import { useCallback, useState } from 'react'
+import { useDropzone } from 'react-dropzone'
+import { PiFolder, PiImage, PiMagnifyingGlass, PiSparkle, PiUploadSimple } from 'react-icons/pi'
 
 type ResourceUploaderProps = {
   onUploaded?: (resources: Resource[]) => void
@@ -286,7 +287,7 @@ export function ResourceDropzone(
   )
 }
 
-function ResourceDialog({
+export function ResourceUploadDialog({
   open,
   onOpenChange,
   onUploaded,
@@ -295,7 +296,7 @@ function ResourceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const [activeTab, setActiveTab] = useState<'upload' | 'stock' | 'ai'>('upload')
+  const [activeTab, setActiveTab] = useState<'upload' | 'stock' | 'ai' | 'library'>('upload')
 
   const { data: stockProviders = [] } = useQuery({
     queryKey: ['admin', 'stock-providers'],
@@ -370,6 +371,19 @@ function ResourceDialog({
               </button>
             </Card>
             <Card
+              onClick={() => setActiveTab('library')}
+              className={cn(
+                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
+                activeTab === 'library' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
+              )}
+              asChild
+            >
+              <button type='button'>
+                <PiFolder className='h-5 w-5' />
+                <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Library</span>
+              </button>
+            </Card>
+            <Card
               className='flex md:flex-row flex-1 md:flex-none relative flex-col items-center gap-2 p-4 rounded-lg border opacity-50 cursor-not-allowed'
               asChild
             >
@@ -403,6 +417,15 @@ function ResourceDialog({
 
             {activeTab === 'stock' && <StockTabContent onSelect={handleStockImageSelect} />}
 
+            {activeTab === 'library' && (
+              <LibraryTabContent
+                onSelect={(resource) => {
+                  onUploaded?.([resource])
+                  onOpenChange(false)
+                }}
+              />
+            )}
+
             {activeTab === 'ai' && <div>{/* AI image generation will go here */}</div>}
           </div>
         </div>
@@ -431,7 +454,80 @@ export function ResourceButtonUpload(
         Upload files
       </Button>
 
-      <ResourceDialog open={open} onOpenChange={setOpen} {...props} />
+      <ResourceUploadDialog open={open} onOpenChange={setOpen} {...props} />
     </>
+  )
+}
+
+function LibraryTabContent(props: { onSelect: (resource: Resource) => void }) {
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 500)
+
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
+    mediaInfiniteQueryOptions({ search: debouncedSearch })
+  )
+
+  const resources = data?.pages.flatMap((page) => page.data) ?? []
+
+  return (
+    <div className='space-y-4 h-full flex flex-col'>
+      <Input
+        type='search'
+        value={search}
+        placeholder='Search resources...'
+        onChange={(e) => setSearch(e.target.value)}
+        before={<PiMagnifyingGlass className='ml-3 text-muted-foreground' />}
+      />
+
+      <div className='overflow-y-auto flex-1'>
+        {isLoading ? (
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+            {Array.from({ length: 8 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+              <Skeleton key={i} className='aspect-square rounded-lg' />
+            ))}
+          </div>
+        ) : resources.length === 0 ? (
+          <div className='h-full flex flex-col items-center justify-center text-center p-4'>
+            <PiFolder className='w-12 h-12 text-muted-foreground/40' />
+            <h3 className='mt-4 text-sm font-bold'>No resources found</h3>
+            <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
+              {search ? 'Try a different search term' : 'Upload some resources to get started'}
+            </p>
+          </div>
+        ) : (
+          <div className='space-y-4'>
+            <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+              {resources.map((resource) => (
+                <Card
+                  key={resource.id}
+                  className='cursor-pointer hover:border-primary transition-colors'
+                  onClick={() => props.onSelect(resource)}
+                >
+                  <ResourcePreview
+                    resource={resource}
+                    className='w-full aspect-square'
+                    hideActions
+                  />
+                </Card>
+              ))}
+            </div>
+
+            {hasNextPage && (
+              <div className='flex justify-center py-4'>
+                <Button
+                  variant='outline'
+                  onClick={() => fetchNextPage()}
+                  disabled={isFetchingNextPage}
+                  size='sm'
+                >
+                  {isFetchingNextPage ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

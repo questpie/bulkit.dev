@@ -5,7 +5,10 @@ import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { resourceStockRoutes } from '@bulkit/api/modules/resources/routes/resources-stock.routes'
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
-import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
+import {
+  ResourceSchema,
+  UpdateResourceSchema,
+} from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -35,11 +38,16 @@ export const resourceRoutes = new Elysia({
     async (ctx) => {
       return ctx.resourcesService.getAll(ctx.db, {
         organizationId: ctx.organization!.id,
-        pagination: ctx.query,
+        query: ctx.query,
       })
     },
     {
-      query: t.Composite([PaginationSchema]),
+      query: t.Composite([
+        PaginationSchema,
+        t.Object({
+          search: t.Optional(t.String()),
+        }),
+      ]),
     }
   )
   .get(
@@ -100,54 +108,48 @@ export const resourceRoutes = new Elysia({
     }
   )
   .patch(
-    '/approve',
+    '/:id',
     async (ctx) => {
-      const { ids } = ctx.body
-      return ctx.db
-        .transaction(async (trx) => {
-          return ctx.resourcesService.approveResources(trx, {
-            organizationId: ctx.organization!.id,
-            ids,
-          })
-        })
-        .catch((err) => {
-          console.error(err)
-          return ctx.error(500, { message: 'Failed to approve resources' })
-        })
+      const resource = await ctx.resourcesService.update(ctx.db, {
+        organizationId: ctx.organization!.id,
+        id: ctx.params.id,
+        data: ctx.body,
+      })
+
+      if (!resource) {
+        throw HttpError.NotFound('Resource not found')
+      }
+
+      return resource
     },
     {
-      body: t.Object({
-        ids: t.Array(t.String()),
+      params: t.Object({
+        id: t.String(),
       }),
-      response: {
-        500: t.Object({ message: t.String({ minLength: 1 }) }),
-        200: t.Array(t.String()),
-      },
+      body: UpdateResourceSchema,
     }
   )
   .delete(
-    '/cleanup',
+    '/:id',
     async (ctx) => {
-      const { ids } = ctx.body
-      return ctx.db
-        .transaction(async (trx) => {
-          return ctx.resourcesService.scheduleCleanup(trx, {
-            organizationId: ctx.organization!.id,
-            ids,
-          })
-        })
-        .catch((err) => {
-          console.error(err)
-          return ctx.error(500, { message: 'Failed to schedule cleanup for resources' })
-        })
+      const result = await ctx.resourcesService.deleteById(ctx.db, {
+        id: ctx.params.id,
+        organizationId: ctx.organization!.id,
+      })
+
+      if (!result) {
+        throw HttpError.NotFound('Resource not found')
+      }
+
+      return result
     },
     {
-      body: t.Object({
-        ids: t.Array(t.String()),
+      params: t.Object({
+        id: t.String({ minLength: 1 }),
       }),
       response: {
-        500: t.Object({ message: t.String({ minLength: 1 }) }),
-        200: t.Array(t.String()),
+        404: HttpErrorSchema(),
+        200: t.String(),
       },
     }
   )

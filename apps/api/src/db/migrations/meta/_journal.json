@@ -64,6 +64,13 @@
       "when": 1733421395686,
       "tag": "20241205175635_strange_sprite",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1733914895255,
+      "tag": "20241211110135_steady_red_ghost",
+      "breakpoints": true
     }
   ]
 }
