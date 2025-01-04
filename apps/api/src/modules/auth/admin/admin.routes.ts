@@ -1,6 +1,7 @@
 import { adminMiddleware } from '@bulkit/api/modules/auth/admin/admin.middleware'
 import Elysia from 'elysia'
 import { aiProvidersRoutes } from './routes/ai-providers/ai-providers.routes'
+import { aiImageProvidersRoutes } from './routes/ai-image-providers/ai-image-providers.routes'
 import { channelSettingsRoutes } from './routes/channel-settings/channel-settings.routes'
 import { stockImageProvidersRoutes } from './routes/stock-image-providers/stock-image-providers.routes'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
@@ -18,6 +19,7 @@ export const adminRoutes = new Elysia({
   .use(channelSettingsRoutes)
   .use(stockImageProvidersRoutes)
   .use(aiProvidersRoutes)
+  .use(aiImageProvidersRoutes)
   .get('/status', () => {
     return { isAdmin: true }
   })

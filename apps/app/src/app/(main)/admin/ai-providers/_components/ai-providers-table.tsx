@@ -169,33 +169,36 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
         })}
       />
 
-      <AIProviderForm
-        open={!!selectedProvider}
-        onOpenChange={(open) => {
-          if (!open) setSelectedProvider(null)
-        }}
-        defaultValues={
-          selectedProvider
-            ? {
-                id: selectedProvider.id,
-                name: selectedProvider.name,
-                model: selectedProvider.model,
-                capabilities: selectedProvider.capabilities,
-                isActive: selectedProvider.isActive,
-                isDefaultFor: selectedProvider.isDefaultFor,
-                promptTokenToCreditCoefficient: selectedProvider.promptTokenToCreditCoefficient,
-                outputTokenToCreditCoefficient: selectedProvider.outputTokenToCreditCoefficient,
-              }
-            : {
-                promptTokenToCreditCoefficient: 1,
-                outputTokenToCreditCoefficient: 1,
-                capabilities: [],
-                isActive: true,
-                isDefaultFor: [],
-              }
-        }
-        mode='edit'
-      />
+      {selectedProvider && (
+        <AIProviderForm
+          key={selectedProvider.id}
+          open={!!selectedProvider}
+          onOpenChange={(open) => {
+            if (!open) setSelectedProvider(null)
+          }}
+          defaultValues={
+            selectedProvider
+              ? {
+                  id: selectedProvider.id,
+                  name: selectedProvider.name,
+                  model: selectedProvider.model,
+                  capabilities: selectedProvider.capabilities,
+                  isActive: selectedProvider.isActive,
+                  isDefaultFor: selectedProvider.isDefaultFor,
+                  promptTokenToCreditCoefficient: selectedProvider.promptTokenToCreditCoefficient,
+                  outputTokenToCreditCoefficient: selectedProvider.outputTokenToCreditCoefficient,
+                }
+              : {
+                  promptTokenToCreditCoefficient: 1,
+                  outputTokenToCreditCoefficient: 1,
+                  capabilities: [],
+                  isActive: true,
+                  isDefaultFor: [],
+                }
+          }
+          mode='edit'
+        />
+      )}
     </>
   )
 }
