@@ -1,5 +1,11 @@
 # @bulkit/api
 
+## 0.3.0
+
+### Minor Changes
+
+- Added media library with ai image generation
+
 ## 0.2.19
 
 ### Patch Changes
