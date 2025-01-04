@@ -73,7 +73,7 @@ export function ChannelsTable(props: ChannelsTableProps) {
           id: 'platform',
           header: 'Platform',
           accessorKey: 'platform',
-          hideBelow: 'sm',
+          hideBelowBreakpoint: 'sm',
           cell: (row) => {
             const Icon = PLATFORM_ICON[row.platform]
             return (
@@ -88,7 +88,7 @@ export function ChannelsTable(props: ChannelsTableProps) {
           id: 'stats',
           header: 'Posts',
           accessorKey: 'postsCount',
-          hideBelow: 'sm',
+          hideBelowBreakpoint: 'sm',
           cell: (row) => (
             <div className='flex  gap-2'>
               <Badge variant='secondary'>

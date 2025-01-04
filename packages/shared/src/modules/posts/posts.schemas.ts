@@ -14,6 +14,7 @@ export const PostMediaSchema = Type.Object({
   order: Type.Number(),
   resource: ResourceSchema,
 })
+
 export const PostMetricsSchema = Type.Object({
   likes: Type.Optional(Type.Number()),
   comments: Type.Optional(Type.Number()),

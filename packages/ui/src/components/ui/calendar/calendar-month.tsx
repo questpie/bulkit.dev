@@ -1,6 +1,6 @@
 'use client'
 
-import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
+import { getIsoDateString } from '@bulkit/shared/utils/date'
 import { cn } from '@bulkit/ui/lib'
 import {
   addMonths,

@@ -16,7 +16,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { createSeeder } from '@bulkit/seed/index'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
-import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
+import { getIsoDateString } from '@bulkit/shared/utils/date'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { addDays } from 'date-fns'
 

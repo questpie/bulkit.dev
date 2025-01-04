@@ -83,14 +83,14 @@ export function MembersTable(props: MembersTableProps) {
               {USER_ROLE_LABEL[row.role]}
             </Badge>
           ),
-          hideBelow: 'sm',
+          hideBelowBreakpoint: 'sm',
         },
         {
           id: 'joinedAt',
           header: 'Joined',
           accessorKey: 'createdAt',
           cell: (row) => new Date(row.createdAt).toLocaleDateString(),
-          hideBelow: 'sm',
+          hideBelowBreakpoint: 'sm',
         },
       ]}
       actions={(row) => ({

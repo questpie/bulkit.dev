@@ -12,7 +12,7 @@ import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { PropsWithChildren, ReactNode } from 'react'
-import { PiBuildingOffice, PiImage, PiList, PiShareNetwork, PiSparkle } from 'react-icons/pi'
+import { PiBuildingOffice, PiImage, PiList, PiSparkle } from 'react-icons/pi'
 
 const ADMIN_TABS: {
   name: string
@@ -20,12 +20,6 @@ const ADMIN_TABS: {
   icon: ReactNode
   description: string
 }[] = [
-  // {
-  //   name: 'Platforms',
-  //   href: '/admin/platforms',
-  //   icon: <PiShareNetwork />,
-  //   description: 'Configure and manage social media platform integrations',
-  // },
   {
     name: 'Organizations',
     href: '/admin/organizations',
@@ -39,10 +33,16 @@ const ADMIN_TABS: {
     description: 'Configure stock image providers for content creation',
   },
   {
-    name: 'AI Providers',
+    name: 'AI Text Providers',
     href: '/admin/ai-providers',
     icon: <PiSparkle />,
     description: 'Manage AI providers for text generation and other AI features',
+  },
+  {
+    name: 'AI Image Providers',
+    href: '/admin/ai-image-providers',
+    icon: <PiSparkle />,
+    description: 'Manage AI providers for image generation',
   },
 ]
 
@@ -64,7 +64,6 @@ function AdminNav({ className }: { className?: string }) {
           {tab.icon}
           <div className='flex flex-col'>
             <span className='line-clamp-1'>{tab.name}</span>
-            {/* <span className='text-xs text-muted-foreground line-clamp-1'>{tab.description}</span> */}
           </div>
         </Link>
       ))}

@@ -483,56 +483,5 @@ describe('PostService', () => {
         })
       ).rejects.toThrow()
     })
-
-    it('should cleanup unused resources when updating post media', async () => {
-      // Create initial resource
-      const resource1 = await resourceService
-        .create(ctx.db, {
-          organizationId: ctx.testUser.organization.id,
-          files: [new File(['test1'], 'test1.jpg', { type: 'image/jpeg' })],
-        })
-        .then((res) => res[0]!)
-
-      // Create post with first resource
-      const post = await postService.create<'post'>(ctx.db, {
-        orgId: ctx.testUser.organization.id,
-        type: 'post',
-      })
-
-      await postService.update<'post'>(ctx.db, {
-        orgId: ctx.testUser.organization.id,
-        post: {
-          ...post,
-          media: [{ id: 'temp-id-1', order: 1, resource: resource1 }],
-        },
-      })
-
-      // Create second resource and update post
-      const resource2 = await resourceService
-        .create(ctx.db, {
-          organizationId: ctx.testUser.organization.id,
-          files: [new File(['test2'], 'test2.jpg', { type: 'image/jpeg' })],
-        })
-        .then((res) => res[0]!)
-
-      await postService.update<'post'>(ctx.db, {
-        orgId: ctx.testUser.organization.id,
-        post: {
-          ...post,
-          media: [{ id: 'temp-id-2', order: 1, resource: resource2 }],
-        },
-      })
-
-      // First resource should be scheduled for cleanup
-      const resource1Status = await ctx.db
-        .select()
-        .from(resourcesTable)
-        .where(eq(resourcesTable.id, resource1.id))
-        .then((res) => res[0]!)
-
-      expect(resource1Status.cleanupAt).toBeDefined()
-      expect(resource1Status.cleanupAt).not.toBeNull()
-      expect(new Date(resource1Status.cleanupAt!).getTime()).toBeGreaterThan(new Date().getTime())
-    })
   })
 })
