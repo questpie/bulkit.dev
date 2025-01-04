@@ -1,14 +1,21 @@
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { injectApiKeyManager, type ApiKeyManager } from '@bulkit/api/common/api-key.manager'
+import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { aiImageProvidersTable } from '@bulkit/api/db/schema/admin.table'
-import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
-import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
+import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import {
+  injectCreditService,
+  type CreditService,
+} from '@bulkit/api/modules/credits/services/credit.service'
+import {
+  injectResourcesService,
+  type ResourcesService,
+} from '@bulkit/api/modules/resources/services/resources.service'
 import type { AIImageCapability } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
 import type { AIImageProviderType } from '@bulkit/shared/modules/app/app-constants'
+import { and, eq } from 'drizzle-orm'
 import { HttpError } from 'elysia-http-error'
 import { ReplicateProvider } from './providers/replicate.provider'
 import type { AIImageProviderAdapter } from './providers/types'
-import { eq, and } from 'drizzle-orm'
-import { injectApiKeyManager, type ApiKeyManager } from '@bulkit/api/common/api-key.manager'
 
 const PROVIDER_CONSTRUCTORS: Record<
   AIImageProviderType,
@@ -22,7 +29,11 @@ const PROVIDER_CONSTRUCTORS: Record<
 export class AIImageGenerationService {
   private providers: Map<string, AIImageProviderAdapter> = new Map()
 
-  constructor(private readonly apiKeyManager: ApiKeyManager) {}
+  constructor(
+    private readonly apiKeyManager: ApiKeyManager,
+    private readonly creditService: CreditService,
+    private readonly resourcesService: ResourcesService
+  ) {}
 
   async getAvailableProviders(db: TransactionLike) {
     const providers = await db
@@ -84,10 +95,15 @@ export class AIImageGenerationService {
         // outputMapping: provider.outputMapping,
       })
 
-      const { resourcesService } = iocResolve(ioc.use(injectResourcesService))
+      // Deduct credits
+      await this.creditService.spend(db, {
+        organizationId: params.organizationId,
+        amount: provider.costPerImage,
+        description: `AI Image Generation ${provider.name}/${provider.model}`,
+      })
 
       // Store the generated image in resources
-      const resource = await resourcesService.createFromUrl(db, {
+      const resource = await this.resourcesService.createFromUrl(db, {
         url: generatedImageUrl,
         name: prompt,
         caption: prompt,
@@ -121,6 +137,12 @@ export class AIImageGenerationService {
 }
 
 export const injectAIImageGenerationService = iocRegister('aiImageGenerationService', () => {
-  const container = iocResolve(ioc.use(injectApiKeyManager))
-  return new AIImageGenerationService(container.apiKeyManager)
+  const container = iocResolve(
+    ioc.use(injectApiKeyManager).use(injectCreditService).use(injectResourcesService)
+  )
+  return new AIImageGenerationService(
+    container.apiKeyManager,
+    container.creditService,
+    container.resourcesService
+  )
 })
