@@ -12,7 +12,7 @@ type MediaInfiniteQueryOptionsData = {
 
 export function mediaInfiniteQueryOptions(opts: MediaInfiniteQueryOptionsData) {
   return infiniteQueryOptions({
-    queryKey: [MEDIA_QUERY_KEY, 'infinite', opts.search],
+    queryKey: [MEDIA_QUERY_KEY, 'infinite', opts.search ?? ''],
     queryFn: async ({ pageParam }) => {
       const res = await apiClient.resources.index.get({
         query: {

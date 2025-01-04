@@ -5,7 +5,7 @@ import { TextPreview } from '@bulkit/app/app/(main)/posts/[id]/_components/previ
 import { POST_TYPE_ICON } from '@bulkit/app/app/(main)/posts/post.constants'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
 import type { Post } from '@bulkit/shared/modules/posts/posts.schemas'
-import { getRelativeTimeString } from '@bulkit/shared/utils/date-utils'
+import { getRelativeTimeString } from '@bulkit/shared/utils/date'
 import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
 import { cn } from '@bulkit/ui/lib'
 import { useState, type PropsWithChildren } from 'react'

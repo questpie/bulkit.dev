@@ -1,14 +1,11 @@
-import { AI_TEXT_PROVIDER_TYPES } from '@bulkit/shared/modules/app/app-constants'
+import {
+  AI_TEXT_CAPABILITIES,
+  AI_TEXT_PROVIDER_TYPES,
+} from '@bulkit/shared/modules/app/app-constants'
 import { EntityTimestampsSchema, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
-export const AI_CAPABILITIES = [
-  'fast-completion', // For very quick responses and inferences, like classification, sentiment analysis, etc. eg (llama 3.1), used for quick insights, scheduling, etc.
-  'general-purpose', // For conversational AI, should be the most human-like (Claude Sonnet, GPT-4o), used for text improvements, post creation, tool usage, etc.
-  'embedding', // For vector embeddings eg (text-embedding-3-small), used for semantic search, clustering, etc.
-] as const
-
-export const AICapabilitySchema = StringLiteralEnum(AI_CAPABILITIES)
+export const AICapabilitySchema = StringLiteralEnum(AI_TEXT_CAPABILITIES)
 
 export const AIProviderSchema = Type.Object({
   id: Type.String(),
@@ -45,7 +42,7 @@ export const UpdateAIProviderSchema = Type.Object({
   outputTokenToCreditCoefficient: Type.Number(),
 })
 
-export type AICapability = (typeof AI_CAPABILITIES)[number]
+export type AICapability = (typeof AI_TEXT_CAPABILITIES)[number]
 export type AIProvider = Static<typeof AIProviderSchema>
 export type AddAIProvider = Static<typeof AddAIProviderSchema>
 export type UpdateAIProvider = Static<typeof UpdateAIProviderSchema>

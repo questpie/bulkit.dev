@@ -3,21 +3,15 @@ import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { injectDrive } from '@bulkit/api/drive/drive'
 import { ioc, iocResolve } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
+import type { ResourceMetadata } from '@bulkit/shared/modules/resources/resources.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
-import { and, eq, inArray, isNull } from 'drizzle-orm'
-import { imageSize } from 'image-size'
-import ffmpeg from 'fluent-ffmpeg'
-import ffmpegPath from '@ffmpeg-installer/ffmpeg'
-import ffprobePath from '@ffprobe-installer/ffprobe'
-import { writeFile, unlink } from 'node:fs/promises'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
-import type { ResourceDimensions } from '@bulkit/shared/modules/resources/resources.schemas'
 import { Type } from '@sinclair/typebox'
-
-// Configure ffmpeg with the installed binaries
-ffmpeg.setFfmpegPath(ffmpegPath.path)
-ffmpeg.setFfprobePath(ffprobePath.path)
+import { eq, inArray } from 'drizzle-orm'
+import ffmpeg from 'fluent-ffmpeg'
+import { imageSize } from 'image-size'
+import { unlink, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
   name: 'resource-metadata',
@@ -56,18 +50,15 @@ export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
         const buffer = await drive.get(resource.location)
         if (!buffer) continue
 
-        let dimensions: ResourceDimensions | undefined
-        const sizeInBytes = buffer.length
+        let metadata: ResourceMetadata = {
+          sizeInBytes: buffer.length,
+        }
 
         if (resource.type.startsWith('image/')) {
           try {
             const imageInfo = imageSize(buffer)
-            if (imageInfo.width && imageInfo.height) {
-              dimensions = {
-                width: imageInfo.width,
-                height: imageInfo.height,
-              }
-            }
+            metadata.width = imageInfo.width
+            metadata.height = imageInfo.height
           } catch (error) {
             appLogger.error('Failed to extract image dimensions', {
               error,
@@ -80,7 +71,7 @@ export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
             await writeFile(tempPath, buffer)
 
             // Use promise-based ffprobe
-            const metadata = await new Promise<{
+            const videoMetadata = await new Promise<{
               width?: number
               height?: number
               duration?: number
@@ -96,12 +87,9 @@ export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
               })
             })
 
-            if (metadata.width && metadata.height) {
-              dimensions = {
-                width: metadata.width,
-                height: metadata.height,
-                duration: metadata.duration,
-              }
+            metadata = {
+              ...metadata,
+              ...videoMetadata,
             }
 
             await unlink(tempPath)
@@ -113,8 +101,7 @@ export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
         await db
           .update(resourcesTable)
           .set({
-            dimensions,
-            sizeInBytes,
+            metadata,
           })
           .where(eq(resourcesTable.id, resource.id))
 

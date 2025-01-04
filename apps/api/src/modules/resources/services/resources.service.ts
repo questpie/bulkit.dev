@@ -48,8 +48,7 @@ export class ResourcesService {
         createdAt: resourcesTable.createdAt,
         name: resourcesTable.name,
         caption: resourcesTable.caption,
-        sizeInBytes: resourcesTable.sizeInBytes,
-        dimensions: resourcesTable.dimensions,
+        metadata: resourcesTable.metadata,
       })
       .from(resourcesTable)
       .where(
@@ -94,8 +93,7 @@ export class ResourcesService {
         createdAt: resourcesTable.createdAt,
         name: resourcesTable.name,
         caption: resourcesTable.caption,
-        dimensions: resourcesTable.dimensions,
-        sizeInBytes: resourcesTable.sizeInBytes,
+        metadata: resourcesTable.metadata,
       })
       .from(resourcesTable)
       .where(
@@ -160,8 +158,7 @@ export class ResourcesService {
         caption: opts.caption,
         name: opts.name,
         // Metadata will be processed by the background job
-        sizeInBytes: null,
-        dimensions: null,
+        metadata: null,
       })
       .returning({
         id: resourcesTable.id,
@@ -171,8 +168,7 @@ export class ResourcesService {
         createdAt: resourcesTable.createdAt,
         name: resourcesTable.name,
         caption: resourcesTable.caption,
-        dimensions: resourcesTable.dimensions,
-        sizeInBytes: resourcesTable.sizeInBytes,
+        metadata: resourcesTable.metadata,
       })
       .then((r) => r[0]!)
   }
@@ -288,7 +284,6 @@ export class ResourcesService {
 
     return result
   }
-
 
   async update(
     db: TransactionLike,

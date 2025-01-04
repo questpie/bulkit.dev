@@ -1,10 +1,11 @@
 import { Nullable } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
-const DimensionsSchema = Type.Object({
-  width: Type.Number(),
-  height: Type.Number(),
+export const ResourceMetadataSchema = Type.Object({
+  width: Type.Optional(Type.Number()),
+  height: Type.Optional(Type.Number()),
   duration: Type.Optional(Type.Number()),
+  sizeInBytes: Type.Optional(Type.Number()),
 })
 
 export const ResourceSchema = Type.Object({
@@ -14,11 +15,9 @@ export const ResourceSchema = Type.Object({
   isExternal: Type.Boolean(),
   url: Type.String(),
   createdAt: Type.String(),
-
   name: Nullable(Type.String()),
   caption: Nullable(Type.String()),
-  dimensions: Nullable(DimensionsSchema),
-  sizeInBytes: Nullable(Type.Number()),
+  metadata: Nullable(ResourceMetadataSchema),
 })
 
 export const UpdateResourceSchema = Type.Object({
@@ -28,4 +27,4 @@ export const UpdateResourceSchema = Type.Object({
 
 export type Resource = Static<typeof ResourceSchema>
 export type UpdateResource = Static<typeof UpdateResourceSchema>
-export type ResourceDimensions = Static<typeof DimensionsSchema>
+export type ResourceMetadata = Static<typeof ResourceMetadataSchema>

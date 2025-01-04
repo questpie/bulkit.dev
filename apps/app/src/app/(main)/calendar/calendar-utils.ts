@@ -1,4 +1,4 @@
-import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
+import { getIsoDateString } from '@bulkit/shared/utils/date'
 import { endOfMonth, isValid, startOfMonth } from 'date-fns'
 import type { ReadonlyURLSearchParams } from 'next/navigation'
 

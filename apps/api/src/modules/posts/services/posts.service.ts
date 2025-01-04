@@ -116,8 +116,7 @@ export class PostsService {
             url: await getResourceUrl(reelPost.resources),
             name: reelPost.resources.name,
             caption: reelPost.resources.caption,
-            sizeInBytes: reelPost.resources.sizeInBytes,
-            dimensions: reelPost.resources.dimensions,
+            metadata: reelPost.resources.metadata,
           },
         } satisfies PostWithType<'reel'> as unknown as PReturn
       }
@@ -156,8 +155,7 @@ export class PostsService {
                     url: await getResourceUrl(p.resources!),
                     name: p.resources!.name,
                     caption: p.resources!.caption,
-                    sizeInBytes: p.resources!.sizeInBytes,
-                    dimensions: p.resources!.dimensions,
+                    metadata: p.resources!.metadata,
                   },
                 } satisfies Extract<Post, { type: 'post' }>['media'][number]
               })
@@ -209,8 +207,7 @@ export class PostsService {
                       url: await getResourceUrl(p.resources!),
                       name: p.resources!.name,
                       caption: p.resources!.caption,
-                      sizeInBytes: p.resources!.sizeInBytes,
-                      dimensions: p.resources!.dimensions,
+                      metadata: p.resources!.metadata,
                     },
                   }
                 })
@@ -250,8 +247,7 @@ export class PostsService {
             url: await getResourceUrl(storyPosts.resource),
             name: storyPosts.resource.name,
             caption: storyPosts.resource.caption,
-            sizeInBytes: storyPosts.resource.sizeInBytes,
-            dimensions: storyPosts.resource.dimensions,
+            metadata: storyPosts.resource.metadata,
           },
         } satisfies PostWithType<'story'> as unknown as PReturn
       }
@@ -614,8 +610,7 @@ export class PostsService {
             url: await getResourceUrl(m.resources),
             name: m.resources.name,
             caption: m.resources.caption,
-            dimensions: m.resources.dimensions,
-            sizeInBytes: m.resources.sizeInBytes,
+            metadata: m.resources.metadata,
           },
         }))
       ),

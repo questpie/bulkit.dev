@@ -1,8 +1,8 @@
 import { apiClient } from '@bulkit/app/api/api.client'
 import { mediaInfiniteQueryOptions } from '@bulkit/app/app/(main)/media/media.queries'
 import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
+import type { AIImageProvider } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
 import type { Resource } from '@bulkit/shared/modules/resources/resources.schemas'
-import { Badge } from '@bulkit/ui/components/ui/badge'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@bulkit/ui/components/ui/dialog'
@@ -16,12 +16,24 @@ import {
 } from '@bulkit/ui/components/ui/select'
 import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
 import { toast } from '@bulkit/ui/components/ui/sonner'
+import { Spinner } from '@bulkit/ui/components/ui/spinner'
+import { Textarea } from '@bulkit/ui/components/ui/textarea'
 import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
 import { cn } from '@bulkit/ui/lib'
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query'
-import { useCallback, useState } from 'react'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { PiFolder, PiImage, PiMagnifyingGlass, PiSparkle, PiUploadSimple } from 'react-icons/pi'
+import { LuWand2 } from 'react-icons/lu'
+import {
+  PiFolder,
+  PiImage,
+  PiMagnifyingGlass,
+  PiSparkle,
+  PiUploadSimple,
+  PiX,
+} from 'react-icons/pi'
+
+type ResourceUploaderTab = 'upload' | 'stock' | 'library' | 'ai'
 
 type ResourceUploaderProps = {
   onUploaded?: (resources: Resource[]) => void
@@ -29,6 +41,7 @@ type ResourceUploaderProps = {
   maxFiles?: number
   maxSize?: number // in bytes
   disabled?: boolean
+  hideTabs?: ResourceUploaderTab[]
 }
 
 type StockImage = {
@@ -188,6 +201,7 @@ function useResourceUploader({
   maxSize = 1024 * 1024 * 1024, // 1024MB
   disabled,
 }: ResourceUploaderProps) {
+  const queryClient = useQueryClient()
   const mutation = useMutation({
     mutationFn: (...args: Parameters<typeof apiClient.resources.index.post>) =>
       apiClient.resources.index.post(...args).then((res) => {
@@ -199,6 +213,7 @@ function useResourceUploader({
       }),
     onSuccess: (data) => {
       onUploaded?.(data)
+      queryClient.invalidateQueries(mediaInfiniteQueryOptions({}))
     },
   })
 
@@ -287,53 +302,297 @@ export function ResourceDropzone(
   )
 }
 
+type ResourceUploaderTabConfig = {
+  id: ResourceUploaderTab
+  label: string
+  icon: React.ElementType
+  disabled?: boolean
+  soon?: boolean
+  content: (props: {
+    onSelect?: (resource: Resource) => void
+    onUploaded?: (resources: Resource[]) => void
+    onClose?: () => void
+    uploaderProps?: ResourceUploaderProps
+  }) => React.ReactNode
+}
+
+type TabContentProps = {
+  onSelect?: (resource: Resource) => void
+  onUploaded?: (resources: Resource[]) => void
+  onClose?: () => void
+  uploaderProps?: ResourceUploaderProps
+}
+
+function AITabContent(props: {
+  onSelect: (resource: Resource) => void
+}) {
+  const [prompt, setPrompt] = useState('')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [generatedResource, setGeneratedResource] = useState<Resource | null>(null)
+
+  const { data: providers = [] } = useQuery({
+    queryKey: ['ai', 'providers'],
+    queryFn: async () => {
+      const response = await apiClient.resources.ai.providers.get()
+      if (response.error) throw response.error
+      return response.data as AIImageProvider[]
+    },
+  })
+
+  const [activeProvider, setActiveProvider] = useState<string | undefined>()
+
+  // Initialize activeProvider when providers are loaded
+  useEffect(() => {
+    if (providers.length > 0 && !activeProvider) {
+      setActiveProvider(providers[0]?.id)
+    }
+  }, [providers, activeProvider])
+
+  const queryClient = useQueryClient()
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeProvider) throw new Error('No provider selected')
+
+      let imageUrl: string | undefined
+      if (imageFile) {
+        const formData = new FormData()
+        formData.append('files', imageFile)
+        formData.append('isPrivate', 'true')
+
+        const uploadResponse = await apiClient.resources.index.post({
+          files: [imageFile] as any,
+          isPrivate: true,
+        })
+
+        if (uploadResponse.error) throw uploadResponse.error
+        imageUrl = uploadResponse.data[0]?.url
+      }
+
+      const response = await apiClient.resources.ai.generate.post({
+        prompt,
+        imageUrl,
+        providerId: activeProvider,
+      })
+
+      if (response.error) throw response.error
+      return response.data
+    },
+    onSuccess: (data) => {
+      setGeneratedResource(data)
+      setIsGenerating(false)
+      queryClient.invalidateQueries(mediaInfiniteQueryOptions({}))
+    },
+    onError: (error: Error) => {
+      toast.error('Failed to generate image', {
+        description: error.message,
+      })
+      setIsGenerating(false)
+    },
+  })
+
+  if (providers.length === 0) {
+    return (
+      <div className='flex flex-col items-center justify-center h-full text-center p-4'>
+        <PiImage className='w-12 h-12 text-muted-foreground/40' />
+        <h3 className='mt-4 text-sm font-bold'>AI image generation not configured</h3>
+        <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
+          Contact your administrator to configure AI image providers.
+        </p>
+      </div>
+    )
+  }
+
+  const defaultProvider = providers[0]
+  if (!defaultProvider) return null
+
+  const selectedProvider = providers.find((p) => p.id === activeProvider)
+  const hasImageToImage = selectedProvider?.capabilities.includes('image-to-image') ?? false
+
+  return (
+    <div className='flex flex-col h-full'>
+      <div className='flex-1 flex items-center justify-center'>
+        {isGenerating ? (
+          <Skeleton className='w-64 h-64 rounded-lg' />
+        ) : generatedResource ? (
+          <div className='relative w-64 h-64'>
+            <ResourcePreview resource={generatedResource} className='w-full h-full rounded-lg' />
+            <Button
+              variant='secondary'
+              size='sm'
+              className='absolute bottom-2 right-2'
+              onClick={() => {
+                props.onSelect(generatedResource)
+                setGeneratedResource(null)
+                setPrompt('')
+                setImageFile(null)
+              }}
+            >
+              Use Image
+            </Button>
+          </div>
+        ) : (
+          <div className='flex flex-col items-center text-center'>
+            <PiImage className='w-12 h-12 text-muted-foreground/40' />
+            <p className='mt-2 text-sm text-muted-foreground'>
+              Enter a prompt below to generate an image
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className='space-y-4 pt-4 border-t'>
+        <div className='flex flex-col gap-2'>
+          <div className='flex flex-col gap-2'>
+            <Textarea
+              value={prompt}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
+              placeholder='Describe the image you want to generate...'
+              disabled={isGenerating}
+            />
+            <div className='flex items-center justify-between'>
+              <Select
+                value={activeProvider ?? defaultProvider.id}
+                onValueChange={setActiveProvider}
+                disabled={isGenerating}
+              >
+                <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2 shadow-none text-xs'>
+                  <p className='text-xs'>
+                    Using {selectedProvider?.model ?? defaultProvider.model}
+                  </p>
+                </SelectTrigger>
+                <SelectContent>
+                  {providers.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id} className='text-xs'>
+                      {provider.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                onClick={() => {
+                  setIsGenerating(true)
+                  generateMutation.mutate()
+                }}
+                disabled={!prompt || isGenerating || !activeProvider}
+              >
+                {isGenerating ? <Spinner /> : <LuWand2 className='h-4 w-4' />}
+                Generate
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {hasImageToImage && (
+          <div className='flex items-center gap-2 pt-2 border-t'>
+            <Input
+              type='file'
+              accept='image/*'
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setImageFile(e.target.files?.[0] ?? null)
+              }
+              disabled={isGenerating}
+            />
+            {imageFile && (
+              <Button
+                variant='ghost'
+                size='icon'
+                onClick={() => setImageFile(null)}
+                disabled={isGenerating}
+              >
+                <PiX className='h-4 w-4' />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const RESOURCE_UPLOADER_TABS: ResourceUploaderTabConfig[] = [
+  {
+    id: 'upload',
+    label: 'Upload',
+    icon: PiUploadSimple,
+    content: (props: TabContentProps) => (
+      <ResourceDropzone
+        {...props.uploaderProps}
+        className='h-full items-center justify-center'
+        onUploaded={(resources) => {
+          props.onUploaded?.(resources)
+        }}
+      />
+    ),
+  },
+  {
+    id: 'stock',
+    label: 'Stock',
+    icon: PiImage,
+    content: (props: TabContentProps) => (
+      <StockTabContent
+        onSelect={async (image) => {
+          const response = await apiClient.resources.stock.index.post({
+            url: image.url,
+            name: image.author,
+            caption: image.alt,
+            isPrivate: true,
+          })
+
+          if (response.error) {
+            throw new Error(response.error.value.message)
+          }
+
+          props.onSelect?.(response.data)
+        }}
+      />
+    ),
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    icon: PiFolder,
+    content: (props: TabContentProps) => (
+      <LibraryTabContent
+        onSelect={(resource) => {
+          props.onSelect?.(resource)
+        }}
+      />
+    ),
+  },
+  {
+    id: 'ai',
+    label: 'AI Image',
+    icon: PiSparkle,
+    content: (props: TabContentProps) => (
+      <AITabContent
+        onSelect={(resource) => {
+          props.onSelect?.(resource)
+        }}
+      />
+    ),
+  },
+]
+
 export function ResourceUploadDialog({
   open,
   onOpenChange,
   onUploaded,
+  hideTabs = [],
   ...props
 }: ResourceUploaderProps & {
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const [activeTab, setActiveTab] = useState<'upload' | 'stock' | 'ai' | 'library'>('upload')
+  const [activeTab, setActiveTab] = useState<ResourceUploaderTab>('upload')
+  const availableTabs = RESOURCE_UPLOADER_TABS.filter((tab) => !hideTabs.includes(tab.id))
 
-  const { data: stockProviders = [] } = useQuery({
-    queryKey: ['admin', 'stock-providers'],
-    queryFn: async () => {
-      const response = await apiClient.admin['stock-image-providers'].index.get()
-      if (response.error) throw response.error
-      return response.data
-    },
-  })
-
-  const stockSaveMutation = useMutation({
-    mutationFn: async (image: StockImage) => {
-      const response = await apiClient.resources.stock.index.post({
-        url: image.url,
-        caption: image.alt,
-        isPrivate: true,
-      })
-
-      if (response.error) {
-        throw new Error(response.error.value.message)
-      }
-
-      return response.data
-    },
-  })
-
-  const handleStockImageSelect = (image: StockImage) => {
-    toast.promise(stockSaveMutation.mutateAsync(image), {
-      loading: 'Saving stock image...',
-      success: (resource) => {
-        onUploaded?.([resource])
-        onOpenChange(false)
-        return 'Stock image saved'
-      },
-      error: 'Failed to save stock image',
-    })
-  }
+  useEffect(() => {
+    if (hideTabs.includes(activeTab) && availableTabs.length > 0) {
+      setActiveTab(availableTabs[0]!.id)
+    }
+  }, [hideTabs, activeTab, availableTabs])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -343,90 +602,36 @@ export function ResourceUploadDialog({
         </DialogHeader>
         <div className='flex md:flex-row flex-col h-[600px] gap-4 md:gap-2'>
           <div className='flex md:flex-col md:w-48 w-full gap-2 md:h-full pr-4 md:border-border md:border-r'>
-            <Card
-              onClick={() => setActiveTab('upload')}
-              className={cn(
-                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
-                activeTab === 'upload' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
-              )}
-              asChild
-            >
-              <button type='button'>
-                <PiUploadSimple className='h-5 w-5' />
-                <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Upload</span>
-              </button>
-            </Card>
-            <Card
-              onClick={() => setActiveTab('stock')}
-              className={cn(
-                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors relative',
-                activeTab === 'stock' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
-                // stockProviders.length === 0 && 'opacity-50 cursor-not-allowed hover:bg-transparent'
-              )}
-              asChild
-            >
-              <button type='button'>
-                <PiImage className='h-5 w-5' />
-                <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Stock</span>
-              </button>
-            </Card>
-            <Card
-              onClick={() => setActiveTab('library')}
-              className={cn(
-                'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
-                activeTab === 'library' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
-              )}
-              asChild
-            >
-              <button type='button'>
-                <PiFolder className='h-5 w-5' />
-                <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>Library</span>
-              </button>
-            </Card>
-            <Card
-              className='flex md:flex-row flex-1 md:flex-none relative flex-col items-center gap-2 p-4 rounded-lg border opacity-50 cursor-not-allowed'
-              asChild
-            >
-              <button type='button' disabled>
-                <PiSparkle className='h-5 w-5' />
-                <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>
-                  AI Image
-                </span>
-                <Badge
-                  size='sm'
-                  variant='warning'
-                  className='ml-1 absolute rotate-12 -top-1 -right-3 text-xs text-muted-foreground flex items-center gap-1'
-                >
-                  Soon
-                </Badge>
-              </button>
-            </Card>
+            {availableTabs.map((tab) => (
+              <Card
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
+                  activeTab === tab.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
+                )}
+                asChild
+              >
+                <button type='button'>
+                  <tab.icon className='h-5 w-5' />
+                  <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>
+                    {tab.label}
+                  </span>
+                </button>
+              </Card>
+            ))}
           </div>
 
           <div className='flex-1'>
-            {activeTab === 'upload' && (
-              <ResourceDropzone
-                {...props}
-                className='h-full items-center justify-center'
-                onUploaded={(resources) => {
-                  onUploaded?.(resources)
-                  onOpenChange(false)
-                }}
-              />
-            )}
-
-            {activeTab === 'stock' && <StockTabContent onSelect={handleStockImageSelect} />}
-
-            {activeTab === 'library' && (
-              <LibraryTabContent
-                onSelect={(resource) => {
-                  onUploaded?.([resource])
-                  onOpenChange(false)
-                }}
-              />
-            )}
-
-            {activeTab === 'ai' && <div>{/* AI image generation will go here */}</div>}
+            {RESOURCE_UPLOADER_TABS.find((tab) => tab.id === activeTab)?.content({
+              onSelect: (resource) => {
+                onUploaded?.([resource])
+                onOpenChange(false)
+              },
+              onUploaded,
+              onClose: () => onOpenChange(false),
+              uploaderProps: props,
+            })}
           </div>
         </div>
       </DialogContent>

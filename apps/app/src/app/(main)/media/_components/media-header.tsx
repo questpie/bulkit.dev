@@ -17,9 +17,11 @@ export function MediaPageHeader() {
       <ResourceUploadDialog
         open={isOpen}
         onOpenChange={setIsOpen}
+        hideTabs={['library']}
         onUploaded={() => {
+          console.log('uploading', mediaInfiniteQueryOptions({}))
           router.refresh()
-          queryClient.invalidateQueries({ queryKey: mediaInfiniteQueryOptions({}).queryKey })
+          queryClient.invalidateQueries(mediaInfiniteQueryOptions({}))
         }}
       />
       <HeaderButton icon={<LuPlus />} label='Upload Media' onClick={() => setIsOpen(true)} />

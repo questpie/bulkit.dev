@@ -1,42 +1,41 @@
 'use client'
 
 import { apiClient } from '@bulkit/app/api/api.client'
-import { calculateCostPerMillion } from '@bulkit/app/app/(main)/admin/ai-providers/ai-proivders.utils'
-import { aiProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-providers/ai-providers.queries'
+import { aiImageProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-image-providers/ai-image-providers.queries'
 import { useAppSettings } from '@bulkit/app/app/_components/app-settings-provider'
-import type { AIProvider } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
+import type { AIImageProvider } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
+import { formatCurrency } from '@bulkit/shared/utils/string'
 import { Badge } from '@bulkit/ui/components/ui/badge'
 import { DataTable } from '@bulkit/ui/components/ui/data-table/data-table'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PiPencil, PiTrash } from 'react-icons/pi'
-import { AIProviderForm } from './ai-provider-form'
+import { AIImageProviderForm } from './ai-image-provider-form'
 
-type AIProvidersTableProps = {
-  initialProviders?: AIProvider[]
+type AIImageProvidersTableProps = {
+  initialProviders?: AIImageProvider[]
 }
 
-export function AIProvidersTable(props: AIProvidersTableProps) {
-  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(null)
+export function AIImageProvidersTable(props: AIImageProvidersTableProps) {
+  const [selectedProvider, setSelectedProvider] = useState<AIImageProvider | null>(null)
   const queryClient = useQueryClient()
-  const isCloud = useAppSettings().deploymentType === 'cloud'
   const appSettings = useAppSettings()
 
   const providersQuery = useQuery(
-    aiProvidersQueryOptions({
+    aiImageProvidersQueryOptions({
       initialProviders: props.initialProviders,
     })
   )
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient.admin['ai-providers']({ id }).delete()
+      const response = await apiClient.admin['ai-image-providers']({ id }).delete()
       if (response.error) throw new Error(response.error.value.message)
       return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: aiProvidersQueryOptions({}).queryKey })
+      queryClient.invalidateQueries({ queryKey: aiImageProvidersQueryOptions({}).queryKey })
       toast.success('Provider deleted successfully')
     },
     onError: (error) => {
@@ -88,59 +87,21 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
             ),
           },
           {
-            id: 'isDefaultFor',
-            header: 'Default For',
-            accessorKey: 'isDefaultFor',
+            id: 'costPerImage',
+            header: 'Cost Per Image',
+            accessorKey: 'costPerImage',
             cell: (row) => (
-              <div className='flex flex-wrap gap-1 justify-start'>
-                {row.isDefaultFor.map((capability) => (
-                  <Badge key={capability} variant='outline' size='sm'>
-                    {capability}
-                  </Badge>
-                ))}
+              <div className='space-y-1'>
+                <div className='text-sm'>
+                  {row.costPerImage} credits
+                  <span className='block text-xs text-muted-foreground'>
+                    {formatCurrency(row.costPerImage, appSettings.currency)} per image
+                  </span>
+                </div>
               </div>
             ),
+            forceHide: appSettings.deploymentType !== 'cloud',
           },
-          // {
-          //   id: 'createdAt',
-          //   header: 'Added',
-          //   accessorKey: 'createdAt',
-          //   cell: (row) => new Date(row.createdAt).toLocaleDateString(),
-          // },
-          ...(isCloud
-            ? [
-                {
-                  id: 'tokenCosts',
-                  header: 'Token Costs',
-                  cell: (row: AIProvider) => (
-                    <div className='space-y-1'>
-                      <div className='text-sm'>
-                        <span className='font-medium'>Prompt:</span>{' '}
-                        {row.promptTokenToCreditCoefficient} credits
-                        <span className='block text-xs text-muted-foreground'>
-                          {calculateCostPerMillion(
-                            row.promptTokenToCreditCoefficient,
-                            appSettings.currency
-                          )}
-                          /million tokens
-                        </span>
-                      </div>
-                      <div className='text-sm'>
-                        <span className='font-medium'>Output:</span>{' '}
-                        {row.outputTokenToCreditCoefficient} credits
-                        <span className='block text-xs text-muted-foreground'>
-                          {calculateCostPerMillion(
-                            row.outputTokenToCreditCoefficient,
-                            appSettings.currency
-                          )}
-                          /million tokens
-                        </span>
-                      </div>
-                    </div>
-                  ),
-                },
-              ]
-            : []),
         ]}
         actions={(row) => ({
           options: [
@@ -170,7 +131,7 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
       />
 
       {selectedProvider && (
-        <AIProviderForm
+        <AIImageProviderForm
           key={selectedProvider.id}
           open={!!selectedProvider}
           onOpenChange={(open) => {
@@ -184,16 +145,22 @@ export function AIProvidersTable(props: AIProvidersTableProps) {
                   model: selectedProvider.model,
                   capabilities: selectedProvider.capabilities,
                   isActive: selectedProvider.isActive,
-                  isDefaultFor: selectedProvider.isDefaultFor,
-                  promptTokenToCreditCoefficient: selectedProvider.promptTokenToCreditCoefficient,
-                  outputTokenToCreditCoefficient: selectedProvider.outputTokenToCreditCoefficient,
+                  costPerImage: selectedProvider.costPerImage,
+                  inputMapping: selectedProvider.inputMapping,
+                  defaultInput: selectedProvider.defaultInput,
+                  //   outputMapping: selectedProvider.outputMapping,
                 }
               : {
-                  promptTokenToCreditCoefficient: 1,
-                  outputTokenToCreditCoefficient: 1,
                   capabilities: [],
                   isActive: true,
-                  isDefaultFor: [],
+                  costPerImage: 0.01,
+                  inputMapping: {
+                    prompt: 'prompt',
+                  },
+                  defaultInput: null,
+                  //   outputMapping: {
+                  //     image_url: 'url',
+                  //   },
                 }
           }
           mode='edit'

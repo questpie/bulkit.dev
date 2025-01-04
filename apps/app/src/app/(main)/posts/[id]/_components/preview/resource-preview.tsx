@@ -1,6 +1,7 @@
-import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
+import type { Resource } from '@bulkit/shared/modules/resources/resources.schemas'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Card } from '@bulkit/ui/components/ui/card'
+import { Dialog, DialogContent } from '@bulkit/ui/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,12 +9,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@bulkit/ui/components/ui/dropdown-menu'
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-} from '@bulkit/ui/components/ui/responsive-dialog'
 import { cn } from '@bulkit/ui/lib'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
@@ -27,6 +22,7 @@ import {
   LuPlay,
   LuTrash,
 } from 'react-icons/lu'
+import { PiX } from 'react-icons/pi'
 
 type ResourcePreviewProps = {
   resource: Resource
@@ -61,6 +57,7 @@ export function ResourcePreview({
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const isVideo = resource.type.startsWith('video/')
+  const [showFullscreen, setShowFullscreen] = useState(false)
 
   useEffect(() => {
     const generateThumbnail = async () => {
@@ -190,22 +187,35 @@ type ResourceDialogPreviewProps = {
 
 export function ResourceDialogPreview({ resource, onClose }: ResourceDialogPreviewProps) {
   return (
-    <ResponsiveDialog open={true} onOpenChange={onClose} activeSnapPoint={1}>
-      <ResponsiveDialogContent>
-        <ResponsiveDialogHeader>
-          <ResponsiveDialogTitle>{resource.location.split('/').pop()}</ResponsiveDialogTitle>
-        </ResponsiveDialogHeader>
-        {/* Add preview content based on resource type */}
-        {resource.type.startsWith('image/') && (
-          <img src={resource.url} alt={resource.location} style={{ maxWidth: '100%' }} />
-        )}
-        {resource.type.startsWith('video/') && (
-          <video src={resource.url} controls style={{ maxWidth: '100%' }}>
-            <track kind='captions' />
-          </video>
-        )}
-        {/* Add more preview types as needed */}
-      </ResponsiveDialogContent>
-    </ResponsiveDialog>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent
+        hideCloseButton
+        className='max-w-screen-lg w-full mx-auto bg-transparent border-none rounded-none flex flex-col items-center justify-center gap-4'
+      >
+        <div className='relative p-4 w-full h-full flex items-center justify-center'>
+          {resource.type.startsWith('image/') && (
+            <img
+              src={resource.url}
+              alt={resource.location}
+              className='max-w-full max-h-[85vh] w-auto h-auto object-contain'
+            />
+          )}
+          {resource.type.startsWith('video/') && (
+            <video
+              src={resource.url}
+              controls
+              className='max-w-full max-h-[85vh] w-auto h-auto object-contain'
+            >
+              <track kind='captions' />
+            </video>
+          )}
+          <div className='absolute -bottom-10 w-full flex items-center justify-center'>
+            <Button onClick={onClose} variant='secondary' className=''>
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

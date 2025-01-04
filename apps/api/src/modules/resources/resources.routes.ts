@@ -4,6 +4,7 @@ import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { resourceStockRoutes } from '@bulkit/api/modules/resources/routes/resources-stock.routes'
+import { resourceAIRoutes } from '@bulkit/api/modules/resources/routes/resources-ai.routes'
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import {
   ResourceSchema,
@@ -11,6 +12,8 @@ import {
 } from '@bulkit/shared/modules/resources/resources.schemas'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
+import { Type } from '@sinclair/typebox'
+import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
@@ -33,6 +36,8 @@ export const resourceRoutes = new Elysia({
   .use(injectResourcesService)
   .use(organizationMiddleware)
   .use(resourceStockRoutes)
+  .use(resourceAIRoutes)
+  .use(protectedMiddleware)
   .get(
     '/',
     async (ctx) => {

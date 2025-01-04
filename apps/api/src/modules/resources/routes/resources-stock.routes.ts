@@ -58,6 +58,7 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
           organizationId: ctx.organization!.id,
           url: ctx.body.url,
           caption: ctx.body.caption,
+          name: ctx.body.name,
           isPrivate: ctx.body.isPrivate,
         })
       })
@@ -66,6 +67,7 @@ export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
       body: t.Object({
         url: t.String({ format: 'uri' }),
         caption: t.String(),
+        name: t.String(),
         isPrivate: t.Optional(t.BooleanString({ default: true })),
       }),
       response: {

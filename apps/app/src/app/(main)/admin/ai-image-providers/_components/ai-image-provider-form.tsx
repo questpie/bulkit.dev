@@ -1,19 +1,19 @@
 'use client'
 
 import { apiClient } from '@bulkit/app/api/api.client'
-import { calculateCostPerMillion } from '@bulkit/app/app/(main)/admin/ai-providers/ai-proivders.utils'
-import { aiProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-providers/ai-providers.queries'
+import { aiImageProvidersQueryOptions } from '@bulkit/app/app/(main)/admin/ai-image-providers/ai-image-providers.queries'
 import { useAppSettings } from '@bulkit/app/app/_components/app-settings-provider'
 import {
-  AddAIProviderSchema,
-  UpdateAIProviderSchema,
-  type AddAIProvider,
-  type UpdateAIProvider,
-} from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
+  AddAIImageProviderSchema,
+  UpdateAIImageProviderSchema,
+  type AddAIImageProvider,
+  type UpdateAIImageProvider,
+} from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
 import {
-  AI_TEXT_CAPABILITIES,
-  AI_TEXT_PROVIDER_TYPES,
+  AI_IMAGE_CAPABILITIES,
+  AI_IMAGE_PROVIDER_TYPES,
 } from '@bulkit/shared/modules/app/app-constants'
+import { formatCurrency } from '@bulkit/shared/utils/string'
 import { Button } from '@bulkit/ui/components/ui/button'
 import { Checkbox } from '@bulkit/ui/components/ui/checkbox'
 import {
@@ -25,6 +25,14 @@ import {
   FormMessage,
 } from '@bulkit/ui/components/ui/form'
 import { Input } from '@bulkit/ui/components/ui/input'
+import { JsonEditor } from '@bulkit/ui/components/ui/json-editor'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@bulkit/ui/components/ui/select'
 import {
   Sheet,
   SheetContent,
@@ -33,28 +41,21 @@ import {
   SheetTrigger,
   SheetFooter,
 } from '@bulkit/ui/components/ui/sheet'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@bulkit/ui/components/ui/select'
 import { toast } from '@bulkit/ui/components/ui/sonner'
 import useControllableState from '@bulkit/ui/hooks/use-controllable-state'
 import { typeboxResolver } from '@hookform/resolvers/typebox'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { PropsWithChildren } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, type PropsWithChildren } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 
-type AIProviderFormProps = {
+type AIImageProviderFormProps = {
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  defaultValues?: Partial<AddAIProvider | UpdateAIProvider>
+  defaultValues?: Partial<AddAIImageProvider | UpdateAIImageProvider>
   mode?: 'add' | 'edit'
 }
 
-export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
+export function AIImageProviderForm(props: PropsWithChildren<AIImageProviderFormProps>) {
   const [open, setOpen] = useControllableState({
     defaultValue: props.open ?? false,
     onChange: props.onOpenChange,
@@ -62,27 +63,37 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
   })
 
   const appSettings = useAppSettings()
-
   const isCloud = appSettings.deploymentType === 'cloud'
 
-  const form = useForm<UpdateAIProvider | AddAIProvider>({
-    resolver: typeboxResolver(props.mode === 'edit' ? UpdateAIProviderSchema : AddAIProviderSchema),
+  const [jsonEditorValue, setJsonEditorValue] = useState<string>(() => {
+    const defaultInput = props.defaultValues?.defaultInput
+    return defaultInput ? JSON.stringify(defaultInput, null, 2) : ''
+  })
+
+  const form = useForm<UpdateAIImageProvider | AddAIImageProvider>({
+    resolver: typeboxResolver(
+      props.mode === 'edit' ? UpdateAIImageProviderSchema : AddAIImageProviderSchema
+    ),
     defaultValues: props.defaultValues || {
-      name: 'anthropic',
+      name: 'replicate',
       model: '',
       capabilities: [],
       isActive: true,
-      isDefaultFor: [],
-      promptTokenToCreditCoefficient: 0.0001,
-      outputTokenToCreditCoefficient: 0.0002,
+      costPerImage: 0.01,
+      inputMapping: {
+        prompt: 'prompt',
+        image_url: 'image',
+      },
+      defaultInput: null,
     },
   })
 
   const queryClient = useQueryClient()
 
   const editMutation = useMutation({
-    mutationFn: async (values: UpdateAIProvider) => {
-      const response = await apiClient.admin['ai-providers'].index.put({
+    mutationFn: async (values: UpdateAIImageProvider) => {
+      console.log('values', values)
+      const response = await apiClient.admin['ai-image-providers'].index.put({
         ...values,
         apiKey: values.apiKey || undefined,
       })
@@ -90,7 +101,7 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
       return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: aiProvidersQueryOptions({}).queryKey })
+      queryClient.invalidateQueries({ queryKey: aiImageProvidersQueryOptions({}).queryKey })
       setOpen(false)
       toast.success('Provider updated successfully')
     },
@@ -102,13 +113,13 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
   })
 
   const addMutation = useMutation({
-    mutationFn: async (values: AddAIProvider) => {
-      const response = await apiClient.admin['ai-providers'].index.post(values)
+    mutationFn: async (values: AddAIImageProvider) => {
+      const response = await apiClient.admin['ai-image-providers'].index.post(values)
       if (response.error) throw new Error(response.error.value.message)
       return response.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: aiProvidersQueryOptions({}).queryKey })
+      queryClient.invalidateQueries({ queryKey: aiImageProvidersQueryOptions({}).queryKey })
       setOpen(false)
       toast.success('Provider added successfully')
     },
@@ -120,8 +131,13 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
   })
 
   const handleSubmit = form.handleSubmit((values) => {
-    if (props.mode === 'edit') editMutation.mutate(values as UpdateAIProvider)
-    else addMutation.mutate(values as AddAIProvider)
+    if (props.mode === 'edit') editMutation.mutate(values as UpdateAIImageProvider)
+    else addMutation.mutate(values as AddAIImageProvider)
+  })
+
+  const costPerImage = useWatch({
+    control: form.control,
+    name: 'costPerImage',
   })
 
   return (
@@ -130,9 +146,9 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
 
       <SheetContent>
         <Form {...form}>
-          <form onSubmit={handleSubmit} className='h-full relative flex flex-col gap-4'>
+          <form onSubmit={handleSubmit} className='relative h-full flex flex-col gap-4'>
             <SheetHeader>
-              <SheetTitle>{props.mode === 'edit' ? 'Edit' : 'Add'} AI Provider</SheetTitle>
+              <SheetTitle>{props.mode === 'edit' ? 'Edit' : 'Add'} AI Image Provider</SheetTitle>
             </SheetHeader>
 
             <div className='flex flex-col flex-1 gap-4 overflow-auto'>
@@ -153,7 +169,7 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {AI_TEXT_PROVIDER_TYPES.map((provider) => (
+                        {AI_IMAGE_PROVIDER_TYPES.map((provider) => (
                           <SelectItem key={provider} value={provider}>
                             {provider}
                           </SelectItem>
@@ -209,7 +225,7 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
                   <FormItem>
                     <FormLabel>Capabilities</FormLabel>
                     <div className='space-y-2'>
-                      {AI_TEXT_CAPABILITIES.map((capability) => (
+                      {AI_IMAGE_CAPABILITIES.map((capability) => (
                         <FormControl key={capability}>
                           <div className='flex items-center space-x-2'>
                             <Checkbox
@@ -247,98 +263,114 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name='isDefaultFor'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default For</FormLabel>
-                    <div className='space-y-2'>
-                      {AI_TEXT_CAPABILITIES.map((capability) => (
-                        <FormControl key={capability}>
-                          <div className='flex items-center space-x-2'>
-                            <Checkbox
-                              checked={field.value.includes(capability)}
-                              onCheckedChange={(checked) => {
-                                const newValue = checked
-                                  ? [...field.value, capability]
-                                  : field.value.filter((v) => v !== capability)
-                                field.onChange(newValue)
-                              }}
-                            />
-                            <span className='text-sm'>{capability}</span>
-                          </div>
-                        </FormControl>
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {isCloud && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name='promptTokenToCreditCoefficient'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Prompt Token Credit Cost</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            min={0}
-                            step='0.00001'
-                            placeholder='Enter credit cost per prompt token'
-                            {...field}
-                            onChange={(e) => field.onChange(Number.parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <p className='text-xs text-muted-foreground'>
-                          Number of credits charged per token in the prompt
-                          {field.value && (
-                            <span className='block mt-1'>
-                              Cost per million tokens:{' '}
-                              {calculateCostPerMillion(field.value, appSettings.currency)}
-                            </span>
-                          )}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name='outputTokenToCreditCoefficient'
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Output Token Credit Cost</FormLabel>
-                        <FormControl>
-                          <Input
-                            type='number'
-                            min={0}
-                            step='0.00001'
-                            placeholder='Enter credit cost per output token'
-                            {...field}
-                            onChange={(e) => field.onChange(Number.parseFloat(e.target.value))}
-                          />
-                        </FormControl>
-                        <p className='text-xs text-muted-foreground'>
-                          Number of credits charged per token in the response
-                          {field.value && (
-                            <span className='block mt-1'>
-                              Cost per million tokens:{' '}
-                              {calculateCostPerMillion(field.value, appSettings.currency)}
-                            </span>
-                          )}
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </>
+                <FormField
+                  control={form.control}
+                  name='costPerImage'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cost Per Image</FormLabel>
+                      <FormControl>
+                        <Input
+                          type='number'
+                          min={0}
+                          step='0.01'
+                          placeholder='Enter credits cost per image'
+                          {...field}
+                          onChange={(e) => field.onChange(Number.parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <p className='text-xs text-muted-foreground'>
+                        {Number.isNaN(field.value)
+                          ? '-'
+                          : formatCurrency(field.value, appSettings.currency)}{' '}
+                        per image
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
+
+              <div className='space-y-4'>
+                <div>
+                  <h3 className='text-sm font-medium mb-2'>Input Mapping</h3>
+                  <p className='text-xs text-muted-foreground mb-4'>
+                    Map your application's input parameters to the provider's parameters
+                  </p>
+                  <div className='space-y-2'>
+                    <div className='grid grid-cols-2 gap-2'>
+                      <FormField
+                        control={form.control}
+                        name='inputMapping.prompt'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Prompt</FormLabel>
+                            <FormControl>
+                              <Input placeholder='prompt' {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name='inputMapping.image_url'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Image URL</FormLabel>
+                            <FormControl>
+                              <Input placeholder='image_url' {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className='text-sm font-medium mb-2'>Default Input</h3>
+                  <p className='text-xs text-muted-foreground mb-4'>
+                    Default parameters to be sent with every request (in JSON format)
+                  </p>
+                  <FormField
+                    control={form.control}
+                    name='defaultInput'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <JsonEditor
+                            value={jsonEditorValue}
+                            onChange={(value) => {
+                              console.log('value', value)
+                              setJsonEditorValue(value)
+                              try {
+                                const parsed = value ? JSON.parse(value) : null
+                                field.onChange(parsed)
+                              } catch {
+                                field.onChange(null)
+                              }
+                            }}
+                            onValidate={(isValid) => {
+                              if (isValid) {
+                                form.setError('defaultInput', {
+                                  message: 'Invalid JSON format',
+                                })
+                              } else {
+                                form.clearErrors('defaultInput')
+                              }
+                            }}
+                            placeholder='{"key": "value"}'
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
 
             <SheetFooter>
@@ -353,4 +385,4 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
   )
 }
 
-export const AIProviderFormTrigger = SheetTrigger
+export const AIImageProviderFormTrigger = SheetTrigger

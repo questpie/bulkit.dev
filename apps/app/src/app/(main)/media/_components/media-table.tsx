@@ -65,21 +65,25 @@ export function MediaTable(props: MediaTableProps) {
           {
             id: 'name',
             header: 'Name',
-            accessorKey: 'name',
+            accessorKey: (row) => row.name ?? '-',
           },
           {
             id: 'type',
             header: 'Type',
+            hideBelowBreakpoint: 'sm',
             accessorKey: 'type',
           },
           {
             id: 'size',
             header: 'Size',
-            cell: (row) => formatBytes(row.sizeInBytes ?? 0),
+            hideBelowBreakpoint: 'sm',
+            cell: (row) =>
+              row.metadata?.sizeInBytes ? formatBytes(row.metadata?.sizeInBytes) : 'Not computed',
           },
           {
             id: 'createdAt',
             header: 'Created At',
+            hideBelowBreakpoint: 'sm',
             cell: (row) => formatDateToMonthDayYear(row.createdAt),
           },
         ]}

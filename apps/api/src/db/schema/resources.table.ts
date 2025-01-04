@@ -1,4 +1,4 @@
-import type { ResourceDimensions } from '@bulkit/shared/modules/resources/resources.schemas'
+import type { ResourceMetadata } from '@bulkit/shared/modules/resources/resources.schemas'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { organizationsTable } from './organizations.table'
 import { relations } from 'drizzle-orm'
@@ -21,8 +21,7 @@ export const resourcesTable = pgTable('resources', {
    * or alt text for the resource
    */
   caption: text('caption'),
-  sizeInBytes: bigint('size_in_bytes', { mode: 'number' }),
-  dimensions: jsonb('dimensions').$type<ResourceDimensions>(),
+  metadata: jsonb('metadata').$type<ResourceMetadata>(),
   ...timestampCols(),
 })
 
