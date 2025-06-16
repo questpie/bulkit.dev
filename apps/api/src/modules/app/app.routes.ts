@@ -56,7 +56,7 @@ export const appRoutes = new Elysia({
         const lemonSqueezy = iocResolve(ioc.use(injectLemonSqueezy)).lemonSqueezy
         currency = await lemonSqueezy
           .getStore()
-          .then((s) => s.data?.attributes.currency)
+          .then((s) => s.data?.attributes.currency ?? 'USD')
           .catch(() => 'USD')
       }
 
