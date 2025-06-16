@@ -79,6 +79,35 @@ export type ChannelStatus = (typeof CHANNEL_STATUS)[number]
 // export type WorkflowStepType = (typeof WORKFLOW_STEP_TYPES)[number]
 
 /**
+ * Tasks
+ */
+
+export const TASK_STATUS = ['todo', 'in_progress', 'review', 'done', 'blocked'] as const
+export type TaskStatus = (typeof TASK_STATUS)[number]
+
+export const TASK_PRIORITY = ['low', 'medium', 'high', 'critical'] as const
+export type TaskPriority = (typeof TASK_PRIORITY)[number]
+
+export const DEPENDENCY_TYPE = ['finish_to_start', 'start_to_start', 'finish_to_finish'] as const
+export type DependencyType = (typeof DEPENDENCY_TYPE)[number]
+
+export const TASK_ACTIVITY_ACTION_TYPE = [
+  'created',
+  'updated',
+  'assigned',
+  'unassigned',
+  'status_changed',
+  'priority_changed',
+  'completed',
+  'reopened',
+  'commented',
+  'dependency_added',
+  'dependency_removed',
+  'time_logged',
+] as const
+export type TaskActivityActionType = (typeof TASK_ACTIVITY_ACTION_TYPE)[number]
+
+/**
  * Plans
  */
 

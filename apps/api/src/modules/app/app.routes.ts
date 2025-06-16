@@ -7,7 +7,7 @@ import { injectAIProvidersService } from '@bulkit/api/modules/ai/services/ai-pro
 import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { AI_TEXT_CAPABILITIES } from '@bulkit/shared/modules/app/app-constants'
-import { AppSettingsResponseSchema } from '@bulkit/shared/modules/app/app-schemas'
+import { AppSettingsResponseSchema } from '@bulkit/shared/modules/app/app.schemas'
 import Elysia from 'elysia'
 
 export const appRoutes = new Elysia({

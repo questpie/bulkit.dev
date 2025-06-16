@@ -1,7 +1,7 @@
 // use debounce
 
-import { debounce, type DebouncedFunction } from '@bulkit/shared/utils/debounce'
 import { useEffect, useMemo, useState } from 'react'
+import { debounce, type DebouncedFunction } from '@bulkit/shared/utils/debounce'
 
 export function useDebounce<TFn extends (...args: any[]) => any>(
   fn: TFn,

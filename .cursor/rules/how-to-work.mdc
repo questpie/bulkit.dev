@@ -1,0 +1,554 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Bulkit.dev - Cursor Rules
+
+## Project Structure
+This is a TypeScript monorepo using Bun as package manager with the following structure:
+- **apps/api** - Elysia.js backend API server
+- **apps/app** - Next.js frontend application
+- **packages/** - Shared packages (ui, shared, cache, jobs, mail, etc.)
+
+## Technologies Stack
+- **Package Manager**: Bun
+- **Backend**: Elysia.js with TypeScript
+- **Frontend**: Next.js 14+ with App Router
+- **Database**: PostgreSQL with Drizzle ORM
+- **Background Jobs**: Custom job system with workers
+- **Dependency Injection**: Custom IoC container
+- **Styling**: Tailwind CSS
+- **UI Components**: Custom component library in packages/ui
+
+## Database & Schema Pattern (Drizzle)
+- Database schemas live in `apps/api/src/db/schema/`
+- Each module has its own schema file (e.g., `posts.table.ts`, `users.table.ts`)
+- Export schemas from `apps/api/src/db/db.schema.ts`
+- Migrations are auto-generated in `apps/api/src/db/migrations/`
+- Use `bun db:generate` to create migrations
+- Use `bun db:migrate` to run migrations
+
+## New Feature Development Pattern
+
+### 1. Backend Module Structure (apps/api/src/modules/[feature]/)
+```
+feature/
+├── exceptions/           # Custom exceptions/errors
+├── jobs/                # Background jobs for this feature
+├── services/            # Business logic services
+├── [feature].routes.ts  # API routes definition
+```
+
+### 2. Shared Package (packages/shared/src/modules/[feature]/)
+```
+feature/
+├── [feature].schemas.ts    # TypeBox validation schemas
+├── [feature].constants.ts  # Constants and enums
+├── [feature].utils.ts      # Utility functions
+├── [feature].types.ts      # TypeScript types
+```
+
+### 3. Frontend Feature (apps/app/src/app/(main)/[feature]/)
+```
+feature/
+├── _components/         # Feature-specific components
+├───── component-name-in-snake-case.tsx #component name in snake case
+├── _hooks/             # Feature-specific hooks
+├── _utils/             # Feature-specific utilities
+├── [feature].queries.tsx  # React Query hooks
+├── [feature].constants.ts # Frontend constants
+├── page.tsx            # Main page component
+```
+
+## Development Rules
+
+### Backend (API)
+- Use Elysia.js for route definitions
+- Always use services for business logic, keep routes thin
+- Use dependency injection (IoC) for service registration
+- Register all jobs in `worker.entry.ts`
+- Use Drizzle for all database operations
+- Follow the modular pattern: routes → services → database
+
+### Frontend
+- Use Next.js App Router (not Pages Router)
+- Client-side fetching with React Query (TanStack Query)
+- Store queries in `[feature].queries.tsx` files
+- Use Server Components when possible, Client Components when needed
+- Follow the folder structure with `_components`, `_hooks`, `_utils`
+
+### Shared Code
+- All validation schemas go in `packages/shared`
+- Use TypeBox for schema validation
+- Export types derived from TypeBox schemas
+- Keep constants in dedicated `.constants.ts` files
+- Utilities in `.utils.ts` files
+
+### Code Style
+- Always use TypeScript
+- Prefer `type` over `interface`
+- Never destructure objects in function parameters unless absolutely necessary
+- Provide complete implementations, no partial code
+- Use consistent naming: camelCase for variables/functions, PascalCase for types/components
+
+### Job/Worker Pattern
+- Background jobs go in `[module]/jobs/` folders
+- Register jobs in `worker.entry.ts` using IoC
+- Use the job system for async operations (email, external API calls, etc.)
+
+### Database Operations
+- All database operations through Drizzle ORM
+- Use transactions for multi-table operations
+- Keep database logic in services, not in routes
+- Use proper TypeScript types derived from Drizzle schemas
+
+## File Naming Conventions
+- Routes: `[feature].routes.ts`
+- Services: `[feature].service.ts`
+- Schemas: `[feature].schemas.ts`
+- Jobs: `[job-name].job.ts`
+- Components: `PascalCase.tsx`
+- Utilities: `[feature].utils.ts`
+- Constants: `[feature].constants.ts`
+
+## Import Patterns
+- Use path aliases: `@bulkit/api`, `@bulkit/shared`, `@bulkit/ui`
+- Import types with `type` keyword: `import type { User } from './types'`
+- Group imports: external libraries, internal packages, relative imports
+
+This structure ensures clean separation of concerns, reusable code, and maintainable architecture across the entire application.
+
+## Code Examples & Patterns
+
+### Database Schema Pattern (Drizzle)
+```typescript
+// apps/api/src/db/schema/posts.table.ts
+import { relations } from 'drizzle-orm'
+import { foreignKey, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+import { primaryKeyCol, timestampCols } from './_base.table'
+
+export const postsTable = pgTable(
+  'posts',
+  {
+    id: primaryKeyCol('id'),
+    name: text('name').notNull(),
+    status: text('status', { enum: POST_STATUS }).notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
+    type: text('type', { enum: POST_TYPE }).notNull(),
+    scheduledAt: timestamp('scheduled_at', { mode: 'string', withTimezone: true }),
+    ...timestampCols(),
+  },
+  (table) => [
+    index().on(table.organizationId),
+    index().on(table.type)
+  ]
+)
+
+export const postsRelations = relations(postsTable, ({ one, many }) => ({
+  organization: one(organizationsTable, {
+    fields: [postsTable.organizationId],
+    references: [organizationsTable.id],
+  }),
+  scheduledPosts: many(scheduledPostsTable),
+}))
+```
+
+### Service Pattern (Business Logic)
+```typescript
+// apps/api/src/modules/posts/services/posts.service.ts
+export class PostsService {
+  constructor(private readonly resourcesService: ResourcesService) {}
+
+  async getById<PType extends PostType = PostType>(
+    db: TransactionLike,
+    opts: { orgId?: string; postId: string }
+  ): Promise<PostWithType<PType> | null> {
+    const post = await db
+      .select({
+        id: postsTable.id,
+        type: postsTable.type,
+        status: postsTable.status,
+        name: postsTable.name,
+        createdAt: postsTable.createdAt,
+      })
+      .from(postsTable)
+      .where(and(
+        eq(postsTable.id, opts.postId),
+        opts.orgId ? eq(postsTable.organizationId, opts.orgId) : undefined
+      ))
+      .then((res) => res[0])
+
+    if (!post) return null
+
+    // Type-specific logic based on post.type
+    switch (post.type) {
+      case 'post':
+        return await this.getRegularPost(db, post)
+      case 'thread':
+        return await this.getThreadPost(db, post)
+      // ... other types
+    }
+  }
+
+  async create<PType extends PostType>(
+    db: TransactionLike,
+    opts: { orgId: string; name?: string; type: PostType }
+  ): Promise<PostWithType<PType>> {
+    return db.transaction(async (trx) => {
+      const post = await trx
+        .insert(postsTable)
+        .values({
+          organizationId: opts.orgId,
+          type: opts.type,
+          name: opts.name || generateNewPostName(opts.type),
+          status: 'draft',
+        })
+        .returning()
+        .then((res) => res[0]!)
+
+      // Create type-specific records
+      switch (opts.type) {
+        case 'post':
+          await trx.insert(regularPostsTable).values({
+            postId: post.id,
+            text: '',
+          })
+          break
+        // ... other types
+      }
+
+      return post as PostWithType<PType>
+    })
+  }
+}
+```
+
+### Shared Schema Pattern (TypeBox)
+```typescript
+// packages/shared/src/modules/posts/posts.schemas.ts
+import { Type, type Static } from '@sinclair/typebox'
+import { POST_STATUS, POST_TYPE } from '@bulkit/shared/constants/db.constants'
+
+export const PostDetailsSchema = Type.Object({
+  id: Type.String(),
+  name: Type.String(),
+  status: StringLiteralEnum(POST_STATUS),
+  type: StringLiteralEnum(POST_TYPE),
+  channels: Type.Array(PostChannelSchema),
+  scheduledAt: Nullable(Type.String({})),
+  totalLikes: Type.Number(),
+  totalImpressions: Type.Number(),
+  createdAt: Type.String({}),
+})
+
+export const RegularPostSchema = Type.Object({
+  type: Type.Literal('post'),
+  text: Type.String(),
+  media: Type.Array(PostMediaSchema),
+})
+
+export const PostSchema = Type.Union([
+  Type.Composite([PostDetailsSchema, RegularPostSchema]),
+  Type.Composite([PostDetailsSchema, ReelPostSchema]),
+  Type.Composite([PostDetailsSchema, ThreadPostSchema]),
+])
+
+export type Post = Static<typeof PostSchema>
+export type PostWithType<T extends PostType> = Extract<Post, { type: T }>
+```
+
+### React Query Pattern
+```typescript
+// apps/app/src/app/(main)/posts/posts.queries.tsx
+import { apiClient } from '@bulkit/app/api/api.client'
+import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query'
+
+export const POSTS_QUERY_KEY = 'posts'
+
+// Infinite Query Factory
+export function postsInfiniteQueryOptions(opts: {
+  initialPosts?: PaginatedResponse<PostListItem>
+}) {
+  return infiniteQueryOptions({
+    queryKey: [POSTS_QUERY_KEY, 'infinite'],
+    queryFn: async ({ pageParam }) => {
+      const res = await apiClient.posts.index.get({
+        query: { limit: 25, cursor: pageParam ?? 0 },
+      })
+      if (res.error) throw res.error
+      return res.data
+    },
+    initialPageParam: 0,
+    initialData: opts.initialPosts ? {
+      pages: [opts.initialPosts],
+      pageParams: [0],
+    } : undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+  })
+}
+
+// Single Query Factory
+export function postQueryOptions(postId: string) {
+  return queryOptions({
+    queryKey: [POSTS_QUERY_KEY, postId],
+    queryFn: async () => {
+      const res = await apiClient.posts({ id: postId }).get()
+      if (res.error) throw res.error
+      return res.data
+    },
+  })
+}
+```
+
+### Form Pattern (React Hook Form + Auto-save)
+```typescript
+// apps/app/src/app/(main)/posts/[id]/_components/post-form.tsx
+export function PostFormProvider(props: {
+  children?: React.ReactNode
+  defaultValues: Post
+}) {
+  const form = useForm<Post>({
+    defaultValues: { ...props.defaultValues },
+    resolver: typeboxResolver(
+      Type.Composite([PostDetailsSchema, getPostSchemaFromType(props.defaultValues.type)])
+    ),
+  })
+
+  const values = useWatch({ control: form.control })
+  const debouncedValues = useDebouncedValue(values, 500)
+
+  const updateMutation = useMutation({
+    mutationFn: apiClient.posts.index.put,
+    onSuccess: (res) => {
+      if (res.error?.status === 400 && res.error.value.data.errors) {
+        setPostValidationErrors(form, res.error.value.data.errors)
+      }
+    },
+  })
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (form.formState.isDirty) {
+      updateMutation.mutate(debouncedValues)
+    }
+  }, [calculateFormHash(debouncedValues)])
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(updateMutation.mutate)}>
+        {props.children}
+      </form>
+    </Form>
+  )
+}
+
+// Field Components
+export function RegularPostFields() {
+  const form = useFormContext<Extract<Post, { type: 'post' }>>()
+  const mediaArray = useFieldArray({
+    control: form.control,
+    name: 'media',
+  })
+
+  return (
+    <div className='flex flex-col gap-4'>
+      <FormField
+        control={form.control}
+        name='text'
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Post content</FormLabel>
+            <FormControl>
+              <Textarea
+                rows={10}
+                {...field}
+                placeholder='Write your post here'
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        name='media'
+        control={form.control}
+        render={() => (
+          <FormItem>
+            <FormLabel>Post Media</FormLabel>
+            <ResourceButtonUpload
+              maxFiles={10 - mediaArray.fields.length}
+              onUploaded={(resources) => {
+                for (const resource of resources) {
+                  mediaArray.append({
+                    id: nanoid(),
+                    order: mediaArray.fields.length + 1,
+                    resource,
+                  })
+                }
+              }}
+            />
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+}
+```
+
+### Component with Query Usage
+```typescript
+// apps/app/src/app/(main)/posts/_components/posts-table.tsx
+export function PostsTable(props: {
+  initialPosts?: PaginatedResponse<PostListItem>
+}) {
+  const queryClient = useQueryClient()
+
+  const postsQuery = useInfiniteQuery(
+    postsInfiniteQueryOptions({
+      initialPosts: props.initialPosts,
+    })
+  )
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient.posts({ id }).delete(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: postsInfiniteQueryOptions({}).queryKey
+      })
+    },
+  })
+
+  const allPosts = postsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
+
+  return (
+    <DataTable
+      data={allPosts}
+      onLoadMore={postsQuery.fetchNextPage}
+      hasNextPage={postsQuery.hasNextPage}
+      actions={(row) => ({
+        primary: {
+          label: 'Edit',
+          href: `/posts/${row.id}`,
+        },
+        options: [
+          {
+            label: 'Delete',
+            onClick: (row) => deleteMutation.mutate(row.id),
+            requireConfirm: {
+              title: 'Delete Post',
+              content: 'Are you sure?',
+            },
+          },
+        ],
+      })}
+    />
+  )
+}
+```
+
+### Server + Client Page Pattern
+```typescript
+// apps/app/src/app/(main)/posts/page.tsx - Server Component
+export default async function PostsPage() {
+  // Server-side data fetching
+  const initialPosts = await apiServer.posts.index.get({
+    query: { limit: 25, cursor: 0 },
+  })
+
+  if (!initialPosts.data?.data.length) {
+    return (
+      <div className='text-center py-12'>
+        <h2 className='text-2xl font-semibold mb-2'>No posts yet</h2>
+        <CreatePostDialog>
+          <Button>Create post</Button>
+        </CreatePostDialog>
+      </div>
+    )
+  }
+
+  return (
+    <div className='flex flex-col'>
+      <PostsHeader />
+      <PostsTable initialPosts={initialPosts.data} />
+    </div>
+  )
+}
+
+// apps/app/src/app/(main)/posts/[id]/page.tsx - Dynamic Route
+export default async function PostDetail(props: {
+  params: Promise<{ id: string }>
+}) {
+  const postResp = await apiServer.posts({ id: (await props.params).id }).get()
+
+  if (!postResp.data) {
+    notFound()
+  }
+
+  return (
+    <PostFormProvider defaultValues={postResp.data}>
+      <PostDetailHeader post={postResp.data} />
+      <div className='flex flex-row'>
+        <div className='flex-1'>
+          <PostCommonFields />
+          <Tabs>
+            <TabsContent value='content'>
+              {postResp.data.type === 'post' && <RegularPostFields />}
+              {postResp.data.type === 'thread' && <ThreadPostFields />}
+            </TabsContent>
+          </Tabs>
+        </div>
+        <PostSidebar postId={postResp.data.id} />
+      </div>
+    </PostFormProvider>
+  )
+}
+```
+
+### API Routes Pattern (Elysia)
+```typescript
+// apps/api/src/modules/posts/posts.routes.ts
+export const postsRoutes = new Elysia()
+  .use(authPlugin)
+  .get('/', async ({ query, user }) => {
+    const posts = await postsService.list(db, {
+      orgId: user.organizationId,
+      ...query,
+    })
+    return posts
+  }, {
+    query: t.Object({
+      limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+      cursor: t.Optional(t.Number()),
+    }),
+  })
+
+  .get('/:id', async ({ params, user }) => {
+    const post = await postsService.getById(db, {
+      orgId: user.organizationId,
+      postId: params.id,
+    })
+
+    if (!post) {
+      throw new NotFound('Post not found')
+    }
+
+    return post
+  })
+
+  .put('/', async ({ body, user }) => {
+    const updatedPost = await postsService.update(db, {
+      orgId: user.organizationId,
+      post: body,
+    })
+
+    return updatedPost
+  }, {
+    body: PostSchema,
+  })
+```

@@ -69,6 +69,14 @@ export const api = new Elysia()
             description: 'Endpoints for posts',
           },
           {
+            name: 'Tasks',
+            description: 'Endpoints for task management',
+          },
+          {
+            name: 'Labels',
+            description: 'Endpoints for generic labeling system',
+          },
+          {
             name: 'Resources',
             description: 'Endpoints for resources',
           },

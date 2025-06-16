@@ -14,6 +14,7 @@ import {
   PiChartPie,
   PiGear,
   PiImages,
+  PiKanban,
   PiPaperPlane,
 } from 'react-icons/pi'
 
@@ -22,6 +23,11 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     name: 'Dashboard',
     icon: PiChartPie,
     href: '/',
+  },
+  {
+    name: 'Kanban',
+    icon: PiKanban,
+    href: '/tasks',
   },
   {
     name: 'Calendar',

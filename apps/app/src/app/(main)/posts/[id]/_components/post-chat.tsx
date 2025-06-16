@@ -1,16 +1,19 @@
-import { useState } from 'react'
+'use client'
+
 import { useSelectedOrganization } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
-import type { api } from '@bulkit/api/index'
 import { cn } from '@bulkit/transactional/style-utils'
-import { Avatar, AvatarImage, AvatarFallback } from '@bulkit/ui/components/ui/avatar'
-import type { Button } from '@bulkit/ui/components/ui/button'
-import type { Sheet, SheetContent, SheetHeader, SheetTitle } from '@bulkit/ui/components/ui/sheet'
-import { useMediaQuery } from '@bulkit/ui/hooks/use-media-query'
-import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query'
-import { formatDistanceToNow } from 'date-fns'
-import { apiClient } from '@bulkit/app/api/api.client'
-import { LuBot } from 'react-icons/lu'
+import { Avatar, AvatarFallback, AvatarImage } from '@bulkit/ui/components/ui/avatar'
+import { Button } from '@bulkit/ui/components/ui/button'
+import { Input } from '@bulkit/ui/components/ui/input'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@bulkit/ui/components/ui/sheet'
 import { Spinner } from '@bulkit/ui/components/ui/spinner'
+import { ScrollArea } from '@bulkit/ui/components/ui/scroll-area'
+import { useMediaQuery } from '@bulkit/ui/hooks/use-media-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { formatDistanceToNow } from 'date-fns'
+import { useState } from 'react'
+import { LuBot } from 'react-icons/lu'
+import { apiClient } from '@bulkit/app/api/api.client'
 
 type PostChatProps = {
   postId: string
@@ -29,7 +32,10 @@ export function PostChat(props: PostChatProps) {
   })
 
   const { mutate: createComment, isPending } = useMutation({
-    // mutationFn: (content: string) => apiClient.comments.create(props.postId, { content }),
+    mutationFn: (content: string) =>
+      apiClient.comments({ postId: props.postId }).post({
+        content,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', props.postId] })
       setContent('')
@@ -42,7 +48,7 @@ export function PostChat(props: PostChatProps) {
     createComment(content)
   }
 
-  const renderContent = (comment: (typeof comments)[number]) => {
+  const renderContent = (comment: any) => {
     let result = comment.content
     const mentions = [...comment.mentions].sort((a, b) => b.startIndex - a.startIndex)
 
@@ -113,8 +119,8 @@ export function PostChat(props: PostChatProps) {
             placeholder='Type a message...'
             disabled={isPending}
           />
-          <Button type='submit' disabled={isPending || !content.trim()}>
-            {isPending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Send'}
+          <Button type='submit' disabled={isPending || !content.trim()} isLoading={isPending}>
+            Send
           </Button>
         </form>
       </div>
