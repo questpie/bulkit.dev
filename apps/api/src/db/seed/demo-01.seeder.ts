@@ -2,6 +2,7 @@ import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
   organizationsTable,
+  plansTable,
   postMetricsHistoryTable,
   postsTable,
   reelPostsTable,
@@ -9,6 +10,7 @@ import {
   resourcesTable,
   scheduledPostsTable,
   socialMediaIntegrationsTable,
+  subscriptionsTable,
   userOrganizationsTable,
   usersTable,
   type InsertChannel,
@@ -16,7 +18,7 @@ import {
 } from '@bulkit/api/db/db.schema'
 import { createSeeder } from '@bulkit/seed/index'
 import type { PostType } from '@bulkit/shared/constants/db.constants'
-import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
+import { getIsoDateString } from '@bulkit/shared/utils/date'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { addDays } from 'date-fns'
 
@@ -47,6 +49,31 @@ export const demo01Seeder = createSeeder({
       userId: userId,
       organizationId: orgId,
       role: 'owner',
+    })
+
+    const demoPlan = await db
+      .insert(plansTable)
+      .values({
+        id: 'demo-plan',
+        displayName: 'Demo Plan',
+        maxChannels: 10,
+        maxPosts: 100,
+        maxPostsPerMonth: 1000,
+        monthlyAICredits: 1000,
+        order: 0,
+        allowedPlatforms: null,
+        features: [],
+        highlightFeatures: [],
+      })
+      .onConflictDoNothing({
+        target: plansTable.id,
+      })
+
+    const subscription = await db.insert(subscriptionsTable).values({
+      id: 'sub_demo123',
+      organizationId: orgId,
+      planId: 'demo-plan',
+      status: 'active',
     })
 
     // Create social media integrations

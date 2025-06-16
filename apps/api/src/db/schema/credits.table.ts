@@ -3,7 +3,7 @@ import {
   CREDIT_TRANSACTION_TYPE,
   type CreditTransactionType,
 } from '@bulkit/shared/modules/credit/credit.constans'
-import { foreignKey, index, integer, pgTable, text, varchar } from 'drizzle-orm/pg-core'
+import { foreignKey, index, integer, pgTable, real, text, varchar } from 'drizzle-orm/pg-core'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { organizationsTable } from './organizations.table'
 
@@ -44,8 +44,10 @@ export const creditTransactionsTable = pgTable(
     /**
      * amount of credits in this transaction
      * positive for purchase, negative for spend
+     *
+     * we are using real instead of integer, because AI usage cant be so small that even 1cent deduction is too much
      */
-    amount: integer('amount').notNull(),
+    amount: real('amount').notNull(),
 
     description: varchar('description').notNull(),
 

@@ -1,7 +1,7 @@
 import { apiServer } from '@bulkit/app/api/api.server'
-import { ORGANIZATION_COOKIE_NAME } from '@bulkit/app/app/(main)/organizations/organizations.constants'
+import { fetchServerOrganization } from '@bulkit/app/app/(main)/organizations/_utils/fetch-server-organization'
+import { buildOrganizationHeaders } from '@bulkit/app/app/(main)/organizations/_utils/organizations.utils'
 import { PlanSelectionForm } from '@bulkit/app/app/onboarding/plan/_components/plan-selection-form'
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export default async function PlanSelectionPage() {
@@ -11,24 +11,18 @@ export default async function PlanSelectionPage() {
     redirect('/login')
   }
 
-  const selectedOrgId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
+  const organization = await fetchServerOrganization()
 
-  if (!selectedOrgId) {
+  if (!organization) {
     // just redirect to the home page,
     // the organization guard will handle all the organization setter logic
-    redirect('/')
-  }
-
-  // Get organization data
-  const orgResp = await apiServer.organizations({ id: selectedOrgId! }).get()
-  if (!orgResp.data) {
-    // just redirect to the home page,
-    // the organization guard will handle all the organization setter logic
-    redirect('/')
+    redirect('/onboarding/organization')
   }
 
   // Check if organization already has an active plan
-  const activePlanResp = await apiServer.plans.active.get()
+  const activePlanResp = await apiServer.plans.active.get({
+    headers: buildOrganizationHeaders(organization.id),
+  })
   if (activePlanResp.data) {
     // Organization already has a plan, redirect to home
     redirect('/')
@@ -49,7 +43,7 @@ export default async function PlanSelectionPage() {
           </p>
         </div>
 
-        <PlanSelectionForm organizationId={orgResp.data.id} initialPlans={plansResponse.data} />
+        <PlanSelectionForm organizationId={organization.id} initialPlans={plansResponse.data} />
       </div>
     </main>
   )

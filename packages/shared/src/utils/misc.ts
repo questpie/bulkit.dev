@@ -46,3 +46,14 @@ export function ensureEnum<const T>(
 
   return fallback
 }
+
+export async function chunkAndProcess<T>(
+  array: T[],
+  chunkSize: number,
+  callback: (chunk: T[]) => void | Promise<void>
+): Promise<void> {
+  for (let i = 0; i < array.length; i += chunkSize) {
+    const chunk = array.slice(i, i + chunkSize)
+    await callback(chunk)
+  }
+}

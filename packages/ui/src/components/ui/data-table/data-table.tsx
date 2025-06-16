@@ -19,14 +19,18 @@ type HideBelowBreakPoint = 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 type TableColumn<T> = {
   id: string
   header: string
-  accessorKey: keyof T | ((row: T) => any)
+  accessorKey?: keyof T | ((row: T) => any)
   cell?: (row: T) => React.ReactNode
   enableSorting?: boolean
   className?: string
   headerClassName?: string
   cellClassName?: string
-  hideBelow?: HideBelowBreakPoint
-}
+  hideBelowBreakpoint?: HideBelowBreakPoint
+  forceHide?: boolean
+} & (
+  | { accessorKey: keyof T | ((row: T) => any); cell?: (row: T) => React.ReactNode }
+  | { accessorKey?: never; cell: (row: T) => React.ReactNode }
+)
 
 type TableProps<T> = {
   data: T[]
@@ -91,7 +95,6 @@ const pulseVariant = {
 
 export function DataTable<T extends Record<string, any>>({
   data,
-  columns,
   actions,
   isLoading,
   pageSize,
@@ -104,6 +107,7 @@ export function DataTable<T extends Record<string, any>>({
   sortingState,
   onSortingChange,
   keyExtractor,
+  columns: allColumns,
 }: TableProps<T>) {
   // Selection handling
   const handleRowSelection = (row: T, isSelected: boolean) => {
@@ -135,6 +139,8 @@ export function DataTable<T extends Record<string, any>>({
     return breakpointMap[breakpoint]
   }
 
+  const columns = allColumns.filter((column) => !column.forceHide)
+
   const renderSkeletonRows = () => {
     return (
       <motion.div variants={skeletonVariants} initial='hidden' animate='visible'>
@@ -155,7 +161,7 @@ export function DataTable<T extends Record<string, any>>({
             {columns.map((column) => (
               <TableCell
                 key={column.id}
-                className={cn(column.cellClassName, getBreakpointClass(column.hideBelow))}
+                className={cn(column.cellClassName, getBreakpointClass(column.hideBelowBreakpoint))}
               >
                 <Skeleton className='h-4 w-full' />
               </TableCell>
@@ -189,7 +195,7 @@ export function DataTable<T extends Record<string, any>>({
                 key={column.id}
                 className={cn(
                   column.headerClassName,
-                  getBreakpointClass(column.hideBelow),
+                  getBreakpointClass(column.hideBelowBreakpoint),
                   enableSorting && column.enableSorting && 'cursor-pointer'
                 )}
                 onClick={() => {
@@ -232,12 +238,15 @@ export function DataTable<T extends Record<string, any>>({
                 {columns.map((column) => (
                   <TableCell
                     key={column.id}
-                    className={cn(column.cellClassName, getBreakpointClass(column.hideBelow))}
+                    className={cn(
+                      column.cellClassName,
+                      getBreakpointClass(column.hideBelowBreakpoint)
+                    )}
                   >
                     {column.cell?.(row) ??
                       (typeof column.accessorKey === 'function'
                         ? column.accessorKey(row)
-                        : row[column.accessorKey])}
+                        : row[column.accessorKey as keyof T])}
                   </TableCell>
                 ))}
                 {actions && (

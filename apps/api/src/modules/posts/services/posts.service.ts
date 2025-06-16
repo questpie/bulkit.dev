@@ -17,10 +17,7 @@ import {
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
-import {
-  getResourcePublicUrl,
-  isMediaTypeAllowed,
-} from '@bulkit/api/modules/resources/resource.utils'
+import { getResourceUrl, isMediaTypeAllowed } from '@bulkit/api/modules/resources/resource.utils'
 import {
   injectResourcesService,
   type ResourcesService,
@@ -30,16 +27,14 @@ import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform
 import type {
   Post,
   PostChannel,
-  PostSchema,
   PostValidationErrorSchema,
   PostValidationResultSchema,
   PostWithType,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
-import type { ScheduledPost } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
 import { dedupe } from '@bulkit/shared/types/data'
 import { addSeconds, isBefore, max } from 'date-fns'
-import { and, asc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, inArray, sql } from 'drizzle-orm'
 import type { Static } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
@@ -118,7 +113,10 @@ export class PostsService {
             type: reelPost.resources.type,
             createdAt: reelPost.resources.createdAt,
             isExternal: reelPost.resources.isExternal,
-            url: await getResourcePublicUrl(reelPost.resources),
+            url: await getResourceUrl(reelPost.resources),
+            name: reelPost.resources.name,
+            caption: reelPost.resources.caption,
+            metadata: reelPost.resources.metadata,
           },
         } satisfies PostWithType<'reel'> as unknown as PReturn
       }
@@ -154,7 +152,10 @@ export class PostsService {
                     type: p.resources!.type,
                     createdAt: p.resources!.createdAt,
                     isExternal: p.resources!.isExternal,
-                    url: await getResourcePublicUrl(p.resources!),
+                    url: await getResourceUrl(p.resources!),
+                    name: p.resources!.name,
+                    caption: p.resources!.caption,
+                    metadata: p.resources!.metadata,
                   },
                 } satisfies Extract<Post, { type: 'post' }>['media'][number]
               })
@@ -203,7 +204,10 @@ export class PostsService {
                       type: p.resources!.type,
                       createdAt: p.resources!.createdAt,
                       isExternal: p.resources!.isExternal,
-                      url: await getResourcePublicUrl(p.resources!),
+                      url: await getResourceUrl(p.resources!),
+                      name: p.resources!.name,
+                      caption: p.resources!.caption,
+                      metadata: p.resources!.metadata,
                     },
                   }
                 })
@@ -240,7 +244,10 @@ export class PostsService {
             type: storyPosts.resource.type,
             createdAt: storyPosts.resource.createdAt,
             isExternal: storyPosts.resource.isExternal,
-            url: await getResourcePublicUrl(storyPosts.resource),
+            url: await getResourceUrl(storyPosts.resource),
+            name: storyPosts.resource.name,
+            caption: storyPosts.resource.caption,
+            metadata: storyPosts.resource.metadata,
           },
         } satisfies PostWithType<'story'> as unknown as PReturn
       }
@@ -467,33 +474,27 @@ export class PostsService {
     const promises: Promise<any>[] = []
     if (channelsToRemove.length > 0) {
       promises.push(
-        db
-          .delete(scheduledPostsTable)
-          .where(
-            and(
-              eq(scheduledPostsTable.postId, opts.postId),
-              inArray(
-                scheduledPostsTable.channelId,
-                channelsToRemove.map((c) => c.id)
-              )
+        db.delete(scheduledPostsTable).where(
+          and(
+            eq(scheduledPostsTable.postId, opts.postId),
+            inArray(
+              scheduledPostsTable.channelId,
+              channelsToRemove.map((c) => c.id)
             )
           )
-          .execute()
+        )
       )
     }
 
     if (channelsToAdd.length > 0) {
       promises.push(
-        db
-          .insert(scheduledPostsTable)
-          .values(
-            channelsToAdd.map((c) => ({
-              postId: opts.postId,
-              channelId: c.id,
-              organizationId: opts.orgId,
-            }))
-          )
-          .execute()
+        db.insert(scheduledPostsTable).values(
+          channelsToAdd.map((c) => ({
+            postId: opts.postId,
+            channelId: c.id,
+            organizationId: opts.orgId,
+          }))
+        )
       )
     }
 
@@ -515,12 +516,11 @@ export class PostsService {
               eq(scheduledPostsTable.channelId, channel.id)
             )
           )
-          .execute()
       )
     }
 
     // Remove channels post connections
-    await Promise.all([promises])
+    await Promise.all(promises)
 
     return this.getPostChannels(db, opts.postId)
   }
@@ -532,21 +532,6 @@ export class PostsService {
       post: Extract<Post, { type: 'reel' }>
     }
   ): Promise<Post> {
-    const currentResourceId = await db
-      .select({
-        resourceId: reelPostsTable.resourceId,
-      })
-      .from(reelPostsTable)
-      .where(eq(reelPostsTable.postId, opts.post.id))
-      .then((res) => res[0]?.resourceId)
-
-    if (currentResourceId) {
-      await this.resourcesService.scheduleCleanup(db, {
-        organizationId: opts.orgId,
-        ids: [currentResourceId],
-      })
-    }
-
     const updatedShortPost = await db
       .update(reelPostsTable)
       .set({
@@ -556,13 +541,6 @@ export class PostsService {
       .where(and(eq(reelPostsTable.postId, opts.post.id)))
       .returning()
       .then((res) => res[0]!)
-
-    if (updatedShortPost.resourceId) {
-      this.resourcesService.approveResources(db, {
-        organizationId: opts.orgId,
-        ids: [updatedShortPost.resourceId],
-      })
-    }
 
     return {
       ...opts.post,
@@ -595,19 +573,6 @@ export class PostsService {
       sortedMedia[i]!.order = i + 1
     }
 
-    // delete previous media
-    const previousMedia = await db
-      .delete(regularPostMediaTable)
-      .where(eq(regularPostMediaTable.regularPostId, updatedRegularPost.id))
-      .returning({ resourceId: regularPostMediaTable.resourceId })
-
-    await this.resourcesService.scheduleCleanup(db, {
-      organizationId: opts.orgId,
-      ids: previousMedia.map((m) => m.resourceId),
-    })
-
-    // schedule all previous resources for cleanup
-
     // Insert new media
     if (sortedMedia.length) {
       await db
@@ -629,12 +594,6 @@ export class PostsService {
       .orderBy(asc(regularPostMediaTable.order))
       .innerJoin(resourcesTable, eq(resourcesTable.id, regularPostMediaTable.resourceId))
 
-    // remove all cleanup_at marks from inserted media
-    await this.resourcesService.approveResources(db, {
-      organizationId: opts.orgId,
-      ids: insertedMedia.map((m) => m.resources.id),
-    })
-
     return {
       ...post,
       text: updatedRegularPost.text,
@@ -648,7 +607,10 @@ export class PostsService {
             isExternal: m.resources.isExternal,
             location: m.resources.location,
             type: m.resources.type,
-            url: await getResourcePublicUrl(m.resources),
+            url: await getResourceUrl(m.resources),
+            name: m.resources.name,
+            caption: m.resources.caption,
+            metadata: m.resources.metadata,
           },
         }))
       ),
@@ -679,21 +641,6 @@ export class PostsService {
         sortedMedia[i]!.order = i + 1
       }
     }
-
-    const previousResourceIds = await db
-      .select({
-        resourceId: threadMediaTable.resourceId,
-      })
-      .from(threadMediaTable)
-      .innerJoin(threadPostsTable, eq(threadPostsTable.id, threadMediaTable.threadPostId))
-      .where(eq(threadPostsTable.postId, post.id))
-      .then((data) => data.map((r) => r.resourceId))
-
-    // schedule all previous resources for cleanup
-    await this.resourcesService.scheduleCleanup(db, {
-      organizationId: opts.orgId,
-      ids: previousResourceIds,
-    })
 
     // delete all previous thread posts, media are deleted with cascade
     await db.delete(threadPostsTable).where(eq(threadPostsTable.postId, post.id))
@@ -735,13 +682,6 @@ export class PostsService {
       ? await db.insert(threadMediaTable).values(mediaPayload).returning()
       : []
 
-    if (insertedMedia.length) {
-      await this.resourcesService.approveResources(db, {
-        organizationId: opts.orgId,
-        ids: insertedMedia.map((m) => m.resourceId),
-      })
-    }
-
     return {
       ...post,
       items: newThreadPosts.map((threadPost) => ({
@@ -768,20 +708,6 @@ export class PostsService {
   ): Promise<Extract<Post, { type: 'story' }>> {
     const { post } = opts
 
-    const previousResourceIds = await db
-      .select({
-        resourceId: storyPostsTable.resourceId,
-      })
-      .from(storyPostsTable)
-      .where(eq(storyPostsTable.postId, post.id))
-      .then((data) => data.map((r) => r.resourceId))
-
-    // schedules previous resource for cleanup
-    await this.resourcesService.scheduleCleanup(db, {
-      organizationId: opts.orgId,
-      ids: previousResourceIds.filter(Boolean) as string[],
-    })
-
     await db
       .update(storyPostsTable)
       .set({
@@ -792,14 +718,6 @@ export class PostsService {
         resourceId: storyPostsTable.resourceId,
       })
       .then((res) => res[0]!)
-
-    // Update resource cleanupAt
-    if (post.resource) {
-      await this.resourcesService.approveResources(db, {
-        organizationId: opts.orgId,
-        ids: [post.resource.id],
-      })
-    }
 
     return {
       ...post,
@@ -825,47 +743,10 @@ export class PostsService {
       throw new PostCantBeDeletedException(post.id)
     }
 
-    // Delete associated resources
-    await this.deleteAssociatedResources(db, opts.postId, opts.orgId)
-
     // Delete the post
-    await db.delete(postsTable).where(eq(postsTable.id, opts.postId)).execute()
+    await db.delete(postsTable).where(eq(postsTable.id, opts.postId))
 
     return post
-  }
-
-  private async deleteAssociatedResources(
-    db: TransactionLike,
-    postId: string,
-    orgId: string
-  ): Promise<void> {
-    // Get all resource IDs associated with the post
-    const resourceIds = await db
-      .select({ resourceId: resourcesTable.id })
-      .from(resourcesTable)
-      .leftJoin(regularPostMediaTable, eq(regularPostMediaTable.resourceId, resourcesTable.id))
-      .innerJoin(regularPostsTable, eq(regularPostsTable.id, regularPostMediaTable.regularPostId))
-      .leftJoin(threadMediaTable, eq(threadMediaTable.resourceId, resourcesTable.id))
-      .innerJoin(threadPostsTable, eq(threadPostsTable.id, threadMediaTable.threadPostId))
-      .leftJoin(reelPostsTable, eq(reelPostsTable.resourceId, resourcesTable.id))
-      .leftJoin(storyPostsTable, eq(storyPostsTable.resourceId, resourcesTable.id))
-      .where(
-        or(
-          eq(regularPostsTable.postId, postId),
-          eq(threadPostsTable.postId, postId),
-          eq(reelPostsTable.postId, postId),
-          eq(storyPostsTable.postId, postId)
-        )
-      )
-      .then((res) => res.map((r) => r.resourceId).filter((id): id is string => id !== null))
-
-    // Schedule cleanup for these resources
-    if (resourceIds.length > 0) {
-      await this.resourcesService.scheduleCleanup(db, {
-        organizationId: orgId,
-        ids: resourceIds,
-      })
-    }
   }
 
   async archiveById(
@@ -1183,7 +1064,6 @@ export class PostsService {
         scheduledAt: null,
       })
       .where(eq(scheduledPostsTable.postId, opts.postId))
-      .execute()
 
     await Promise.all(
       scheduledPostIds.map(
@@ -1219,7 +1099,6 @@ export class PostsService {
         updatedAt: new Date().toISOString(),
       })
       .where(eq(postsTable.id, opts.postId))
-      .then((r) => r[0]!)
 
     return {
       ...post,

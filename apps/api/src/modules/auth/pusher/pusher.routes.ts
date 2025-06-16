@@ -50,10 +50,16 @@ export const pusherAuthRoute = new Elysia({ prefix: '/pusher' })
         throw HttpError.Forbidden()
       }
 
-      const authResponse = pusher.authorizeChannel(body.socketId, body.channelName, {
-        user_id: auth.user.id,
-        user_info: getUserInfo(auth.user),
-      })
+      const authResponse = pusher.authorizeChannel(
+        body.socketId,
+        body.channelName,
+        body.channelName.startsWith('presence-')
+          ? {
+              user_id: auth.user.id,
+              user_info: getUserInfo(auth.user),
+            }
+          : undefined
+      )
 
       return authResponse
     },

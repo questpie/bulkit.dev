@@ -86,7 +86,6 @@ export function PostsTable(props: PostsTableProps) {
   })
 
   const allPosts = postsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
-  console.log('allPosts', allPosts)
 
   return (
     <>
@@ -121,7 +120,7 @@ export function PostsTable(props: PostsTableProps) {
             id: 'status',
             header: 'Status',
             accessorKey: 'status',
-            hideBelow: 'sm',
+            hideBelowBreakpoint: 'sm',
             cell: (row) => (
               <Badge variant={POST_STATUS_TO_BADGE_VARIANT[row.status]} className='capitalize'>
                 {row.status}
@@ -132,7 +131,7 @@ export function PostsTable(props: PostsTableProps) {
             id: 'type',
             header: 'Type',
             accessorKey: 'type',
-            hideBelow: 'md',
+            hideBelowBreakpoint: 'md',
             cell: (row) => {
               const Icon = POST_TYPE_ICON[row.type]
               return (
@@ -147,7 +146,7 @@ export function PostsTable(props: PostsTableProps) {
             id: 'channels',
             header: 'Channels',
             accessorKey: 'channels',
-            hideBelow: 'lg',
+            hideBelowBreakpoint: 'lg',
             cell: (row) => (
               <div className='flex items-center -space-x-4'>
                 {row.channels.slice(0, 3).map((channel, index) => (
@@ -172,7 +171,7 @@ export function PostsTable(props: PostsTableProps) {
             id: 'createdAt',
             header: 'Created At',
             accessorKey: 'createdAt',
-            hideBelow: 'xl',
+            hideBelowBreakpoint: 'xl',
             cell: (row) => new Date(row.createdAt).toLocaleDateString(),
           },
         ]}

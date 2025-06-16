@@ -1,50 +1,66 @@
 // import { drizzle, migrate } from 'drizzle-orm/connect'
-import { drizzle } from 'drizzle-orm/postgres-js'
-import { migrate } from 'drizzle-orm/postgres-js/migrator'
+import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres'
+import { migrate } from 'drizzle-orm/node-postgres/migrator'
 
 import { envApi } from '@bulkit/api/envApi'
 import { iocRegister } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { sql } from 'drizzle-orm'
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import path from 'node:path'
+import type { PoolConfig } from 'pg'
 import * as schema from './db.schema'
+
+function replaceDbName(connectionString: string, dbName: string) {
+  const url = new URL(connectionString)
+  url.pathname = `/${dbName}`
+  return url.toString()
+}
+
+function getDbName(connectionString: string) {
+  // take pathname and remove first slash
+  return new URL(connectionString).pathname.slice(1)
+}
 
 // for query purposes
 export function createDbClient(dbNameOverride?: string) {
-  const dbName = dbNameOverride ?? envApi.DB_NAME
-  let dbInstance: PostgresJsDatabase<typeof schema>
+  const dbName = dbNameOverride ?? getDbName(envApi.DB_URL)
+  let dbInstance: NodePgDatabase<typeof schema>
+
+  const createDrizzleClient = (configOverride: Partial<PoolConfig> = {}) => {
+    return drizzle({
+      schema,
+      connection: {
+        connectionString: replaceDbName(envApi.DB_URL, dbName),
+        ...configOverride,
+      },
+      logger: {
+        logQuery: (query, params) => {
+          appLogger.debug(`${query} [${params.join(', ')}]`)
+        },
+      },
+    })
+  }
 
   const getDbInstance = () => {
     if (dbInstance) {
       return dbInstance
     }
 
-    dbInstance = drizzle({
-      schema,
-      connection: {
-        user: envApi.DB_USER,
-        port: envApi.DB_PORT,
-        password: envApi.DB_PASSWORD,
-        database: dbName,
-        host: envApi.DB_HOST,
-      },
-      logger: {
-        logQuery: (query, time) => {
-          appLogger.debug(`${query} - ${time}ms`)
-        },
-      },
-    })
+    dbInstance = createDrizzleClient()
 
     return dbInstance
   }
 
   const runMigrations = async () => {
-    if (!dbInstance) {
-      dbInstance = getDbInstance()
-    }
-    appLogger.info(`Running migrations inside ${dbName}`)
-    await migrate(dbInstance, { migrationsFolder: path.resolve(__dirname, './migrations') })
+    const migrationsPath = path.join(process.cwd(), 'apps/api/src/db/migrations')
+    appLogger.info(`Running migrations inside ${dbName} from ${migrationsPath}`)
+    await migrate(
+      createDrizzleClient({
+        max: 1,
+        connectionString: replaceDbName(envApi.DIRECT_DB_URL ?? envApi.DB_URL, dbName),
+      }),
+      { migrationsFolder: migrationsPath }
+    )
   }
 
   const injectDatabase = iocRegister('db', () => getDbInstance())
@@ -75,7 +91,7 @@ export function createTestDb() {
         SELECT 1 FROM pg_database WHERE datname = ${testDbName}
       `)
 
-      if (result.length === 0) {
+      if (result.rows.length === 0) {
         // If the database doesn't exist, create it
         await defaultDb.execute(sql`CREATE DATABASE ${sql.identifier(testDbName)}`)
       }

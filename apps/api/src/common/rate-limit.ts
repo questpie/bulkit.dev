@@ -65,5 +65,5 @@ export const rateLimit = new Elysia({ name: 'rate-limit' })
   .as('plugin')
 
 export const applyRateLimit = (options: RateLimitOptions = defaultOptions) => {
-  return new Elysia().use(rateLimit).guard({ applyRateLimit: options }).as('plugin')
+  return new Elysia() //.use(rateLimit).guard({ applyRateLimit: options }).as('plugin')
 }

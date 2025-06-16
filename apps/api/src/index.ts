@@ -1,6 +1,6 @@
 import { httpError } from '@bulkit/api/common/http-error-handler'
 import { pinioLogger } from '@bulkit/api/common/logger'
-import { PLATFORMS, PLATFORM_TO_NAME } from '@bulkit/shared/constants/db.constants'
+import { staticPlugin } from '@bulkit/api/common/static.plugin'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import cors from '@elysiajs/cors'
 import swagger from '@elysiajs/swagger'
@@ -68,14 +68,23 @@ export const api = new Elysia()
             name: 'Posts',
             description: 'Endpoints for posts',
           },
-          ...PLATFORMS.map((platform) => ({
-            name: PLATFORM_TO_NAME[platform],
-            description: `${PLATFORM_TO_NAME[platform]} endpoints`,
-          })),
+          {
+            name: 'Resources',
+            description: 'Endpoints for resources',
+          },
+          {
+            name: 'Open Graph',
+            description: 'Endpoints for open graph',
+          },
+          {
+            name: 'Admin',
+            description: 'Admin endpoints',
+          },
         ],
       },
     })
   )
+  .use(staticPlugin)
   .onError(({ error }) => {
     appLogger.error(error)
   })

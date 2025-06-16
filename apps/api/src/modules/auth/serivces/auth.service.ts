@@ -6,18 +6,12 @@ import {
   usersTable,
   type InsertUser,
 } from '@bulkit/api/db/db.schema'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
-import {
-  injectOrganizationService,
-  type OrganizationsService,
-} from '@bulkit/api/modules/organizations/services/organizations.service'
+import { iocRegister } from '@bulkit/api/ioc'
 import { and, eq } from 'drizzle-orm'
 import { HttpError } from 'elysia-http-error'
 import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
 
 class AuthService {
-  constructor(private readonly orgService: OrganizationsService) {}
-
   async getSuperAdmin(db: TransactionLike, userId: string) {
     return db
       .select()
@@ -51,13 +45,6 @@ class AuthService {
         .values({ email, name })
         .returning()
         .then((r) => r[0]!)
-
-      // also create an organization for the user to use
-      await this.orgService.create(trx, {
-        userId: user!.id,
-        role: 'owner',
-        data: { name: `${user!.name}'s Organization` },
-      })
     }
 
     const existingSuperAdmin = await trx
@@ -154,6 +141,5 @@ class AuthService {
 }
 
 export const injectAuthService = iocRegister('authService', () => {
-  const container = iocResolve(ioc.use(injectOrganizationService))
-  return new AuthService(container.organizationsService)
+  return new AuthService()
 })

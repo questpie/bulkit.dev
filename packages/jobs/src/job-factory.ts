@@ -118,13 +118,18 @@ export class JobFactory {
       }
 
       appLogger.info('Worker registered', options.name)
-
       if (!options.repeat) {
         return
       }
 
+      // the jobId is used to identify the job in the repeat queue and prevent duplicates
       invoke(options.repeat.defaultValues || {}, {
         repeat: options.repeat,
+        jobId: `schedule_${options.name}`,
+        removeOnComplete: {
+          count: 10000,
+          age: 60 * 60 * 24 * 30, // 30 days
+        },
       })
     }
 
@@ -172,6 +177,21 @@ export class JobFactory {
       let dataValidated = data
       if (options.schema) {
         dataValidated = parse(options.schema, data)
+      }
+
+      if (opts.repeat) {
+        const repeatOpts = (options.repeat || opts.repeat)!
+        const optsWithoutRepeat = { ...opts, repeat: undefined }
+
+        return queue.upsertJobScheduler(
+          `scheduler_${options.name}`,
+          { ...repeatOpts },
+          {
+            name: options.name,
+            data: dataValidated,
+            opts: optsWithoutRepeat,
+          }
+        )
       }
 
       await queue.add(options.name, dataValidated, opts)

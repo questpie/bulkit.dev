@@ -1,0 +1,98 @@
+version: "3.8"
+services:
+  app:
+    image: questpie/bulkitdev-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3333
+      - NEXT_PUBLIC_PUSHER_APP_KEY=app-key
+      - NEXT_PUBLIC_PUSHER_HOST=localhost
+      - NEXT_PUBLIC_PUSHER_PORT=6001
+      - NEXT_PUBLIC_PUSHER_USE_TLS=false
+    depends_on:
+      - api
+
+  api:
+    image: questpie/bulkitdev-api:latest
+    ports:
+      - "3333:3333"
+    environment:
+      - PORT=3333
+      - APP_URL=http://localhost:3000
+      - SERVER_URL=http://localhost:3333
+      - ENCRYPTION_SECRET=your-64-character-encryption-secret-key-here-please-change-it
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=webapp-dev
+      - DB_PASSWORD=webapp-dev
+      - DB_NAME=webapp-dev
+      - STORAGE_DRIVER=fs
+      - LOCAL_STORAGE_PATH=/usr/src/app/uploads
+      - LOCAL_STORAGE_URL_PATH=/uploads
+      - REDIS_URL=redis://redis:6379
+      - PUSHER_APP_ID=app-id
+      - PUSHER_KEY=app-key
+      - PUSHER_SECRET=app-secret
+      - PUSHER_HOST=soketi
+      - PUSHER_PORT=6001
+      - PUSHER_USE_TLS=false
+      - MAIL_FROM=noreply@yourdomain.com
+    volumes:
+      - uploads:/usr/src/app/uploads
+    depends_on:
+      - db
+      - redis
+      - soketi
+
+  worker:
+    image: questpie/bulkitdev-worker:latest
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=webapp-dev
+      - DB_PASSWORD=webapp-dev
+      - DB_NAME=webapp-dev
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: ankane/pgvector:v0.5.1
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=webapp-dev
+      - POSTGRES_PASSWORD=webapp-dev
+      - POSTGRES_DB=webapp-dev
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U webapp-dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    command: redis-server --requirepass webapp-dev
+    volumes:
+      - redis-data:/data
+
+  soketi:
+    image: quay.io/soketi/soketi:latest-16-alpine
+    ports:
+      - "6001:6001"
+    environment:
+      - SOKETI_DEBUG=1
+      - SOKETI_DEFAULT_APP_ID=app-id
+      - SOKETI_DEFAULT_APP_KEY=app-key
+      - SOKETI_DEFAULT_APP_SECRET=app-secret
+
+volumes:
+  db-data:
+  redis-data:
+  uploads:

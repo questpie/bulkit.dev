@@ -6,6 +6,7 @@ import {
   injectProcessWebhookJob,
   type LemonSqueezyCustomData,
 } from '@bulkit/api/modules/plans/jobs/process-webhook.job'
+import { generalEnv } from '@bulkit/shared/env/general.env'
 import Elysia from 'elysia'
 import { HttpError } from 'elysia-http-error'
 import ms from 'ms'
@@ -13,7 +14,12 @@ import ms from 'ms'
 export const lemonSqueezyWebhookRoutes =
   envApi.DEPLOYMENT_TYPE !== 'cloud'
     ? new Elysia()
-    : new Elysia({ prefix: '/lemon-squeezy' })
+    : new Elysia({
+        prefix: '/lemon-squeezy',
+        detail: {
+          hide: true,
+        },
+      })
         .use(injectLemonSqueezy)
         .use(injectDatabase)
         .onParse(async ({ request }) => {

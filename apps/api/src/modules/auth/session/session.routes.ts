@@ -1,9 +1,8 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
-import { rateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import { lucia } from '@bulkit/api/modules/auth/lucia'
+import { injectLucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { and, eq } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
@@ -12,60 +11,59 @@ import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
   .use(injectDatabase)
+  .use(injectLucia)
   .post(
     '/',
-    async ({ body, error, db, request }) => {
+    async ({ body, db, request, lucia }) => {
       const { authToken } = body
 
-      return db.transaction(async (trx) => {
-        const [storedToken] = await trx
-          .select()
-          .from(emailVerificationsTable)
-          .where(
-            and(
-              eq(emailVerificationsTable.id, authToken),
-              eq(emailVerificationsTable.type, 'auth-code')
-            )
+      const [storedToken] = await db
+        .select()
+        .from(emailVerificationsTable)
+        .where(
+          and(
+            eq(emailVerificationsTable.id, authToken),
+            eq(emailVerificationsTable.type, 'auth-code')
           )
-          .limit(1)
+        )
+        .limit(1)
 
-        if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
-          throw HttpError.BadRequest('Invalid token')
-        }
+      if (!storedToken || !isWithinExpirationDate(storedToken.expiresAt)) {
+        throw HttpError.BadRequest('Invalid token')
+      }
 
-        const user = await trx
-          .select()
-          .from(usersTable)
-          .where(eq(usersTable.email, storedToken.email))
-          .limit(1)
-          .then((r) => r[0])
+      const user = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.email, storedToken.email))
+        .limit(1)
+        .then((r) => r[0])
 
-        if (!user) {
-          throw HttpError.BadRequest('Invalid user')
-        }
+      if (!user) {
+        throw HttpError.BadRequest('Invalid user')
+      }
 
-        const existingSuperAdmin = await trx
-          .select()
-          .from(superAdminsTable)
-          .where(eq(superAdminsTable.userId, user.id))
-          .limit(1)
-          .then((r) => r[0])
+      const existingSuperAdmin = await db
+        .select()
+        .from(superAdminsTable)
+        .where(eq(superAdminsTable.userId, user.id))
+        .limit(1)
+        .then((r) => r[0])
 
-        const session = await lucia.createSession(user.id, getDeviceInfo(request))
-        await trx.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
+      const session = await lucia.createSession(user.id, getDeviceInfo(request))
+      await db.delete(emailVerificationsTable).where(eq(emailVerificationsTable.id, authToken))
 
-        return {
-          session: {
-            id: session.id,
-          },
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            isAdmin: !!existingSuperAdmin,
-          },
-        }
-      })
+      return {
+        session: {
+          id: session.id,
+        },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          isAdmin: !!existingSuperAdmin,
+        },
+      }
     },
     {
       applyRateLimit: {
@@ -142,7 +140,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
       )
       .delete(
         '/',
-        async ({ auth }) => {
+        async ({ auth, lucia }) => {
           await lucia.invalidateSession(auth.session.id)
           return { success: true }
         },
@@ -154,7 +152,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
       )
       .get(
         '/list',
-        async ({ auth }) => {
+        async ({ auth, lucia }) => {
           // remove invalid sessions
           await lucia.deleteExpiredSessions()
           const sessions = await lucia.getUserSessions(auth.user.id)
@@ -176,7 +174,6 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
                 deviceInfo: t.Object({
                   browser: t.String(),
                   os: t.String(),
-                  country: t.String(),
                   device: t.String(),
                 }),
                 expiresAt: t.String(),
@@ -187,7 +184,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
       )
       .delete(
         '/revoke',
-        async ({ auth, query }) => {
+        async ({ auth, query, lucia }) => {
           if (query.sessionId) {
             await lucia.invalidateSession(query.sessionId)
           } else {

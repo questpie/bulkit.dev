@@ -221,7 +221,7 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
   .put(
     '/',
     async (ctx) => {
-      return ctx.db.transaction(async (trx) => {
+      const post = await ctx.db.transaction(async (trx) => {
         const post = await ctx.postService.update(trx, {
           orgId: ctx.organization!.id,
           post: ctx.body,
@@ -231,14 +231,16 @@ export const postsRoutes = new Elysia({ prefix: '/posts', detail: { tags: ['Post
           throw HttpError.NotFound('Post not found')
         }
 
-        const errors = await ctx.postService.validate(post)
-
-        if (errors) {
-          throw HttpError.BadRequest('Validation failed', { errors, post })
-        }
-
         return post
       })
+
+      const errors = await ctx.postService.validate(post)
+
+      if (errors) {
+        throw HttpError.BadRequest('Validation failed', { errors, post })
+      }
+
+      return post
     },
     {
       body: PostSchema,

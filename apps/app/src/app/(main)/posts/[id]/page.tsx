@@ -84,7 +84,7 @@ export default async function PostDetail(props: {
           </Tabs>
         </div>
 
-        <div className='hidden md:flex w-full max-w-lg border-l flex-col gap-4 px-4 border-border pb-4 bottom-0 h-full overflow-auto '>
+        <div className='hidden xl:flex w-full 2xl:max-w-lg xl:max-w-md border-l flex-col gap-4 px-4 border-border pb-4 bottom-0 h-full overflow-auto '>
           {/* <div className='flex flex-row items-center gap-2 pt-4'>
             <h4 className='text-lg font-bold'>{POST_TYPE_NAME[postResp.data.type]} Preview</h4>
             <PiEye />

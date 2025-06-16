@@ -3,23 +3,41 @@ import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
 import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
-import { getResourcePublicUrl } from '@bulkit/api/modules/resources/resource.utils'
-import type { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
+import { injectResourceMetadataJob } from '@bulkit/api/modules/resources/jobs/resource-metadata.job'
+import { getResourceUrl } from '@bulkit/api/modules/resources/resource.utils'
+import type { Resource, UpdateResource } from '@bulkit/shared/modules/resources/resources.schemas'
 import { extractPathExt } from '@bulkit/shared/utils/string'
 import cuid2 from '@paralleldrive/cuid2'
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, ilike } from 'drizzle-orm'
 import type { Static } from 'elysia'
 import fetch from 'node-fetch'
-import { Readable } from 'node:stream'
-
-export type Resource = Static<typeof ResourceSchema>
 
 export class ResourcesService {
   constructor(private readonly drive: Drive) {}
 
+  private async dispatchMetadataJob(resourceIds: string[]) {
+    const { jobResourceMetadata } = iocResolve(ioc.use(injectResourceMetadataJob))
+
+    await jobResourceMetadata.invoke(
+      { resourceIds },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+      }
+    )
+  }
+
   async getAll(
     db: TransactionLike,
-    opts: { organizationId: string; pagination: Static<typeof PaginationSchema> }
+    opts: {
+      organizationId: string
+      query: Static<typeof PaginationSchema> & {
+        search?: string
+      }
+    }
   ): Promise<{ data: Resource[]; nextCursor: number | null }> {
     const resources = await db
       .select({
@@ -28,22 +46,31 @@ export class ResourcesService {
         location: resourcesTable.location,
         isExternal: resourcesTable.isExternal,
         createdAt: resourcesTable.createdAt,
+        name: resourcesTable.name,
+        caption: resourcesTable.caption,
+        metadata: resourcesTable.metadata,
       })
       .from(resourcesTable)
-      .where(eq(resourcesTable.organizationId, opts.organizationId))
+      .where(
+        and(
+          eq(resourcesTable.organizationId, opts.organizationId),
+          // TODO: create proper searchable fields with trigrams
+          opts.query.search ? ilike(resourcesTable.name, `${opts.query.search}%`) : undefined
+        )
+      )
       .orderBy(desc(resourcesTable.createdAt))
-      .limit(opts.pagination.limit + 1)
-      .offset(opts.pagination.cursor)
+      .limit(opts.query.limit + 1)
+      .offset(opts.query.cursor)
 
-    const hasNextPage = resources.length > opts.pagination.limit
-    const results = resources.slice(0, opts.pagination.limit)
-    const nextCursor = hasNextPage ? opts.pagination.cursor + opts.pagination.limit : null
+    const hasNextPage = resources.length > opts.query.limit
+    const results = resources.slice(0, opts.query.limit)
+    const nextCursor = hasNextPage ? opts.query.cursor + opts.query.limit : null
 
     return {
       data: await Promise.all(
-        results.map(async (resource, i) => ({
+        results.map(async (resource) => ({
           ...resource,
-          url: await getResourcePublicUrl(resource),
+          url: await getResourceUrl(resource),
         }))
       ),
       nextCursor,
@@ -64,6 +91,9 @@ export class ResourcesService {
         location: resourcesTable.location,
         isExternal: resourcesTable.isExternal,
         createdAt: resourcesTable.createdAt,
+        name: resourcesTable.name,
+        caption: resourcesTable.caption,
+        metadata: resourcesTable.metadata,
       })
       .from(resourcesTable)
       .where(
@@ -75,7 +105,7 @@ export class ResourcesService {
 
     return {
       ...resource,
-      url: await getResourcePublicUrl(resource),
+      url: await getResourceUrl(resource),
     }
   }
 
@@ -107,101 +137,103 @@ export class ResourcesService {
     })
   }
 
+  private async createResourceEntry(
+    trx: TransactionLike,
+    opts: {
+      organizationId: string
+      fileName: string
+      contentType: string
+      isExternal: boolean
+      caption?: string
+      name?: string
+    }
+  ) {
+    return trx
+      .insert(resourcesTable)
+      .values({
+        organizationId: opts.organizationId,
+        type: opts.contentType,
+        location: opts.fileName,
+        isExternal: opts.isExternal,
+        caption: opts.caption,
+        name: opts.name,
+        // Metadata will be processed by the background job
+        metadata: null,
+      })
+      .returning({
+        id: resourcesTable.id,
+        type: resourcesTable.type,
+        location: resourcesTable.location,
+        isExternal: resourcesTable.isExternal,
+        createdAt: resourcesTable.createdAt,
+        name: resourcesTable.name,
+        caption: resourcesTable.caption,
+        metadata: resourcesTable.metadata,
+      })
+      .then((r) => r[0]!)
+  }
+
   async create(
     db: TransactionLike,
     opts: { organizationId: string; files: File[]; isPrivate?: boolean }
   ): Promise<Resource[]> {
-    return db.transaction(async (trx) => {
-      const payload = opts.files.map((file) => ({
-        fileName: `${opts.organizationId}/${Date.now()}-${cuid2.createId()}${extractPathExt(file.name)}`,
-        content: file,
-      }))
+    const result = await db.transaction(async (trx) => {
+      const payload = await Promise.all(
+        opts.files.map(async (file) => {
+          const prefix = opts.isPrivate ? 'private' : 'public'
+          const fileName =
+            [prefix, opts.organizationId, Date.now(), cuid2.createId()].join('/') +
+            extractPathExt(file.name)
 
-      const resources = await trx
-        .insert(resourcesTable)
-        .values(
-          payload.map((item, i) => ({
-            organizationId: opts.organizationId,
-            type: item.content.type,
-            location: item.fileName,
-            isExternal: false,
-            cleanupAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
-            isPrivate: opts.isPrivate ?? true,
-          }))
-        )
-        .returning({
-          id: resourcesTable.id,
-          type: resourcesTable.type,
-          location: resourcesTable.location,
-          isExternal: resourcesTable.isExternal,
-          createdAt: resourcesTable.createdAt,
+          // Convert stream to buffer for storage
+          const chunks: Buffer[] = []
+          const reader = file.stream().getReader()
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            chunks.push(Buffer.from(value))
+          }
+          const buffer = Buffer.concat(chunks)
+
+          return {
+            fileName,
+            content: buffer,
+            contentType: file.type,
+          }
         })
+      )
 
+      const resources = await Promise.all(
+        payload.map((item) =>
+          this.createResourceEntry(trx, {
+            organizationId: opts.organizationId,
+            fileName: item.fileName,
+            contentType: item.contentType,
+            isExternal: false,
+          })
+        )
+      )
+
+      // Upload to storage
       await Promise.all(
         payload.map(async (item) => {
-          return this.drive.putStream(
-            item.fileName,
-            Readable.fromWeb(item.content.stream() as any),
-            {
-              contentType: item.content.type,
-            }
-          )
+          return this.drive.put(item.fileName, item.content, {
+            contentType: item.contentType,
+          })
         })
       )
 
       return Promise.all(
         resources.map(async (resource) => ({
           ...resource,
-          url: await getResourcePublicUrl(resource),
+          url: await getResourceUrl(resource),
         }))
       )
     })
-  }
 
-  async approveResources(
-    db: TransactionLike,
-    opts: { organizationId: string; ids: string[] }
-  ): Promise<string[]> {
-    if (opts.ids.length === 0) return []
+    await this.dispatchMetadataJob(result.map((r) => r.id))
 
-    return db
-      .update(resourcesTable)
-      .set({
-        cleanupAt: null,
-      })
-      .where(
-        and(
-          eq(resourcesTable.organizationId, opts.organizationId),
-          inArray(resourcesTable.id, opts.ids)
-        )
-      )
-      .returning({
-        id: resourcesTable.id,
-      })
-      .then((data) => data.map((r) => r.id))
-  }
-
-  async scheduleCleanup(
-    db: TransactionLike,
-    opts: { organizationId: string; ids: string[]; cleanupAt?: string }
-  ): Promise<string[]> {
-    if (opts.ids.length === 0) return []
-
-    return db
-      .update(resourcesTable)
-      .set({
-        cleanupAt: opts.cleanupAt || new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), // 2 days
-      })
-      .where(
-        and(
-          eq(resourcesTable.organizationId, opts.organizationId),
-          inArray(resourcesTable.id, opts.ids)
-        )
-      )
-      .returning({
-        id: resourcesTable.id,
-      })
-      .then((data) => data.map((r) => r.id))
+    return result
   }
 
   async createFromUrl(
@@ -209,54 +241,72 @@ export class ResourcesService {
     opts: {
       organizationId: string
       url: string
-      caption: string
+      caption?: string
+      name?: string
       isPrivate?: boolean
     }
   ): Promise<Resource> {
-    return db.transaction(async (trx) => {
-      // Download the image and get its type
+    const result = await db.transaction(async (trx) => {
       const response = await fetch(opts.url)
       if (!response.ok) {
         throw new Error('Failed to fetch external resource')
       }
 
       const contentType = response.headers.get('content-type') || 'image/jpeg'
-      const buffer = await response.arrayBuffer()
+      const buffer = Buffer.from(await response.arrayBuffer())
 
-      const fileName = `${opts.organizationId}/${Date.now()}-${cuid2.createId()}.${
-        contentType.split('/')[1]
-      }`
+      const prefix = opts.isPrivate ? 'private' : 'public'
+      const fileName = [
+        [prefix, opts.organizationId, Date.now(), cuid2.createId()].join('/'),
+        contentType.split('/')[1],
+      ].join('.')
 
-      // Upload to storage
-      await this.drive.put(fileName, Buffer.from(buffer), {
+      await this.drive.put(fileName, buffer, {
         contentType,
       })
 
-      // Create resource record
-      const resource = await trx
-        .insert(resourcesTable)
-        .values({
-          organizationId: opts.organizationId,
-          type: contentType,
-          location: fileName,
-          isPrivate: opts.isPrivate,
-          isExternal: false,
-          caption: opts.caption,
-        })
-        .returning({
-          id: resourcesTable.id,
-          type: resourcesTable.type,
-          location: resourcesTable.location,
-          isExternal: resourcesTable.isExternal,
-          createdAt: resourcesTable.createdAt,
-        })
-        .then((r) => r[0]!)
+      const resource = await this.createResourceEntry(trx, {
+        organizationId: opts.organizationId,
+        fileName,
+        contentType,
+        isExternal: false,
+        caption: opts.caption,
+        name: opts.name,
+      })
 
       return {
         ...resource,
-        url: await getResourcePublicUrl(resource),
+        url: await getResourceUrl(resource),
       }
     })
+
+    await this.dispatchMetadataJob([result.id])
+
+    return result
+  }
+
+  async update(
+    db: TransactionLike,
+    opts: { organizationId: string; id: string; data: UpdateResource }
+  ): Promise<Resource | null> {
+    const resource = await db
+      .update(resourcesTable)
+      .set({
+        name: opts.data.name,
+        caption: opts.data.caption,
+      })
+      .where(
+        and(eq(resourcesTable.id, opts.id), eq(resourcesTable.organizationId, opts.organizationId))
+      )
+      .returning()
+      .then((res) => res[0] ?? null)
+
+    if (!resource) return null
+
+    return {
+      ...resource,
+      url: await getResourceUrl(resource),
+    }
   }
 }
 

@@ -1,15 +1,18 @@
 import {
+  AI_IMAGE_CAPABILITIES,
+  AI_IMAGE_PROVIDER_TYPES,
+  AI_TEXT_CAPABILITIES,
   AI_TEXT_PROVIDER_TYPES,
   STOCK_IMAGE_PROVIDER_TYPES,
 } from '@bulkit/shared/modules/app/app-constants'
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import {
   boolean,
   integer,
   jsonb,
   pgEnum,
   pgTable,
-  primaryKey,
+  real,
   text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
@@ -18,6 +21,7 @@ import ms from 'ms'
 import { PLATFORMS } from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { usersTable } from './auth.table'
+import type { AIImageModelInputMapping } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
 
 // admin settings for platforms
 export const platformSettingsTable = pgTable(
@@ -90,13 +94,57 @@ export const appSettingsTable = pgTable('app_settings', {
     .default(DEFAULT_INTERVALS),
 })
 
-export const aiTextProvidersTable = pgTable('ai_text_provider', {
+export const aiTextProvidersTable = pgTable(
+  'ai_text_provider',
+  {
+    id: primaryKeyCol(),
+    name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
+    model: text('model').notNull(),
+    apiKey: text('api_key').notNull(),
+    promptTokenToCreditCoefficient: real('prompt_token_to_credit_coefficient')
+      .notNull()
+      .default(0.0001),
+    outputTokenToCreditCoefficient: real('output_token_to_credit_coefficient')
+      .notNull()
+      .default(0.0002),
+
+    capabilities: text('capabilities', { enum: AI_TEXT_CAPABILITIES }).array().notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    isDefaultFor: text('is_default_for', { enum: AI_TEXT_CAPABILITIES })
+      .array()
+      .notNull()
+      .default([]),
+
+    ...timestampCols(),
+  },
+  (table) => [
+    uniqueIndex()
+      .on(table.isDefaultFor)
+      .where(sql`cardinality(${table.isDefaultFor}) > 0`), // Only apply when isDefaultFor is not empty
+  ]
+)
+
+export const aiImageProvidersTable = pgTable('ai_image_provider', {
   id: primaryKeyCol(),
-  name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
+  name: text('name', { enum: AI_IMAGE_PROVIDER_TYPES }).notNull(),
   model: text('model').notNull(),
   apiKey: text('api_key').notNull(),
+
+  capabilities: text('capabilities', { enum: AI_IMAGE_CAPABILITIES }).array().notNull(),
+
+  inputMapping: jsonb('input_mapping').$type<AIImageModelInputMapping>().notNull(),
+  // outputMapping: jsonb('output_mapping').$type<AIImageModelOutputMapping>().notNull(),
+
+  defaultInput: jsonb('default_input').$type<Record<string, any>>(),
+
+  costPerImage: real('image').notNull().default(1),
+
+  isActive: boolean('is_active').notNull().default(true),
+
   ...timestampCols(),
 })
+
+export type AIImageProvider = typeof aiImageProvidersTable.$inferSelect
 
 export type AITextProvider = typeof aiTextProvidersTable.$inferSelect
 
@@ -118,6 +166,6 @@ export const superAdminsRelations = relations(superAdminsTable, ({ one }) => ({
   }),
 }))
 
-export const appSettingsRelations = relations(appSettingsTable, ({ one }) => ({}))
-
-export const aiTextProvidersRelations = relations(aiTextProvidersTable, ({ many }) => ({}))
+// export const appSettingsRelations = relations(appSettingsTable, ({ one }) => ({}))
+// export const aiTextProvidersRelations = relations(aiTextProvidersTable, ({ many, one }) => ({}))
+// export const stockImageProvidersRelations = relations(stockImageProvidersTable, ({ many, one }) => ({}))

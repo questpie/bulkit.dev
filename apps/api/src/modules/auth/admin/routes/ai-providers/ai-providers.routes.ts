@@ -26,6 +26,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
           model: true,
           createdAt: true,
           updatedAt: true,
+          capabilities: true,
+          isActive: true,
+          isDefaultFor: true,
+          promptTokenToCreditCoefficient: true,
+          outputTokenToCreditCoefficient: true,
         },
       })
       return providers
@@ -47,6 +52,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
           name: body.name,
           model: body.model,
           apiKey: encryptedApiKey,
+          capabilities: body.capabilities,
+          isActive: body.isActive,
+          isDefaultFor: body.isDefaultFor,
+          outputTokenToCreditCoefficient: body.outputTokenToCreditCoefficient,
+          promptTokenToCreditCoefficient: body.promptTokenToCreditCoefficient,
         })
         .returning({
           id: aiTextProvidersTable.id,
@@ -54,6 +64,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
           model: aiTextProvidersTable.model,
           createdAt: aiTextProvidersTable.createdAt,
           updatedAt: aiTextProvidersTable.updatedAt,
+          capabilities: aiTextProvidersTable.capabilities,
+          isActive: aiTextProvidersTable.isActive,
+          isDefaultFor: aiTextProvidersTable.isDefaultFor,
+          outputTokenToCreditCoefficient: aiTextProvidersTable.outputTokenToCreditCoefficient,
+          promptTokenToCreditCoefficient: aiTextProvidersTable.promptTokenToCreditCoefficient,
         })
         .then((r) => r[0]!)
       return provider
@@ -76,6 +91,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
             model: aiTextProvidersTable.model,
             createdAt: aiTextProvidersTable.createdAt,
             updatedAt: aiTextProvidersTable.updatedAt,
+            capabilities: aiTextProvidersTable.capabilities,
+            isActive: aiTextProvidersTable.isActive,
+            isDefaultFor: aiTextProvidersTable.isDefaultFor,
+            outputTokenToCreditCoefficient: aiTextProvidersTable.outputTokenToCreditCoefficient,
+            promptTokenToCreditCoefficient: aiTextProvidersTable.promptTokenToCreditCoefficient,
           })
           .from(aiTextProvidersTable)
           .where(eq(aiTextProvidersTable.id, body.id))
@@ -93,6 +113,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
         .set({
           apiKey: encryptedApiKey,
           model: body.model,
+          capabilities: body.capabilities,
+          isActive: body.isActive,
+          isDefaultFor: body.isDefaultFor,
+          promptTokenToCreditCoefficient: body.promptTokenToCreditCoefficient,
+          outputTokenToCreditCoefficient: body.outputTokenToCreditCoefficient,
         })
         .where(eq(aiTextProvidersTable.id, body.id))
         .returning({
@@ -101,6 +126,11 @@ export const aiProvidersRoutes = new Elysia({ prefix: '/ai-providers' })
           model: aiTextProvidersTable.model,
           createdAt: aiTextProvidersTable.createdAt,
           updatedAt: aiTextProvidersTable.updatedAt,
+          capabilities: aiTextProvidersTable.capabilities,
+          isActive: aiTextProvidersTable.isActive,
+          isDefaultFor: aiTextProvidersTable.isDefaultFor,
+          promptTokenToCreditCoefficient: aiTextProvidersTable.promptTokenToCreditCoefficient,
+          outputTokenToCreditCoefficient: aiTextProvidersTable.outputTokenToCreditCoefficient,
         })
         .then((r) => r[0])
 

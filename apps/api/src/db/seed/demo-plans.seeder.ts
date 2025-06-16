@@ -52,7 +52,7 @@ export const demoPlansSeeder = createSeeder({
         organizationsWithoutPlan.map((org) =>
           db.insert(subscriptionsTable).values({
             organizationId: org.id,
-            planId: 'starter',
+            planId: 'pro',
             status: 'active',
           })
         )

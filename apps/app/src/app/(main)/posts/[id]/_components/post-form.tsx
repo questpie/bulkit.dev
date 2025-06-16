@@ -7,6 +7,7 @@ import {
   ResourceButtonUpload,
   ResourceDropzone,
 } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-uploader'
+import { TextImproveButton } from '@bulkit/app/app/(main)/posts/[id]/_components/text-improve-button'
 import { setPostValidationErrors } from '@bulkit/app/app/(main)/posts/post.utils'
 import {
   getPostSchemaFromType,
@@ -208,12 +209,15 @@ export function RegularPostFields() {
               <FormLabel>Post content</FormLabel>
 
               <FormControl>
-                <Textarea
-                  disabled={isPostLocked}
-                  rows={10}
-                  {...field}
-                  placeholder='Write your post here'
-                />
+                <div className='relative'>
+                  <Textarea
+                    disabled={isPostLocked}
+                    rows={10}
+                    {...field}
+                    placeholder='Write your post here'
+                  />
+                  <TextImproveButton fieldValue={field.value} onValueChange={field.onChange} />
+                </div>
               </FormControl>
 
               <FormMessage />
@@ -389,12 +393,15 @@ export function ReelPostFields() {
               <FormLabel>Reel description</FormLabel>
 
               <FormControl>
-                <Textarea
-                  disabled={isPostLocked}
-                  rows={10}
-                  {...field}
-                  placeholder='Write your reel description here'
-                />
+                <div className='relative'>
+                  <Textarea
+                    disabled={isPostLocked}
+                    rows={10}
+                    {...field}
+                    placeholder='Write your reel description here'
+                  />
+                  <TextImproveButton fieldValue={field.value} onValueChange={field.onChange} />
+                </div>
               </FormControl>
 
               <FormMessage />
@@ -612,12 +619,18 @@ function ThreadItem(props: {
                     {/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
 
                     <FormControl>
-                      <Textarea
-                        disabled={isPostLocked}
-                        rows={10}
-                        {...field}
-                        placeholder='Write your thread here'
-                      />
+                      <div className='relative'>
+                        <Textarea
+                          disabled={isPostLocked}
+                          rows={10}
+                          {...field}
+                          placeholder='Write your thread here'
+                        />
+                        <TextImproveButton
+                          fieldValue={field.value}
+                          onValueChange={field.onChange}
+                        />
+                      </div>
                     </FormControl>
 
                     <FormMessage />

@@ -9,8 +9,6 @@ export const appSettingsSeeder = createSeeder({
     once: true,
   },
   async seed(db: TransactionLike) {
-    // First, ensure we have at least one AI provider
-
     // Now, insert the app settings
     await db.insert(appSettingsTable).values({
       id: 'app-settings',

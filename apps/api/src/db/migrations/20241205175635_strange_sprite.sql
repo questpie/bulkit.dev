@@ -1,0 +1,1 @@
+ALTER TABLE "credit_transactions" ALTER COLUMN "amount" SET DATA TYPE real;

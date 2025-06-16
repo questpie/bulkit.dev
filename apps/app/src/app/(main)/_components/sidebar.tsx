@@ -7,7 +7,15 @@ import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { IconType } from 'react-icons'
-import { PiAt, PiBuilding, PiCalendar, PiChartPie, PiGear, PiPaperPlane } from 'react-icons/pi'
+import {
+  PiAt,
+  PiBuilding,
+  PiCalendar,
+  PiChartPie,
+  PiGear,
+  PiImages,
+  PiPaperPlane,
+} from 'react-icons/pi'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
   {
@@ -30,6 +38,11 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     icon: PiPaperPlane,
     href: '/posts',
   },
+  {
+    name: 'Media Library',
+    icon: PiImages,
+    href: '/media',
+  },
   // {
   //   name: 'Organization settings',
   //   icon: PiBuilding,
@@ -51,13 +64,13 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className='w-12 md:w-64 hidden sm:flex bg-background transition-all flex-col justify-between border-r border-border'>
+      <aside className='w-12 lg:w-64 hidden sm:flex bg-background transition-all flex-col justify-between border-r border-border'>
         <div className='flex flex-col flex-1  gap-4'>
-          <div className='h-20 flex items-center md:px-4 px-0 border-b'>
-            <h1 className='hidden md:block  text-2xl font-black bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text'>
+          <div className='h-20 flex items-center lg:px-4 px-0 border-b'>
+            <h1 className='hidden lg:block  text-2xl font-black bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text'>
               bulkit.dev
             </h1>
-            <h1 className='block md:hidden w-full text-center text-2xl font-black bg-gradient-to-r from-primary to-primary/90 text-transparent bg-clip-text'>
+            <h1 className='block lg:hidden w-full text-center text-2xl font-black bg-gradient-to-r from-primary to-primary/90 text-transparent bg-clip-text'>
               b
             </h1>
           </div>
@@ -67,7 +80,7 @@ export function Sidebar() {
                 <li className='w-full' key={item.href}>
                   <Link
                     className={cn(
-                      'flex items-center w-full gap-4 justify-center md:justify-start md:px-4 py-3 hover:bg-accent/50 font-bold',
+                      'flex items-center w-full gap-4 justify-center lg:justify-start lg:px-4 py-3 hover:bg-accent/50 font-bold',
                       {
                         'text-primary cursor-default pointer-events-none bg-primary/20':
                           item.href === pathname,
@@ -76,7 +89,7 @@ export function Sidebar() {
                     href={item.href}
                   >
                     <item.icon className='size-5' />
-                    <span className='hidden md:inline'>{item.name}</span>
+                    <span className='hidden lg:inline'>{item.name}</span>
                   </Link>
                 </li>
               ))}
@@ -84,7 +97,7 @@ export function Sidebar() {
           </nav>
         </div>
 
-        <div className='px-1 md:px-2 mb-4'>
+        <div className='px-1 lg:px-2 mb-4'>
           <OrganizationSelect />
         </div>
 

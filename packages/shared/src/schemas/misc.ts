@@ -80,3 +80,23 @@ export function PaginatedResponseSchema<T extends TSchema>(dataSchema: T) {
     nextCursor: Nullable(Type.Number()),
   })
 }
+
+type HexStringOptions = StringOptions & {
+  length?: number
+  minLength?: number
+  maxLength?: number
+}
+
+export const HexString = (opts: HexStringOptions = {}) => {
+  const pattern = opts.length
+    ? `^[0-9a-f]{${opts.length}}$`
+    : `^[0-9a-f]{${opts.minLength ?? 1},${opts.maxLength ?? ''}}$`
+
+  return Type.String({
+    ...opts,
+    pattern,
+    pattern_message: opts.length
+      ? `Must be a hex string of exactly ${opts.length} characters`
+      : `Must be a hex string between ${opts.minLength ?? 1} and ${opts.maxLength ?? 'unlimited'} characters`,
+  })
+}

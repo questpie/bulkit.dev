@@ -4,7 +4,7 @@ import type {
   ScheduledPost,
   ScheduledPostSchema,
 } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
-import { getIsoDateString } from '@bulkit/shared/utils/date-utils'
+import { getIsoDateString } from '@bulkit/shared/utils/date'
 import type { Static } from '@sinclair/typebox'
 import { useCallback, useMemo, useState } from 'react'
 

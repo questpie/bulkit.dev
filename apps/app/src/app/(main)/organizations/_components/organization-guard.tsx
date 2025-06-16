@@ -1,7 +1,6 @@
 import { apiServer } from '@bulkit/app/api/api.server'
 import { OrganizationProvider } from '@bulkit/app/app/(main)/organizations/_components/selected-organization-provider'
-import { ORGANIZATION_COOKIE_NAME } from '@bulkit/app/app/(main)/organizations/organizations.constants'
-import { cookies } from 'next/headers'
+import { fetchServerOrganization } from '@bulkit/app/app/(main)/organizations/_utils/fetch-server-organization'
 import { redirect } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
 
@@ -12,22 +11,11 @@ export async function OrganizationGuard(props: PropsWithChildren) {
     redirect('/login')
   }
 
-  const selectedOrganizationId = (await cookies()).get(ORGANIZATION_COOKIE_NAME)?.value
-  const [orgsResp, selectedOrganizationResp] = await Promise.all([
-    apiServer.organizations.index.get({
-      query: {
-        limit: 1,
-        cursor: 0,
-      },
-    }),
-    selectedOrganizationId ? apiServer.organizations({ id: selectedOrganizationId }).get() : null,
-  ])
+  const organization = await fetchServerOrganization()
 
-  if (!selectedOrganizationResp?.data && !orgsResp.data?.data[0]) {
+  if (!organization) {
     redirect('/onboarding/organization')
   }
-
-  const organization = selectedOrganizationResp?.data ?? orgsResp.data?.data[0]!
 
   return <OrganizationProvider organization={organization}>{props.children}</OrganizationProvider>
 }

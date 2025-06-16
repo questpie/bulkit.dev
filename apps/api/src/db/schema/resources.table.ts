@@ -1,26 +1,27 @@
+import type { ResourceMetadata } from '@bulkit/shared/modules/resources/resources.schemas'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { organizationsTable } from './organizations.table'
 import { relations } from 'drizzle-orm'
-import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { bigint, boolean, jsonb, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
 export const resourcesTable = pgTable('resources', {
   id: primaryKeyCol('id'),
   isExternal: boolean('is_external').notNull().default(false),
-  location: text('location').notNull(), // URL of the resource if it's external, otherwise the local path inside storage
-  type: text('type').notNull(), // e.g., 'image', 'video', 'audio'
-  isPrivate: boolean('is_private').notNull().default(true),
+  location: text('location').notNull(),
+  type: text('type').notNull(),
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationsTable.id, {
       onDelete: 'cascade',
     }),
 
+  name: text('name'),
   /**
-   *  if set, the resource will be deleted at this time
+   * Can be used as a caption for the resource,
+   * or alt text for the resource
    */
-  cleanupAt: timestamp('cleanup_at', { mode: 'string', withTimezone: true }),
-
   caption: text('caption'),
+  metadata: jsonb('metadata').$type<ResourceMetadata>(),
   ...timestampCols(),
 })
 
