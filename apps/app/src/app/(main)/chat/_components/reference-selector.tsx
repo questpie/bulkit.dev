@@ -69,7 +69,7 @@ export function ReferenceSelector({ onSelect }: ReferenceSelectorProps) {
           {/* Icon */}
           <div
             className={cn(
-              'w-8 h-8 rounded flex items-center justify-center flex-shrink-0',
+              'w-8 h-8 rounded flex items-center justify-center shrink-0',
               colorClass
             )}
           >
@@ -85,7 +85,7 @@ export function ReferenceSelector({ onSelect }: ReferenceSelectorProps) {
           </div>
 
           {/* Type badge */}
-          <Badge variant='outline' className='text-xs flex-shrink-0'>
+          <Badge variant='outline' className='text-xs shrink-0'>
             {typeInfo?.label || reference.type}
           </Badge>
         </div>

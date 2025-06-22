@@ -91,7 +91,7 @@ function FolderCard(props: FolderCardProps) {
             <PiFolder className='h-8 w-8 text-blue-600 dark:text-blue-400' />
           </div>
           <div className='w-full'>
-            <h4 className='font-medium text-sm line-clamp-2 min-h-[2rem]'>{props.folder.name}</h4>
+            <h4 className='font-medium text-sm line-clamp-2 min-h-8'>{props.folder.name}</h4>
             {props.folder.description && (
               <p className='text-xs text-muted-foreground mt-1 line-clamp-2'>
                 {props.folder.description}
@@ -127,7 +127,7 @@ function ItemCard(props: ItemCardProps) {
           <Icon className='h-8 w-8' />
         </div>
         <div className='w-full'>
-          <h4 className='font-medium text-sm line-clamp-2 min-h-[2rem]'>
+          <h4 className='font-medium text-sm line-clamp-2 min-h-8'>
             {props.item.displayName}
           </h4>
           <div className='flex justify-center mt-2'>

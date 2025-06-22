@@ -95,7 +95,7 @@ function KanbanColumn({
   })
 
   return (
-    <div className='flex-shrink-0 w-80'>
+    <div className='shrink-0 w-80'>
       <Card
         className={`h-full flex flex-col transition-colors ${isOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
       >

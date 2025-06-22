@@ -53,7 +53,7 @@ export function FilesHeader(props: FilesHeaderProps) {
   }
 
   return (
-    <div className='border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+    <div className='border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60'>
       <div className='flex flex-col gap-4 p-4'>
         {/* Breadcrumbs */}
         <FolderBreadcrumbs folderId={props.currentFolderId} staticBreadcrumbs={props.breadcrumbs} />

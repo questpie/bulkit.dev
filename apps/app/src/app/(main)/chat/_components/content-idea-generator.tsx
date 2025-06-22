@@ -296,7 +296,7 @@ export function ContentIdeaGenerator({ conversationId, onComplete }: ContentIdea
                     onClick={() => setSelectedType(type.id)}
                     className="h-auto p-3 flex items-center gap-3 text-left"
                   >
-                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <Icon className="w-4 h-4 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">{type.label}</div>
                       <div className="text-xs text-muted-foreground">{type.description}</div>

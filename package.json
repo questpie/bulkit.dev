@@ -1,48 +1,51 @@
 {
-  "name": "@bulkit/monorepo",
-  "module": "index.ts",
-  "type": "module",
-  "version": "0.1.0",
-  "private": true,
-  "peerDependencies": {
-    "typescript": "^5.5.4"
-  },
-  "scripts": {
-    "clean": "bun clean:artifacts && bun clean:lock && bun clean:nm",
-    "clean:artifacts": "bun rimraf --glob '\"{packages,apps}/**/dist\" \"{packages,apps}/**/build\" \"{packages,apps}/**/out\" \"{packages,apps}/**/.next\"'",
-    "clean:lock": "bun rimraf --glob './bun.lockb'",
-    "clean:nm": "bun rimraf --glob './**/node_modules'",
-    "cli": "bun run ./scripts/cli.ts",
-    "deps:check": "bun check-dependency-version-consistency .",
-    "deps:update": "bun npm-check-updates -ui -ws",
-    "dev:api": "cd apps/api && bun run dev",
-    "dev:app": "cd apps/app && bun run dev",
-    "fix": "bun biome check --apply-unsafe ./packages ./apps",
-    "format": "bun biome format --write ./packages ./apps",
-    "i18n": "cd packages/translations && bun i18n",
-    "lint": "bun biome lint ./packages ./apps",
-    "postinstall": "bun deps:check",
-    "types:check": "tsc --noEmit",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "version-packages:next": "changeset version --snapshot next",
-    "release": "bun run scripts/cli.ts release",
-    "release:next": "bun run scripts/cli.ts release --next"
-  },
-  "workspaces": ["apps/*", "packages/*"],
-  "dependencies": {
-    "@biomejs/biome": "^2.0.4",
-    "@types/bun": "latest",
-    "check-dependency-version-consistency": "^5.0.0",
-    "date-fns": "^4.1.0",
-    "npm-check-updates": "^18.0.1",
-    "rimraf": "^6.0.1"
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.29.5",
-    "gh": "^2.8.9"
-  },
-  "overrides": {
-    "react-is": "^19.0.0-rc-02c0e824-20241028"
-  }
+	"name": "@bulkit/monorepo",
+	"module": "index.ts",
+	"type": "module",
+	"version": "0.1.0",
+	"private": true,
+	"peerDependencies": {
+		"typescript": "^5.5.4"
+	},
+	"scripts": {
+		"clean": "bun clean:artifacts && bun clean:lock && bun clean:nm",
+		"clean:artifacts": "bun rimraf --glob '\"{packages,apps}/**/dist\" \"{packages,apps}/**/build\" \"{packages,apps}/**/out\" \"{packages,apps}/**/.next\"'",
+		"clean:lock": "bun rimraf --glob './bun.lockb'",
+		"clean:nm": "bun rimraf --glob './**/node_modules'",
+		"cli": "bun run ./scripts/cli.ts",
+		"deps:check": "bun check-dependency-version-consistency .",
+		"deps:update": "bun npm-check-updates -ui -ws",
+		"dev:api": "cd apps/api && bun run dev",
+		"dev:app": "cd apps/app && bun run dev",
+		"fix": "bun biome check --apply-unsafe ./packages ./apps",
+		"format": "bun biome format --write ./packages ./apps",
+		"i18n": "cd packages/translations && bun i18n",
+		"lint": "bun biome lint ./packages ./apps",
+		"postinstall": "bun deps:check",
+		"types:check": "tsc --noEmit",
+		"changeset": "changeset",
+		"version-packages": "changeset version",
+		"version-packages:next": "changeset version --snapshot next",
+		"release": "bun run scripts/cli.ts release",
+		"release:next": "bun run scripts/cli.ts release --next"
+	},
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"dependencies": {
+		"@biomejs/biome": "^2.0.4",
+		"@types/bun": "latest",
+		"check-dependency-version-consistency": "^5.0.0",
+		"date-fns": "^4.1.0",
+		"npm-check-updates": "^18.0.1",
+		"rimraf": "^6.0.1"
+	},
+	"devDependencies": {
+		"@changesets/cli": "^2.29.5",
+		"gh": "^2.8.9"
+	},
+	"overrides": {
+		"react-is": "^19.0.0-rc-02c0e824-20241028"
+	}
 }

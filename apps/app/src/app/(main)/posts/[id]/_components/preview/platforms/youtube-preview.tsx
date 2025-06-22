@@ -187,7 +187,7 @@ function ReelPostPreview({ postData, previewUser }: YoutubePreviewProps<'reel'>)
   return (
     <div className='space-y-4'>
       {postData.resource && (
-        <div className='aspect-[9/16] relative'>
+        <div className='aspect-9/16 relative'>
           <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />
           <div className='absolute bottom-2 right-2 bg-black text-white text-sm px-1 rounded'>
             0:00

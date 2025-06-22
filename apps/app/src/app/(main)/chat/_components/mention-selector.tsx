@@ -71,7 +71,7 @@ export function MentionSelector({ agents, onSelect }: MentionSelectorProps) {
           {/* Agent Icon */}
           <div
             className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
+              'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
               colorClass
             )}
           >
@@ -99,7 +99,7 @@ export function MentionSelector({ agents, onSelect }: MentionSelectorProps) {
           </div>
 
           {/* Active indicator */}
-          {agent.isActive && <div className='w-2 h-2 bg-green-500 rounded-full flex-shrink-0' />}
+          {agent.isActive && <div className='w-2 h-2 bg-green-500 rounded-full shrink-0' />}
         </div>
       </Button>
     )

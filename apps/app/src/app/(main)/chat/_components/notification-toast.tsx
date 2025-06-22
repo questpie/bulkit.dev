@@ -137,7 +137,7 @@ export function NotificationToast({
       <div className="p-4">
         <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className={cn("flex-shrink-0 mt-0.5", iconColorClass)}>
+          <div className={cn("shrink-0 mt-0.5", iconColorClass)}>
             <Icon className="w-5 h-5" />
           </div>
 
@@ -147,7 +147,7 @@ export function NotificationToast({
               <div className="font-medium text-sm">{notification.title}</div>
               
               {notification.isActionable && (
-                <Badge variant="secondary" className="text-xs h-4 flex-shrink-0">
+                <Badge variant="secondary" className="text-xs h-4 shrink-0">
                   Action Required
                 </Badge>
               )}

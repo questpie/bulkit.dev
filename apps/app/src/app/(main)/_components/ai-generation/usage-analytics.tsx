@@ -656,7 +656,7 @@ export function UsageAnalytics({
                         <ul className="space-y-2">
                           {forecast.recommendations.map((rec, index) => (
                             <li key={index} className="text-sm flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <CheckCircle className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
                               {rec}
                             </li>
                           ))}

@@ -165,7 +165,7 @@ export function ChatDrawer() {
         {/* Header */}
         <SheetHeader className='flex flex-row items-center justify-between px-6 py-4 border-b'>
           <div className='flex items-center gap-3'>
-            <div className='w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center'>
+            <div className='w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center'>
               <LuMessageCircle className='w-4 h-4 text-white' />
             </div>
             <SheetTitle>AI Assistant</SheetTitle>
@@ -243,7 +243,7 @@ export function ChatDrawer() {
               /* Empty State */
               <div className='flex-1 flex items-center justify-center'>
                 <div className='text-center space-y-4 max-w-md mx-auto px-6'>
-                  <div className='w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto'>
+                  <div className='w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto'>
                     <LuMessageCircle className='w-8 h-8 text-white' />
                   </div>
 

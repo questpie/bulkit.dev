@@ -82,7 +82,7 @@ export function EntityPreview({
       <div className="space-y-3">
         {/* Post header */}
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1 min-w-0">
@@ -188,7 +188,7 @@ export function EntityPreview({
         {/* Task header */}
         <div className="flex items-start gap-3">
           <div className={cn(
-            "w-8 h-8 rounded flex items-center justify-center flex-shrink-0",
+            "w-8 h-8 rounded flex items-center justify-center shrink-0",
             metadata.status === 'completed' ? 'bg-green-500' : 
             metadata.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-500'
           )}>
@@ -308,7 +308,7 @@ export function EntityPreview({
       <div className="space-y-3">
         {/* Media header */}
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center shrink-0">
             {metadata.type === 'video' ? (
               <PlayCircle className="w-4 h-4 text-white" />
             ) : (
@@ -379,7 +379,7 @@ export function EntityPreview({
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div 
-            className="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 rounded flex items-center justify-center shrink-0"
             style={{ backgroundColor: metadata.color || '#6b7280' }}
           >
             <Hash className="w-4 h-4 text-white" />
@@ -407,7 +407,7 @@ export function EntityPreview({
     return (
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-indigo-500 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded bg-indigo-500 flex items-center justify-center shrink-0">
             <Radio className="w-4 h-4 text-white" />
           </div>
           <div className="flex-1">
@@ -461,7 +461,7 @@ export function EntityPreview({
       >
         <div className="flex items-center gap-2 w-full">
           {renderContent()}
-          <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto flex-shrink-0" />
+          <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto shrink-0" />
         </div>
       </Button>
     )

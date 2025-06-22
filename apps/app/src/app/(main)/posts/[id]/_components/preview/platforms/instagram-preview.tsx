@@ -163,11 +163,11 @@ function RegularPostPreview({ postData, previewUser }: InstagramPreviewProps<'po
 
 function ReelPostPreview({ postData, previewUser }: InstagramPreviewProps<'reel'>) {
   return (
-    <div className='aspect-[9/16] relative rounded-lg overflow-hidden'>
+    <div className='aspect-9/16 relative rounded-lg overflow-hidden'>
       {postData.resource && (
         <>
           <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />
-          <div className='absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40'>
+          <div className='absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-black/40'>
             <div className='absolute bottom-20 left-4 right-20'>
               <div className='flex items-center gap-2 mb-4'>
                 <Avatar className='h-10 w-10 ring-2 ring-white'>
@@ -217,7 +217,7 @@ function ReelPostPreview({ postData, previewUser }: InstagramPreviewProps<'reel'
 
 function StoryPostPreview({ postData, previewUser }: InstagramPreviewProps<'story'>) {
   return (
-    <div className='aspect-[9/16] relative rounded-lg overflow-hidden'>
+    <div className='aspect-9/16 relative rounded-lg overflow-hidden'>
       {postData.resource && (
         <>
           <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />

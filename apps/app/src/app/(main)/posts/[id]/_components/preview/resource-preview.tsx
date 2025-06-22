@@ -167,8 +167,8 @@ export function ResourcePreview({
   return (
     <>
       <Card className={cn('flex flex-row items-center gap-4 p-2 overflow-hidden', className)}>
-        <div className='w-16 h-16 flex-shrink-0'>{renderThumbnail()}</div>
-        <div className='flex-grow min-w-0'>
+        <div className='w-16 h-16 shrink-0'>{renderThumbnail()}</div>
+        <div className='grow min-w-0'>
           <p className='text-sm font-medium truncate'>{resource.location.split('/').pop()}</p>
         </div>
         {!hideActions && renderActionsDropdown()}
@@ -190,7 +190,7 @@ export function ResourceDialogPreview({ resource, onClose }: ResourceDialogPrevi
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent
         hideCloseButton
-        className='max-w-screen-lg w-full mx-auto bg-transparent border-none rounded-none flex flex-col items-center justify-center gap-4'
+        className='max-w-(--breakpoint-lg) w-full mx-auto bg-transparent border-none rounded-none flex flex-col items-center justify-center gap-4'
       >
         <div className='relative p-4 w-full h-full flex items-center justify-center'>
           {resource.type.startsWith('image/') && (

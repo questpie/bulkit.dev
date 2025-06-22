@@ -146,7 +146,7 @@ export function CommentForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-3'>
       <div className='flex space-x-3'>
-        <Avatar className='h-8 w-8 flex-shrink-0'>
+        <Avatar className='h-8 w-8 shrink-0'>
           <AvatarImage src={'https://avatar.vercel.sh/current-user'} />
           <AvatarFallback className='text-sm'>You</AvatarFallback>
         </Avatar>

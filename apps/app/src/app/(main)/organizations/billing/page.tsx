@@ -20,7 +20,7 @@ export default function OrganizationBillingPage() {
 
       <Separator />
 
-      <div className='flex flex-col gap-6  pb-4 w-full max-w-screen-sm'>
+      <div className='flex flex-col gap-6  pb-4 w-full max-w-(--breakpoint-sm)'>
         <OrganizationPlanSettings />
       </div>
     </div>

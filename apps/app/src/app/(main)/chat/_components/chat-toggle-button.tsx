@@ -110,7 +110,7 @@ export function ChatToggleButtonFloating({ className }: { className?: string }) 
         showLabel={false}
         className={cn(
           "w-14 h-14 rounded-full shadow-lg hover:shadow-xl",
-          "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700",
+          "bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700",
           "border-0 text-white"
         )}
       />

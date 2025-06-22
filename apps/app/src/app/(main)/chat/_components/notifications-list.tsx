@@ -108,7 +108,7 @@ export function NotificationsList({
       >
         <div className="flex items-start gap-3">
           {/* Icon */}
-          <div className={cn("mt-0.5 flex-shrink-0", iconColor)}>
+          <div className={cn("mt-0.5 shrink-0", iconColor)}>
             <Icon className="w-4 h-4" />
           </div>
 
@@ -128,7 +128,7 @@ export function NotificationsList({
               </div>
 
               {/* Badges and actions */}
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 shrink-0">
                 {notification.isActionable && !notification.isRead && (
                   <Badge variant="secondary" className="text-xs h-4">
                     Action Required

@@ -182,7 +182,7 @@ function ReelPostPreview({ postData, previewUser }: FacebookPreviewProps<'reel'>
         <TextPreview text={postData.description} platform='facebook' />
       </div>
       {postData.resource && (
-        <div className='mt-4 aspect-[9/16] relative'>
+        <div className='mt-4 aspect-9/16 relative'>
           <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />
           {postData.resource.type.startsWith('video') && (
             <div className='absolute bottom-2 right-2 bg-black/50 text-white text-sm px-1 rounded'>
@@ -198,7 +198,7 @@ function ReelPostPreview({ postData, previewUser }: FacebookPreviewProps<'reel'>
 
 function StoryPostPreview({ postData, previewUser }: FacebookPreviewProps<'story'>) {
   return (
-    <div className='aspect-[9/16] relative rounded-lg overflow-hidden'>
+    <div className='aspect-9/16 relative rounded-lg overflow-hidden'>
       {postData.resource && (
         <div className='absolute inset-0'>
           <ResourcePreview resource={postData.resource} hideActions className='w-full h-full' />

@@ -87,7 +87,7 @@ export function ChatConversation({ conversationId }: ChatConversationProps) {
         )}
       >
         {/* Avatar */}
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           {isUser ? (
             <Avatar className="w-8 h-8">
               <AvatarImage src="/placeholder-user.jpg" />
@@ -96,7 +96,7 @@ export function ChatConversation({ conversationId }: ChatConversationProps) {
               </AvatarFallback>
             </Avatar>
           ) : isAgent ? (
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
               <Bot className="w-4 h-4 text-white" />
             </div>
           ) : (
@@ -195,7 +195,7 @@ export function ChatConversation({ conversationId }: ChatConversationProps) {
 
     return (
       <div className="flex gap-3 p-4 mr-8 bg-muted/30 rounded-lg">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
           <Bot className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
@@ -258,7 +258,7 @@ export function ChatConversation({ conversationId }: ChatConversationProps) {
         {/* Messages */}
         {allMessages.length === 0 ? (
           <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
               <MessageCircle className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-lg font-semibold mb-2">Start the conversation</h3>

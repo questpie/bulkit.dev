@@ -134,7 +134,7 @@ export function EnhancedMentionSelector({
         className="w-full p-3 h-auto justify-start hover:bg-muted/50"
       >
         <div className="flex items-center gap-3 w-full">
-          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0", colorClass)}>
+          <div className={cn("w-10 h-10 rounded-full flex items-center justify-center shrink-0", colorClass)}>
             <Bot className="w-5 h-5 text-white" />
           </div>
 
@@ -228,7 +228,7 @@ export function EnhancedMentionSelector({
         className="w-full p-3 h-auto justify-start hover:bg-muted/50"
       >
         <div className="flex items-center gap-3 w-full">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex items-center justify-center">
             <Users className="w-5 h-5 text-white" />
           </div>
 

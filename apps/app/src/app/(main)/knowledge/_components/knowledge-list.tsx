@@ -384,14 +384,14 @@ export function KnowledgeList({
                     <div className="flex-1 min-w-0">
                       {/* Title and Status */}
                       <div className="flex items-center gap-3 mb-2">
-                        <TemplateIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <TemplateIcon className="w-5 h-5 text-muted-foreground shrink-0" />
                         <h3 
                           className="font-medium text-lg cursor-pointer hover:text-primary transition-colors truncate"
                           onClick={() => onView(item)}
                         >
                           {item.title}
                         </h3>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <div className={cn('w-2 h-2 rounded-full', statusInfo.color)} />
                           <span className="text-xs text-muted-foreground">{statusInfo.label}</span>
                           {item.version > 1 && (

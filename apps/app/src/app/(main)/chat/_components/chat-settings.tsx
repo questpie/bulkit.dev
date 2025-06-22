@@ -349,7 +349,7 @@ export function ChatSettings({ agents: propAgents }: ChatSettingsProps) {
                     "w-4 h-4 rounded border",
                     themeOption === 'light' && "bg-white border-gray-300",
                     themeOption === 'dark' && "bg-gray-900 border-gray-700",
-                    themeOption === 'system' && "bg-gradient-to-r from-white to-gray-900 border-gray-500"
+                    themeOption === 'system' && "bg-linear-to-r from-white to-gray-900 border-gray-500"
                   )} />
                   <span className="text-xs capitalize">{themeOption}</span>
                 </Button>

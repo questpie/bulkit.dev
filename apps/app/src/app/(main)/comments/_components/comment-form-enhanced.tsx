@@ -98,7 +98,7 @@ export function CommentFormEnhanced({
   return (
     <div className='space-y-3' onKeyDown={handleKeyDown}>
       <div className='flex space-x-3'>
-        <Avatar className='h-8 w-8 flex-shrink-0'>
+        <Avatar className='h-8 w-8 shrink-0'>
           <AvatarImage src={'https://avatar.vercel.sh/current-user'} />
           <AvatarFallback className='text-sm'>You</AvatarFallback>
         </Avatar>

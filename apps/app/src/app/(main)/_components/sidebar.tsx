@@ -90,10 +90,10 @@ export function Sidebar() {
       <aside className='w-12 lg:w-64 hidden sm:flex bg-background transition-all flex-col justify-between border-r border-border'>
         <div className='flex flex-col flex-1  gap-4'>
           <div className='h-20 flex items-center lg:px-4 px-0 border-b'>
-            <h1 className='hidden lg:block  text-2xl font-black bg-gradient-to-r from-primary to-primary/70 text-transparent bg-clip-text'>
+            <h1 className='hidden lg:block  text-2xl font-black bg-linear-to-r from-primary to-primary/70 text-transparent bg-clip-text'>
               bulkit.dev
             </h1>
-            <h1 className='block lg:hidden w-full text-center text-2xl font-black bg-gradient-to-r from-primary to-primary/90 text-transparent bg-clip-text'>
+            <h1 className='block lg:hidden w-full text-center text-2xl font-black bg-linear-to-r from-primary to-primary/90 text-transparent bg-clip-text'>
               b
             </h1>
           </div>

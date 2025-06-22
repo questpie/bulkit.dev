@@ -277,7 +277,7 @@ export function MediaUploader({ conversationId, onComplete }: MediaUploaderProps
       >
         <div className="flex items-start gap-3">
           {/* Thumbnail/Icon */}
-          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center shrink-0">
             {file.type === 'image' && file.url ? (
               <img
                 src={file.thumbnail || file.url}

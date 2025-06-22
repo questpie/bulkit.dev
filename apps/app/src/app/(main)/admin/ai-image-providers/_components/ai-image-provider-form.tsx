@@ -256,7 +256,7 @@ export function AIImageProviderForm(props: PropsWithChildren<AIImageProviderForm
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel className='!mt-0'>Active</FormLabel>
+                      <FormLabel className='mt-0!'>Active</FormLabel>
                     </div>
                     <FormMessage />
                   </FormItem>

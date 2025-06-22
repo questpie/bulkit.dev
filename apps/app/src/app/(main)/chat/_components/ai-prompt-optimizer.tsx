@@ -219,7 +219,7 @@ export function AIPromptOptimizer({ conversationId, onComplete }: AIPromptOptimi
                   <div className="space-y-2">
                     {analysis.suggestions.map((suggestion, index) => (
                       <div key={index} className="flex items-start gap-2 text-sm">
-                        <Lightbulb className="w-4 h-4 mt-0.5 text-yellow-500 flex-shrink-0" />
+                        <Lightbulb className="w-4 h-4 mt-0.5 text-yellow-500 shrink-0" />
                         <span>{suggestion}</span>
                       </div>
                     ))}
@@ -266,7 +266,7 @@ export function AIPromptOptimizer({ conversationId, onComplete }: AIPromptOptimi
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
                     <div>
                       <p className="text-sm font-medium">Be Specific</p>
                       <p className="text-xs text-muted-foreground">
@@ -276,7 +276,7 @@ export function AIPromptOptimizer({ conversationId, onComplete }: AIPromptOptimi
                   </div>
                   
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
                     <div>
                       <p className="text-sm font-medium">Use Quality Keywords</p>
                       <p className="text-xs text-muted-foreground">
@@ -286,7 +286,7 @@ export function AIPromptOptimizer({ conversationId, onComplete }: AIPromptOptimi
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 mt-0.5 text-green-500 shrink-0" />
                     <div>
                       <p className="text-sm font-medium">Set the Mood</p>
                       <p className="text-xs text-muted-foreground">
@@ -296,7 +296,7 @@ export function AIPromptOptimizer({ conversationId, onComplete }: AIPromptOptimi
                   </div>
 
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-500 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 mt-0.5 text-yellow-500 shrink-0" />
                     <div>
                       <p className="text-sm font-medium">Use Negative Prompts</p>
                       <p className="text-xs text-muted-foreground">

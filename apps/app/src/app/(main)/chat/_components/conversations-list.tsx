@@ -125,8 +125,8 @@ export function ConversationsList({
       >
         {/* Conversation Icon */}
         <div className={cn(
-          "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
-          "bg-gradient-to-br from-blue-500 to-purple-600 text-white"
+          "shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+          "bg-linear-to-br from-blue-500 to-purple-600 text-white"
         )}>
           <Bot className="w-5 h-5" />
         </div>
@@ -141,7 +141,7 @@ export function ConversationsList({
               {conversation.title}
             </h4>
             {isPinned && (
-              <Pin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <Pin className="w-3 h-3 text-muted-foreground shrink-0" />
             )}
           </div>
           
@@ -167,7 +167,7 @@ export function ConversationsList({
               size="sm"
               className={cn(
                 "opacity-0 group-hover:opacity-100 transition-opacity",
-                "w-8 h-8 flex-shrink-0",
+                "w-8 h-8 shrink-0",
                 isActive && "opacity-100"
               )}
             >

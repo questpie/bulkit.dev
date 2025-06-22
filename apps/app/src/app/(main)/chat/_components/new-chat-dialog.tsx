@@ -204,7 +204,7 @@ export function NewChatDialog({ children, defaultOpen = false }: NewChatDialogPr
                   >
                     <div className="flex items-start gap-3">
                       <div className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                        "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
                         template.color
                       )}>
                         <template.icon className="w-5 h-5 text-white" />

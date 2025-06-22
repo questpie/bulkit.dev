@@ -21,7 +21,7 @@ export default function OrganizationGeneralPage() {
 
       <Separator />
 
-      <div className='flex flex-col gap-6  pb-4 w-full max-w-screen-sm'>
+      <div className='flex flex-col gap-6  pb-4 w-full max-w-(--breakpoint-sm)'>
         <div className='flex flex-col gap-3'>
           <Label htmlFor='name'>Organization name</Label>
           <Input
