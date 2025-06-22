@@ -1,594 +1,309 @@
-import { and, eq, ilike, desc, asc, count, sql } from 'drizzle-orm'
-import type { TransactionLike } from '@bulkit/api/db/db.client'
-import { ioc } from '@bulkit/api/ioc'
-import {
-  knowledgeTable,
-  knowledgeVersionsTable,
-  knowledgeReferencesTable,
-  knowledgeViewsTable,
-  type SelectKnowledge,
-  type InsertKnowledge,
-  type SelectKnowledgeVersion,
-} from '@bulkit/api/db/db.schema'
+import type { TransactionLike } from "@bulkit/api/db/db.client";
+import { knowledgeTable, usersTable } from "@bulkit/api/db/db.schema";
+import { ioc } from "@bulkit/api/ioc";
 import type {
-  CreateKnowledge,
-  UpdateKnowledge,
-  KnowledgeListQuery,
-  KnowledgeMention,
-} from '@bulkit/shared/modules/knowledge/knowledge.schemas'
-import type { KnowledgeVersionChangeType } from '@bulkit/shared/constants/db.constants'
+	CreateKnowledge,
+	Knowledge,
+	KnowledgeListQuery,
+	UpdateKnowledge,
+} from "@bulkit/shared/modules/knowledge/knowledge.schemas";
+import type { PaginatedResponse } from "@bulkit/shared/schemas/misc";
+import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { HttpError } from "elysia-http-error";
+import { injectMentionService } from "../../mentions/mention.service";
 
+// Service interfaces
 interface CreateKnowledgeOpts {
-  organizationId: string
-  userId: string
-  data: CreateKnowledge
-}
-
-interface UpdateKnowledgeOpts {
-  knowledgeId: string
-  organizationId: string
-  userId: string
-  data: UpdateKnowledge
+	organizationId: string;
+	userId: string;
+	data: CreateKnowledge;
 }
 
 interface GetKnowledgeOpts {
-  knowledgeId: string
-  organizationId: string
-  trackView?: boolean
-  userId?: string
+	knowledgeId: string;
+	organizationId: string;
+}
+
+interface UpdateKnowledgeOpts {
+	knowledgeId: string;
+	organizationId: string;
+	userId: string;
+	data: UpdateKnowledge;
+}
+
+interface DeleteKnowledgeOpts {
+	knowledgeId: string;
+	organizationId: string;
 }
 
 interface ListKnowledgeOpts {
-  organizationId: string
-  query: KnowledgeListQuery
+	organizationId: string;
+	query: KnowledgeListQuery;
 }
 
-interface RestoreVersionOpts {
-  knowledgeId: string
-  organizationId: string
-  userId: string
-  version: number
-}
-
-interface KnowledgeWithUser extends SelectKnowledge {
-  createdByUser: {
-    id: string
-    displayName: string
-    email: string
-  }
-  lastEditedByUser?: {
-    id: string
-    displayName: string
-    email: string
-  }
-}
-
-interface KnowledgeListResult {
-  data: KnowledgeWithUser[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
+interface CreateFromTemplateOpts {
+	organizationId: string;
+	userId: string;
+	templateId: string;
+	title?: string;
+	placeholderValues?: Record<string, string>;
 }
 
 export class KnowledgeService {
-  async create(db: TransactionLike, opts: CreateKnowledgeOpts): Promise<SelectKnowledge> {
-    const { organizationId, userId, data } = opts
+	constructor(private readonly mentionService: any) {}
 
-    return db.transaction(async (trx) => {
-      // Generate excerpt if not provided
-      const excerpt = data.excerpt || this.generateExcerpt(data.content)
+	async getAll(
+		db: TransactionLike,
+		opts: ListKnowledgeOpts,
+	): Promise<PaginatedResponse<Knowledge>> {
+		const { organizationId, query } = opts;
+		const page = query.page ?? 1;
+		const limit = Math.min(query.limit ?? 20, 100);
+		const offset = (page - 1) * limit;
 
-      // Create the knowledge document
-      const knowledge = await trx
-        .insert(knowledgeTable)
-        .values({
-          title: data.title,
-          content: data.content,
-          excerpt,
-          organizationId,
-          createdByUserId: userId,
-          lastEditedByUserId: userId,
-          status: data.status || 'draft',
-          templateType: data.templateType || 'general',
-          mentions: data.mentions || [],
-          metadata: data.metadata || {},
-          version: 1,
-          isCurrentVersion: true,
-        })
-        .returning()
-        .then((res) => res[0]!)
+		// Build where conditions
+		const whereConditions = [eq(knowledgeTable.organizationId, organizationId)];
 
-      // Create the first version entry
-      await trx.insert(knowledgeVersionsTable).values({
-        knowledgeId: knowledge.id,
-        version: 1,
-        title: knowledge.title,
-        content: knowledge.content,
-        excerpt: knowledge.excerpt,
-        mentions: knowledge.mentions,
-        metadata: knowledge.metadata,
-        templateType: knowledge.templateType,
-        status: knowledge.status,
-        changeType: 'created',
-        changeDescription: 'Initial creation',
-        changedByUserId: userId,
-      })
+		if (query.search) {
+			whereConditions.push(
+				or(
+					ilike(knowledgeTable.title, `%${query.search}%`),
+					ilike(knowledgeTable.content, `%${query.search}%`),
+				)!,
+			);
+		}
 
-      // Process mentions and references if any
-      if (data.mentions && data.mentions.length > 0) {
-        await this.processReferences(trx, knowledge.id, data.mentions, userId)
-      }
+		if (query.status) {
+			whereConditions.push(eq(knowledgeTable.status, query.status));
+		}
 
-      return knowledge
-    })
-  }
+		// Get knowledge documents with user relations
+		const baseQuery = db
+			.select({
+				id: knowledgeTable.id,
+				title: knowledgeTable.title,
+				content: knowledgeTable.content,
+				excerpt: knowledgeTable.excerpt,
+				status: knowledgeTable.status,
+				mentions: knowledgeTable.mentions,
+				organizationId: knowledgeTable.organizationId,
+				createdByUserId: knowledgeTable.createdByUserId,
+				lastEditedByUserId: knowledgeTable.lastEditedByUserId,
+				createdAt: knowledgeTable.createdAt,
+				updatedAt: knowledgeTable.updatedAt,
+				folderId: knowledgeTable.folderId,
+				folderOrder: knowledgeTable.folderOrder,
+				addedToFolderAt: knowledgeTable.addedToFolderAt,
+				addedToFolderByUserId: knowledgeTable.addedToFolderByUserId,
+			})
+			.from(knowledgeTable)
+			.innerJoin(usersTable, eq(knowledgeTable.createdByUserId, usersTable.id))
+			.where(and(...whereConditions))
+			.orderBy(
+				query.sortBy === "title"
+					? query.sortOrder === "desc"
+						? desc(knowledgeTable.title)
+						: asc(knowledgeTable.title)
+					: query.sortOrder === "desc"
+						? desc(knowledgeTable.updatedAt)
+						: asc(knowledgeTable.updatedAt),
+			)
+			.limit(limit + 1)
+			.offset(offset);
 
-  async getById(db: TransactionLike, opts: GetKnowledgeOpts): Promise<KnowledgeWithUser | null> {
-    const { knowledgeId, organizationId, trackView = false, userId } = opts
+		const [knowledgeList, total] = await Promise.all([
+			baseQuery,
+			db.$count(baseQuery),
+		]);
 
-    const knowledge = await db
-      .select({
-        knowledge: knowledgeTable,
-        createdByUser: {
-          id: sql`${knowledgeTable.createdByUserId}`,
-          displayName: sql`created_by.display_name`,
-          email: sql`created_by.email`,
-        },
-        lastEditedByUser: {
-          id: sql`${knowledgeTable.lastEditedByUserId}`,
-          displayName: sql`last_edited_by.display_name`,
-          email: sql`last_edited_by.email`,
-        },
-      })
-      .from(knowledgeTable)
-      .leftJoin(sql`users as created_by`, eq(knowledgeTable.createdByUserId, sql`created_by.id`))
-      .leftJoin(
-        sql`users as last_edited_by`,
-        eq(knowledgeTable.lastEditedByUserId, sql`last_edited_by.id`)
-      )
-      .where(
-        and(
-          eq(knowledgeTable.id, knowledgeId),
-          eq(knowledgeTable.organizationId, organizationId),
-          eq(knowledgeTable.isCurrentVersion, true)
-        )
-      )
-      .then((res) => res[0] || null)
+		// Transform to match expected format
+		const items: Knowledge[] = knowledgeList
+			.map((item) => ({
+				...item,
+				mentions: item.mentions ?? [],
+			}))
+			.slice(0, limit);
 
-    if (!knowledge) {
-      return null
-    }
+		const hasMore = knowledgeList.length > limit;
 
-    // Track view if requested and user provided
-    if (trackView && userId) {
-      await this.trackView(db, knowledgeId, userId)
-    }
+		return {
+			items,
+			total,
+			nextCursor: hasMore ? offset + limit : null,
+		};
+	}
 
-    return {
-      ...knowledge.knowledge,
-      createdByUser: knowledge.createdByUser,
-      lastEditedByUser: knowledge.lastEditedByUser,
-    } as KnowledgeWithUser
-  }
+	async getById(
+		db: TransactionLike,
+		opts: GetKnowledgeOpts,
+	): Promise<Knowledge> {
+		const knowledge = await db
+			.select({
+				id: knowledgeTable.id,
+				title: knowledgeTable.title,
+				content: knowledgeTable.content,
+				excerpt: knowledgeTable.excerpt,
+				status: knowledgeTable.status,
+				mentions: knowledgeTable.mentions,
+				organizationId: knowledgeTable.organizationId,
+				createdByUserId: knowledgeTable.createdByUserId,
+				lastEditedByUserId: knowledgeTable.lastEditedByUserId,
+				createdAt: knowledgeTable.createdAt,
+				updatedAt: knowledgeTable.updatedAt,
+				folderId: knowledgeTable.folderId,
+				folderOrder: knowledgeTable.folderOrder,
+				addedToFolderAt: knowledgeTable.addedToFolderAt,
+				addedToFolderByUserId: knowledgeTable.addedToFolderByUserId,
+			})
+			.from(knowledgeTable)
+			.innerJoin(usersTable, eq(knowledgeTable.createdByUserId, usersTable.id))
+			.where(
+				and(
+					eq(knowledgeTable.id, opts.knowledgeId),
+					eq(knowledgeTable.organizationId, opts.organizationId),
+				),
+			)
+			.then((res) => res[0]);
 
-  async update(db: TransactionLike, opts: UpdateKnowledgeOpts): Promise<SelectKnowledge> {
-    const { knowledgeId, organizationId, userId, data } = opts
+		if (!knowledge) {
+			throw HttpError.NotFound("Knowledge document not found");
+		}
 
-    return db.transaction(async (trx) => {
-      // Get current knowledge
-      const currentKnowledge = await trx
-        .select()
-        .from(knowledgeTable)
-        .where(
-          and(
-            eq(knowledgeTable.id, knowledgeId),
-            eq(knowledgeTable.organizationId, organizationId),
-            eq(knowledgeTable.isCurrentVersion, true)
-          )
-        )
-        .then((res) => res[0])
+		return {
+			...knowledge,
+			mentions: knowledge.mentions ?? [],
+		};
+	}
 
-      if (!currentKnowledge) {
-        throw new Error('Knowledge document not found')
-      }
+	async create(
+		db: TransactionLike,
+		opts: CreateKnowledgeOpts,
+	): Promise<Knowledge> {
+		return db.transaction(async (trx) => {
+			// Extract mentions from content if not provided
+			const mentions =
+				opts.data.mentions ??
+				this.mentionService?.getMentionsFromHtml(opts.data.content) ??
+				[];
 
-      // Prepare updated data
-      const updateData: Partial<InsertKnowledge> = {
-        lastEditedByUserId: userId,
-      }
+			// Get next folder order
+			const folderOrder = await this.getNextFolderOrder(
+				trx,
+				opts.organizationId,
+				null,
+			);
 
-      let changeType: KnowledgeVersionChangeType = 'metadata_updated'
-      let hasContentChange = false
+			const knowledge = await trx
+				.insert(knowledgeTable)
+				.values({
+					title: opts.data.title,
+					content: opts.data.content,
+					excerpt: opts.data.excerpt ?? null,
+					status: opts.data.status ?? "draft",
+					mentions: mentions,
+					organizationId: opts.organizationId,
+					createdByUserId: opts.userId,
+					folderOrder,
+				})
+				.returning()
+				.then((res) => res[0]!);
 
-      if (data.title !== undefined) {
-        updateData.title = data.title
-        if (data.title !== currentKnowledge.title) {
-          changeType = 'content_updated'
-          hasContentChange = true
-        }
-      }
+			return this.getById(trx, {
+				knowledgeId: knowledge.id,
+				organizationId: opts.organizationId,
+			});
+		});
+	}
 
-      if (data.content !== undefined) {
-        updateData.content = data.content
-        updateData.excerpt = data.excerpt || this.generateExcerpt(data.content)
-        if (data.content !== currentKnowledge.content) {
-          changeType = 'content_updated'
-          hasContentChange = true
-        }
-      }
+	async update(
+		db: TransactionLike,
+		opts: UpdateKnowledgeOpts,
+	): Promise<Knowledge> {
+		return db.transaction(async (trx) => {
+			// Check if document exists
+			const existing = await trx
+				.select()
+				.from(knowledgeTable)
+				.where(
+					and(
+						eq(knowledgeTable.id, opts.knowledgeId),
+						eq(knowledgeTable.organizationId, opts.organizationId),
+					),
+				)
+				.then((res) => res[0]);
 
-      if (data.status !== undefined) {
-        updateData.status = data.status
-        if (data.status !== currentKnowledge.status) {
-          changeType = 'status_changed'
-        }
-      }
+			if (!existing) {
+				throw HttpError.NotFound("Knowledge document not found");
+			}
 
-      if (data.templateType !== undefined) {
-        updateData.templateType = data.templateType
-        if (data.templateType !== currentKnowledge.templateType) {
-          changeType = 'template_changed'
-        }
-      }
+			// Extract mentions from content if content is being updated
+			let mentions = opts.data.mentions;
+			if (opts.data.content && !mentions) {
+				mentions =
+					this.mentionService?.getMentionsFromHtml(opts.data.content) ?? [];
+			}
 
-      if (data.mentions !== undefined) {
-        updateData.mentions = data.mentions
-        hasContentChange = true
-      }
+			const updatedKnowledge = await trx
+				.update(knowledgeTable)
+				.set({
+					title: opts.data.title ?? existing.title,
+					content: opts.data.content ?? existing.content,
+					excerpt: opts.data.excerpt ?? existing.excerpt,
+					status: opts.data.status ?? existing.status,
+					mentions: mentions ?? existing.mentions,
+					lastEditedByUserId: opts.userId,
+					updatedAt: new Date().toISOString(),
+				})
+				.where(eq(knowledgeTable.id, opts.knowledgeId))
+				.returning()
+				.then((res) => res[0]!);
 
-      if (data.metadata !== undefined) {
-        updateData.metadata = data.metadata
-      }
+			return this.getById(trx, {
+				knowledgeId: updatedKnowledge.id,
+				organizationId: opts.organizationId,
+			});
+		});
+	}
 
-      // Increment version if content changed
-      if (hasContentChange) {
-        updateData.version = currentKnowledge.version + 1
-      }
+	async delete(db: TransactionLike, opts: DeleteKnowledgeOpts): Promise<void> {
+		const result = await db
+			.delete(knowledgeTable)
+			.where(
+				and(
+					eq(knowledgeTable.id, opts.knowledgeId),
+					eq(knowledgeTable.organizationId, opts.organizationId),
+				),
+			)
+			.returning();
 
-      // Update the knowledge document
-      const updatedKnowledge = await trx
-        .update(knowledgeTable)
-        .set(updateData)
-        .where(eq(knowledgeTable.id, knowledgeId))
-        .returning()
-        .then((res) => res[0]!)
+		if (result.length === 0) {
+			throw HttpError.NotFound("Knowledge document not found");
+		}
+	}
 
-      // Create version entry
-      await trx.insert(knowledgeVersionsTable).values({
-        knowledgeId,
-        version: updatedKnowledge.version,
-        title: updatedKnowledge.title,
-        content: updatedKnowledge.content,
-        excerpt: updatedKnowledge.excerpt,
-        mentions: updatedKnowledge.mentions,
-        metadata: updatedKnowledge.metadata,
-        templateType: updatedKnowledge.templateType,
-        status: updatedKnowledge.status,
-        changeType,
-        changeDescription: data.changeDescription || `Updated via ${changeType}`,
-        changedByUserId: userId,
-      })
+	private async getNextFolderOrder(
+		db: TransactionLike,
+		organizationId: string,
+		folderId: string | null,
+	): Promise<number> {
+		const result = await db
+			.select({ maxOrder: sql<number>`COALESCE(MAX(folder_order), -1)` })
+			.from(knowledgeTable)
+			.where(
+				and(
+					eq(knowledgeTable.organizationId, organizationId),
+					folderId
+						? eq(knowledgeTable.folderId, folderId)
+						: sql`folder_id IS NULL`,
+				),
+			);
 
-      // Update references if mentions changed
-      if (data.mentions !== undefined) {
-        // Remove old references
-        await trx
-          .delete(knowledgeReferencesTable)
-          .where(eq(knowledgeReferencesTable.knowledgeId, knowledgeId))
-
-        // Add new references
-        if (data.mentions.length > 0) {
-          await this.processReferences(trx, knowledgeId, data.mentions, userId)
-        }
-      }
-
-      return updatedKnowledge
-    })
-  }
-
-  async list(db: TransactionLike, opts: ListKnowledgeOpts): Promise<KnowledgeListResult> {
-    const { organizationId, query } = opts
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      status,
-      templateType,
-      createdBy,
-      tags,
-      sortBy = 'updatedAt',
-      sortOrder = 'desc',
-    } = query
-
-    const offset = (page - 1) * limit
-
-    // Build where conditions
-    const conditions = [
-      eq(knowledgeTable.organizationId, organizationId),
-      eq(knowledgeTable.isCurrentVersion, true),
-    ]
-
-    if (status) {
-      conditions.push(eq(knowledgeTable.status, status))
-    }
-
-    if (templateType) {
-      conditions.push(eq(knowledgeTable.templateType, templateType))
-    }
-
-    if (createdBy) {
-      conditions.push(eq(knowledgeTable.createdByUserId, createdBy))
-    }
-
-    if (search) {
-      conditions.push(
-        sql`(${ilike(knowledgeTable.title, `%${search}%`)} OR ${ilike(
-          knowledgeTable.content,
-          `%${search}%`
-        )})`
-      )
-    }
-
-    if (tags && tags.length > 0) {
-      conditions.push(
-        sql`${knowledgeTable.metadata}->>'tags' ?| array[${tags.map((tag) => `'${tag}'`).join(',')}]`
-      )
-    }
-
-    // Build sort order
-    const orderBy = sortOrder === 'asc' ? asc : desc
-    const sortColumn = (() => {
-      switch (sortBy) {
-        case 'title':
-          return knowledgeTable.title
-        case 'createdAt':
-          return knowledgeTable.createdAt
-        case 'viewCount':
-          return knowledgeTable.viewCount
-        default:
-          return knowledgeTable.updatedAt
-      }
-    })()
-
-    // Get total count
-    const totalCount = await db
-      .select({ count: count() })
-      .from(knowledgeTable)
-      .where(and(...conditions))
-      .then((res) => res[0]?.count || 0)
-
-    // Get data
-    const data = await db
-      .select({
-        knowledge: knowledgeTable,
-        createdByUser: {
-          id: sql`created_by.id`,
-          displayName: sql`created_by.display_name`,
-          email: sql`created_by.email`,
-        },
-        lastEditedByUser: {
-          id: sql`last_edited_by.id`,
-          displayName: sql`last_edited_by.display_name`,
-          email: sql`last_edited_by.email`,
-        },
-      })
-      .from(knowledgeTable)
-      .leftJoin(sql`users as created_by`, eq(knowledgeTable.createdByUserId, sql`created_by.id`))
-      .leftJoin(
-        sql`users as last_edited_by`,
-        eq(knowledgeTable.lastEditedByUserId, sql`last_edited_by.id`)
-      )
-      .where(and(...conditions))
-      .orderBy(orderBy(sortColumn))
-      .limit(limit)
-      .offset(offset)
-
-    const knowledgeList = data.map((row) => ({
-      ...row.knowledge,
-      createdByUser: row.createdByUser,
-      lastEditedByUser: row.lastEditedByUser,
-    })) as KnowledgeWithUser[]
-
-    return {
-      data: knowledgeList,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit),
-      },
-    }
-  }
-
-  async delete(db: TransactionLike, opts: GetKnowledgeOpts): Promise<void> {
-    const { knowledgeId, organizationId } = opts
-
-    // Verify ownership
-    const knowledge = await db
-      .select({ id: knowledgeTable.id })
-      .from(knowledgeTable)
-      .where(
-        and(eq(knowledgeTable.id, knowledgeId), eq(knowledgeTable.organizationId, organizationId))
-      )
-      .then((res) => res[0])
-
-    if (!knowledge) {
-      throw new Error('Knowledge document not found')
-    }
-
-    // Delete will cascade to versions, references, and views
-    await db.delete(knowledgeTable).where(eq(knowledgeTable.id, knowledgeId))
-  }
-
-  async getVersions(
-    db: TransactionLike,
-    knowledgeId: string,
-    organizationId: string
-  ): Promise<SelectKnowledgeVersion[]> {
-    // Verify ownership
-    const knowledge = await db
-      .select({ id: knowledgeTable.id })
-      .from(knowledgeTable)
-      .where(
-        and(eq(knowledgeTable.id, knowledgeId), eq(knowledgeTable.organizationId, organizationId))
-      )
-      .then((res) => res[0])
-
-    if (!knowledge) {
-      throw new Error('Knowledge document not found')
-    }
-
-    return db
-      .select()
-      .from(knowledgeVersionsTable)
-      .where(eq(knowledgeVersionsTable.knowledgeId, knowledgeId))
-      .orderBy(desc(knowledgeVersionsTable.version))
-  }
-
-  async restoreVersion(db: TransactionLike, opts: RestoreVersionOpts): Promise<SelectKnowledge> {
-    const { knowledgeId, organizationId, userId, version } = opts
-
-    return db.transaction(async (trx) => {
-      // Get the version to restore
-      const versionToRestore = await trx
-        .select()
-        .from(knowledgeVersionsTable)
-        .where(
-          and(
-            eq(knowledgeVersionsTable.knowledgeId, knowledgeId),
-            eq(knowledgeVersionsTable.version, version)
-          )
-        )
-        .then((res) => res[0])
-
-      if (!versionToRestore) {
-        throw new Error('Version not found')
-      }
-
-      // Get current knowledge for version increment
-      const currentKnowledge = await trx
-        .select()
-        .from(knowledgeTable)
-        .where(
-          and(eq(knowledgeTable.id, knowledgeId), eq(knowledgeTable.organizationId, organizationId))
-        )
-        .then((res) => res[0])
-
-      if (!currentKnowledge) {
-        throw new Error('Knowledge document not found')
-      }
-
-      // Update knowledge with restored content
-      const newVersion = currentKnowledge.version + 1
-      const restoredKnowledge = await trx
-        .update(knowledgeTable)
-        .set({
-          title: versionToRestore.title,
-          content: versionToRestore.content,
-          excerpt: versionToRestore.excerpt,
-          mentions: versionToRestore.mentions,
-          metadata: versionToRestore.metadata,
-          templateType: versionToRestore.templateType,
-          status: versionToRestore.status,
-          version: newVersion,
-          lastEditedByUserId: userId,
-        })
-        .where(eq(knowledgeTable.id, knowledgeId))
-        .returning()
-        .then((res) => res[0]!)
-
-      // Create new version entry
-      await trx.insert(knowledgeVersionsTable).values({
-        knowledgeId,
-        version: newVersion,
-        title: versionToRestore.title,
-        content: versionToRestore.content,
-        excerpt: versionToRestore.excerpt,
-        mentions: versionToRestore.mentions,
-        metadata: versionToRestore.metadata,
-        templateType: versionToRestore.templateType,
-        status: versionToRestore.status,
-        changeType: 'restored_from_version',
-        changeDescription: `Restored from version ${version}`,
-        changedByUserId: userId,
-      })
-
-      return restoredKnowledge
-    })
-  }
-
-  private async trackView(db: TransactionLike, knowledgeId: string, userId: string): Promise<void> {
-    // Only track one view per user per day
-    const today = new Date().toISOString().split('T')[0]
-    const existingView = await db
-      .select({ id: knowledgeViewsTable.id })
-      .from(knowledgeViewsTable)
-      .where(
-        and(
-          eq(knowledgeViewsTable.knowledgeId, knowledgeId),
-          eq(knowledgeViewsTable.userId, userId),
-          sql`DATE(${knowledgeViewsTable.viewedAt}) = ${today}`
-        )
-      )
-      .then((res) => res[0])
-
-    if (!existingView) {
-      await db.transaction(async (trx) => {
-        // Record the view
-        await trx.insert(knowledgeViewsTable).values({
-          knowledgeId,
-          userId,
-        })
-
-        // Increment view count
-        await trx
-          .update(knowledgeTable)
-          .set({
-            viewCount: sql`${knowledgeTable.viewCount} + 1`,
-          })
-          .where(eq(knowledgeTable.id, knowledgeId))
-      })
-    }
-  }
-
-  private async processReferences(
-    db: TransactionLike,
-    knowledgeId: string,
-    mentions: KnowledgeMention[],
-    userId: string
-  ): Promise<void> {
-    const references = mentions.map((mention) => ({
-      knowledgeId,
-      referencedEntityId: mention.id,
-      referencedEntityType: mention.type,
-      referenceType: 'mentions' as const,
-      contextSnippet: mention.name,
-      createdByUserId: userId,
-    }))
-
-    if (references.length > 0) {
-      await db.insert(knowledgeReferencesTable).values(references)
-    }
-  }
-
-  private generateExcerpt(content: string): string {
-    // Remove markdown formatting and generate excerpt
-    const plainText = content
-      .replace(/#{1,6}\s+/g, '') // Remove headers
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-      .replace(/\*(.*?)\*/g, '$1') // Remove italic
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links, keep text
-      .replace(/```[\s\S]*?```/g, '[code]') // Replace code blocks
-      .replace(/`(.*?)`/g, '$1') // Remove inline code
-      .trim()
-
-    return plainText.length > 300 ? `${plainText.substring(0, 297)}...` : plainText
-  }
+		return (result[0]?.maxOrder ?? -1) + 1;
+	}
 }
 
-export const injectKnowledgeService = ioc.register('knowledgeService', () => {
-  return new KnowledgeService()
-})
+export const injectKnowledgeService = ioc.register(
+	"knowledgeService",
+	() =>
+		new KnowledgeService(ioc.resolve([injectMentionService]).mentionService),
+);

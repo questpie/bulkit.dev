@@ -1,4 +1,5 @@
 import { cn } from "@bulkit/ui/lib";
+import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
 
 const textareaVariants = cva(
@@ -20,11 +21,7 @@ export interface TextareaProps
 	extends React.TextareaHTMLAttributes<HTMLTextAreaElement>,
 		VariantProps<typeof textareaVariants> {}
 
-function Textarea({
-	className,
-	variant,
-	...props
-}: React.ComponentProps<"textarea">) {
+function Textarea({ className, variant, ...props }: TextareaProps) {
 	return (
 		<textarea
 			className={cn(
@@ -33,7 +30,6 @@ function Textarea({
 					className,
 				}),
 			)}
-			ref={ref}
 			{...props}
 		/>
 	);

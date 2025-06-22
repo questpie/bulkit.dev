@@ -1,3 +1,4 @@
+import { Spinner } from "@bulkit/ui/components/ui/spinner";
 import { cn } from "@bulkit/ui/lib";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -34,22 +35,27 @@ const buttonVariants = cva(
 	},
 );
 
+export type ButtonProps = React.ComponentProps<"button"> &
+	VariantProps<typeof buttonVariants> & {
+		asChild?: boolean;
+		isLoading?: boolean;
+		loadingText?: string;
+	};
+
 function Button({
 	className,
 	variant,
 	size,
 	asChild = false,
+	isLoading = false,
+	loadingText = "Loading...",
 	...props
-}: React.ComponentProps<"button"> &
-	VariantProps<typeof buttonVariants> & {
-		asChild?: boolean;
-	}) {
+}: ButtonProps) {
 	const Comp = asChild ? Slot : "button";
 
 	return (
 		<Comp
 			className={cn(buttonVariants({ variant, size, className }))}
-			ref={ref}
 			type="button"
 			{...props}
 		>

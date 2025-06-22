@@ -1,714 +1,750 @@
-import { apiClient } from '@bulkit/app/api/api.client'
-import { mediaInfiniteQueryOptions } from '@bulkit/app/app/(main)/media/media.queries'
-import { ResourcePreview } from '@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview'
-import type { AIImageProvider } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
-import type { Resource } from '@bulkit/shared/modules/resources/resources.schemas'
-import { Button } from '@bulkit/ui/components/ui/button'
-import { Card } from '@bulkit/ui/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@bulkit/ui/components/ui/dialog'
-import { Input } from '@bulkit/ui/components/ui/input'
+import { apiClient } from "@bulkit/app/api/api.client";
+import { mediaInfiniteQueryOptions } from "@bulkit/app/app/(main)/media/media.queries";
+import { ResourcePreview } from "@bulkit/app/app/(main)/posts/[id]/_components/preview/resource-preview";
+import type { Resource } from "@bulkit/shared/modules/resources/resources.schemas";
+import { Button } from "@bulkit/ui/components/ui/button";
+import { Card } from "@bulkit/ui/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@bulkit/ui/components/ui/select'
-import { Skeleton } from '@bulkit/ui/components/ui/skeleton'
-import { toast } from '@bulkit/ui/components/ui/sonner'
-import { Spinner } from '@bulkit/ui/components/ui/spinner'
-import { Textarea } from '@bulkit/ui/components/ui/textarea'
-import { useDebouncedValue } from '@bulkit/ui/hooks/use-debounce'
-import { cn } from '@bulkit/ui/lib'
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback, useEffect, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
-import { LuWand2 } from 'react-icons/lu'
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@bulkit/ui/components/ui/dialog";
+import { Input } from "@bulkit/ui/components/ui/input";
 import {
-  PiFolder,
-  PiImage,
-  PiMagnifyingGlass,
-  PiSparkle,
-  PiUploadSimple,
-  PiX,
-} from 'react-icons/pi'
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@bulkit/ui/components/ui/select";
+import { Skeleton } from "@bulkit/ui/components/ui/skeleton";
+import { toast } from "@bulkit/ui/components/ui/sonner";
+import { Spinner } from "@bulkit/ui/components/ui/spinner";
+import { Textarea } from "@bulkit/ui/components/ui/textarea";
+import { useDebouncedValue } from "@bulkit/ui/hooks/use-debounce";
+import { cn } from "@bulkit/ui/lib";
+import {
+	useInfiniteQuery,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { LuWandSparkles } from "react-icons/lu";
+import {
+	PiFolder,
+	PiImage,
+	PiMagnifyingGlass,
+	PiSparkle,
+	PiUploadSimple,
+} from "react-icons/pi";
 
-type ResourceUploaderTab = 'upload' | 'stock' | 'library' | 'ai'
+type ResourceUploaderTab = "upload" | "stock" | "library" | "ai";
 
 type ResourceUploaderProps = {
-  onUploaded?: (resources: Resource[]) => void
-  allowedTypes?: string[]
-  maxFiles?: number
-  maxSize?: number // in bytes
-  disabled?: boolean
-  hideTabs?: ResourceUploaderTab[]
-}
+	onUploaded?: (resources: Resource[]) => void;
+	allowedTypes?: string[];
+	maxFiles?: number;
+	maxSize?: number; // in bytes
+	disabled?: boolean;
+	hideTabs?: ResourceUploaderTab[];
+};
 
 type StockImage = {
-  id: string
-  url: string
-  thumbnailUrl: string
-  alt: string
-  author: string
-}
+	id: string;
+	url: string;
+	thumbnailUrl: string;
+	alt: string;
+	author: string;
+};
 
 function StockImageGrid({
-  images,
-  onSelect,
-  isLoading,
+	images,
+	onSelect,
+	isLoading,
 }: {
-  images: StockImage[]
-  onSelect: (image: StockImage) => void
-  isLoading?: boolean
+	images: StockImage[];
+	onSelect: (image: StockImage) => void;
+	isLoading?: boolean;
 }) {
-  if (isLoading) {
-    return (
-      <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
-        {Array.from({ length: 6 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-          <Skeleton key={i} className='aspect-square rounded-lg' />
-        ))}
-      </div>
-    )
-  }
+	if (isLoading) {
+		return (
+			<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+				{Array.from({ length: 6 }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+					<Skeleton key={i} className="aspect-square rounded-lg" />
+				))}
+			</div>
+		);
+	}
 
-  return (
-    <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
-      {images.map((image) => (
-        <button
-          type='button'
-          key={image.id}
-          onClick={() => onSelect(image)}
-          className='group relative aspect-square overflow-hidden rounded-lg border bg-muted hover:bg-muted/80 transition-colors'
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image.thumbnailUrl} alt={image.alt} className='object-cover w-full h-full' />
-          <div className='absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2'>
-            <span className='text-xs text-white truncate'>by {image.author}</span>
-          </div>
-        </button>
-      ))}
-    </div>
-  )
+	return (
+		<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+			{images.map((image) => (
+				<button
+					type="button"
+					key={image.id}
+					onClick={() => onSelect(image)}
+					className="group relative aspect-square overflow-hidden rounded-lg border bg-muted hover:bg-muted/80 transition-colors"
+				>
+					{/* eslint-disable-next-line @next/next/no-img-element */}
+					<img
+						src={image.thumbnailUrl}
+						alt={image.alt}
+						className="object-cover w-full h-full"
+					/>
+					<div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+						<span className="text-xs text-white truncate">
+							by {image.author}
+						</span>
+					</div>
+				</button>
+			))}
+		</div>
+	);
 }
 
 function StockTabContent(props: { onSelect: (image: StockImage) => void }) {
-  const [search, setSearch] = useState('nature landscape')
-  const debouncedSearch = useDebouncedValue(search, 500)
+	const [search, setSearch] = useState("nature landscape");
+	const debouncedSearch = useDebouncedValue(search, 500);
 
-  const { data: providers = [] } = useQuery({
-    queryKey: ['admin', 'stock-providers'],
-    queryFn: async () => {
-      const response = await apiClient.admin['stock-image-providers'].index.get()
-      if (response.error) throw response.error
-      return response.data
-    },
-  })
+	const { data: providers = [] } = useQuery({
+		queryKey: ["admin", "stock-providers"],
+		queryFn: async () => {
+			const response = await apiClient.admin["stock-image-providers"].get();
+			if (response.error) throw response.error;
+			return response.data;
+		},
+	});
 
-  const [activeProvider, setActiveProvider] = useState<string | undefined>(providers[0]?.id)
+	const [activeProvider, setActiveProvider] = useState<string | undefined>(
+		providers[0]?.id,
+	);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
-    queryKey: ['stock-images', debouncedSearch, activeProvider],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await apiClient.resources.stock.search.get({
-        query: {
-          query: debouncedSearch,
-          per_page: 30,
-          page: pageParam,
-          provider: activeProvider,
-        },
-      })
+	const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		useInfiniteQuery({
+			queryKey: ["stock-images", debouncedSearch, activeProvider],
+			queryFn: async ({ pageParam = 1 }) => {
+				const response = await apiClient.resources.stock.search.get({
+					query: {
+						query: debouncedSearch,
+						per_page: 30,
+						page: pageParam,
+						provider: activeProvider,
+					},
+				});
 
-      if (response.error) {
-        throw new Error(response.error.value.message)
-      }
+				if (response.error) {
+					throw new Error(response.error.value.message);
+				}
 
-      return response.data
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 30 ? allPages.length + 1 : undefined
-    },
-    initialPageParam: 1,
-    enabled: search.length > 0 && !!activeProvider,
-  })
+				return response.data;
+			},
+			getNextPageParam: (lastPage, allPages) => {
+				return lastPage.length === 30 ? allPages.length + 1 : undefined;
+			},
+			initialPageParam: 1,
+			enabled: search.length > 0 && !!activeProvider,
+		});
 
-  const images = data?.pages.flat() ?? []
+	const images = data?.pages.flat() ?? [];
 
-  if (providers.length === 0) {
-    return (
-      <div className='h-full flex flex-col items-center justify-center text-center p-4'>
-        <PiImage className='w-12 h-12 text-muted-foreground/40' />
-        <h3 className='mt-4 text-sm font-bold'>Stock images not configured</h3>
-        <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
-          Contact your administrator to configure stock image providers.
-        </p>
-      </div>
-    )
-  }
+	if (providers.length === 0) {
+		return (
+			<div className="h-full flex flex-col items-center justify-center text-center p-4">
+				<PiImage className="w-12 h-12 text-muted-foreground/40" />
+				<h3 className="mt-4 text-sm font-bold">Stock images not configured</h3>
+				<p className="mt-2 text-xs text-muted-foreground max-w-xs">
+					Contact your administrator to configure stock image providers.
+				</p>
+			</div>
+		);
+	}
 
-  return (
-    <div className='space-y-4 h-full flex flex-col'>
-      <div className='space-y-2'>
-        <Input
-          type='search'
-          value={search}
-          placeholder='Search stock images...'
-          onChange={(e) => setSearch(e.target.value)}
-          before={<PiMagnifyingGlass className='ml-3 text-muted-foreground' />}
-        />
-        {providers.length > 1 && (
-          <Select value={activeProvider} onValueChange={setActiveProvider}>
-            <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2  shadow-none text-xs'>
-              <p className='text-xs'>
-                Using <SelectValue />
-              </p>
-            </SelectTrigger>
-            <SelectContent>
-              {providers.map((provider) => (
-                <SelectItem key={provider.id} value={provider.id} className='text-xs'>
-                  {provider.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {providers.length === 1 && <p className='text-xs'>Using {providers[0]!.id}</p>}
-      </div>
-      <div className='overflow-y-auto flex-1 space-y-4'>
-        <StockImageGrid images={images} onSelect={props.onSelect} isLoading={isLoading} />
+	return (
+		<div className="space-y-4 h-full flex flex-col">
+			<div className="space-y-2">
+				<Input
+					type="search"
+					value={search}
+					placeholder="Search stock images..."
+					onChange={(e) => setSearch(e.target.value)}
+					before={<PiMagnifyingGlass className="ml-3 text-muted-foreground" />}
+				/>
+				{providers.length > 1 && (
+					<Select value={activeProvider} onValueChange={setActiveProvider}>
+						<SelectTrigger className="h-6 gap-2 rounded-sm w-auto px-2  shadow-none text-xs">
+							<p className="text-xs">
+								Using <SelectValue />
+							</p>
+						</SelectTrigger>
+						<SelectContent>
+							{providers.map((provider) => (
+								<SelectItem
+									key={provider.id}
+									value={provider.id}
+									className="text-xs"
+								>
+									{provider.id}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				)}
+				{providers.length === 1 && (
+					<p className="text-xs">Using {providers[0]!.id}</p>
+				)}
+			</div>
+			<div className="overflow-y-auto flex-1 space-y-4">
+				<StockImageGrid
+					images={images}
+					onSelect={props.onSelect}
+					isLoading={isLoading}
+				/>
 
-        {hasNextPage && (
-          <div className='flex justify-center pb-4'>
-            <Button
-              variant='outline'
-              onClick={() => fetchNextPage()}
-              disabled={isFetchingNextPage}
-              size='sm'
-            >
-              {isFetchingNextPage ? 'Loading...' : 'Load More'}
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+				{hasNextPage && (
+					<div className="flex justify-center pb-4">
+						<Button
+							variant="outline"
+							onClick={() => fetchNextPage()}
+							disabled={isFetchingNextPage}
+							size="sm"
+						>
+							{isFetchingNextPage ? "Loading..." : "Load More"}
+						</Button>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }
 
 function useResourceUploader({
-  onUploaded,
-  allowedTypes = ['image/*', 'video/*', 'audio/*'],
-  maxFiles = 10,
-  maxSize = 1024 * 1024 * 1024, // 1024MB
-  disabled,
+	onUploaded,
+	allowedTypes = ["image/*", "video/*", "audio/*"],
+	maxFiles = 10,
+	maxSize = 1024 * 1024 * 1024, // 1024MB
+	disabled,
 }: ResourceUploaderProps) {
-  const queryClient = useQueryClient()
-  const mutation = useMutation({
-    mutationFn: (...args: Parameters<typeof apiClient.resources.index.post>) =>
-      apiClient.resources.index.post(...args).then((res) => {
-        if (res.error) {
-          throw new Error(res.error.value.message)
-        }
+	const queryClient = useQueryClient();
+	const mutation = useMutation({
+		mutationFn: (...args: Parameters<typeof apiClient.resources.post>) =>
+			apiClient.resources.post(...args).then((res) => {
+				if (res.error) {
+					throw new Error(res.error.value.message);
+				}
 
-        return res.data
-      }),
-    onSuccess: (data) => {
-      onUploaded?.(data)
-      queryClient.invalidateQueries(mediaInfiniteQueryOptions({}))
-    },
-  })
+				return res.data;
+			}),
+		onSuccess: (data) => {
+			onUploaded?.(data);
+			queryClient.invalidateQueries(mediaInfiniteQueryOptions({}));
+		},
+	});
 
-  const dropzone = useDropzone({
-    disabled,
-    onDropAccepted: useCallback(
-      (acceptedFiles: File[]) => {
-        toast.promise(
-          mutation.mutateAsync({
-            files: acceptedFiles as any,
-            isPrivate: true,
-          }),
-          {
-            loading: 'Uploading files...',
-            success: 'Files uploaded',
-            error: (err) => err.message,
-          }
-        )
-      },
-      [mutation]
-    ),
-    accept: allowedTypes?.reduce(
-      (acc, type) => {
-        acc[type] = []
-        return acc
-      },
-      {} as Record<string, string[]>
-    ),
-    onDropRejected: (rejectedFiles) => {
-      const uniqueErrorMessages = new Set<string>()
-      for (const file of rejectedFiles) {
-        for (const error of file.errors) {
-          uniqueErrorMessages.add(error.message)
-        }
-      }
-      const m = Array.from(uniqueErrorMessages).map((m, i) => (
-        <>
-          <span key={`${m}-span`}>{m}</span>
-          <br key={`${m}-br`} />
-        </>
-      ))
+	const dropzone = useDropzone({
+		disabled,
+		onDropAccepted: useCallback(
+			(acceptedFiles: File[]) => {
+				toast.promise(
+					mutation.mutateAsync({
+						files: acceptedFiles as any,
+						isPrivate: true,
+					}),
+					{
+						loading: "Uploading files...",
+						success: "Files uploaded",
+						error: (err) => err.message,
+					},
+				);
+			},
+			[mutation],
+		),
+		accept: allowedTypes?.reduce(
+			(acc, type) => {
+				acc[type] = [];
+				return acc;
+			},
+			{} as Record<string, string[]>,
+		),
+		onDropRejected: (rejectedFiles) => {
+			const uniqueErrorMessages = new Set<string>();
+			for (const file of rejectedFiles) {
+				for (const error of file.errors) {
+					uniqueErrorMessages.add(error.message);
+				}
+			}
+			const m = Array.from(uniqueErrorMessages).map((m, i) => (
+				<>
+					<span key={`${m}-span`}>{m}</span>
+					<br key={`${m}-br`} />
+				</>
+			));
 
-      toast.error('Some files were rejected.', {
-        description: m,
-      })
-    },
-    maxSize,
-    maxFiles,
-  })
+			toast.error("Some files were rejected.", {
+				description: m,
+			});
+		},
+		maxSize,
+		maxFiles,
+	});
 
-  return {
-    ...dropzone,
-    isUploading: mutation.isPending,
-  }
+	return {
+		...dropzone,
+		isUploading: mutation.isPending,
+	};
 }
 
 export function ResourceDropzone(
-  props: ResourceUploaderProps & {
-    className?: React.ComponentProps<'div'>['className']
-  }
+	props: ResourceUploaderProps & {
+		className?: React.ComponentProps<"div">["className"];
+	},
 ) {
-  const { getRootProps, getInputProps, isDragActive } = useResourceUploader(props)
-  // TODO: add a middle step which opens a dialog, shows the selected file and lets you either cancel or upload
+	const { getRootProps, getInputProps, isDragActive } =
+		useResourceUploader(props);
+	// TODO: add a middle step which opens a dialog, shows the selected file and lets you either cancel or upload
 
-  return (
-    <div
-      {...getRootProps()}
-      className={cn(
-        'border-2 text-sm transition  text-muted-foreground duration-200 flex flex-col gap-4 hover:bg-accent/50 border-dashed border-border rounded-xl p-5 text-center cursor-pointer',
-        isDragActive && 'bg-primary/20 border-primary text-primary',
-        props.disabled && 'opacity-80 pointer-events-none',
-        props.className
-      )}
-    >
-      <PiUploadSimple className='h-12 w-12 mx-auto' />
+	return (
+		<div
+			{...getRootProps()}
+			className={cn(
+				"border-2 text-sm transition  text-muted-foreground duration-200 flex flex-col gap-4 hover:bg-accent/50 border-dashed border-border rounded-xl p-5 text-center cursor-pointer",
+				isDragActive && "bg-primary/20 border-primary text-primary",
+				props.disabled && "opacity-80 pointer-events-none",
+				props.className,
+			)}
+		>
+			<PiUploadSimple className="h-12 w-12 mx-auto" />
 
-      <input {...getInputProps()} />
-      {isDragActive ? (
-        <p className='text-sm text-center w-full'>Drop the files here ...</p>
-      ) : (
-        <p className='text-sm text-center w-full'>
-          Drag 'n' drop some files here, or click to select files
-        </p>
-      )}
-    </div>
-  )
+			<input {...getInputProps()} />
+			{isDragActive ? (
+				<p className="text-sm text-center w-full">Drop the files here ...</p>
+			) : (
+				<p className="text-sm text-center w-full">
+					Drag 'n' drop some files here, or click to select files
+				</p>
+			)}
+		</div>
+	);
 }
 
 type ResourceUploaderTabConfig = {
-  id: ResourceUploaderTab
-  label: string
-  icon: React.ElementType
-  disabled?: boolean
-  soon?: boolean
-  content: (props: {
-    onSelect?: (resource: Resource) => void
-    onUploaded?: (resources: Resource[]) => void
-    onClose?: () => void
-    uploaderProps?: ResourceUploaderProps
-  }) => React.ReactNode
-}
+	id: ResourceUploaderTab;
+	label: string;
+	icon: React.ElementType;
+	disabled?: boolean;
+	soon?: boolean;
+	content: (props: {
+		onSelect?: (resource: Resource) => void;
+		onUploaded?: (resources: Resource[]) => void;
+		onClose?: () => void;
+		uploaderProps?: ResourceUploaderProps;
+	}) => React.ReactNode;
+};
 
 type TabContentProps = {
-  onSelect?: (resource: Resource) => void
-  onUploaded?: (resources: Resource[]) => void
-  onClose?: () => void
-  uploaderProps?: ResourceUploaderProps
-}
+	onSelect?: (resource: Resource) => void;
+	onUploaded?: (resources: Resource[]) => void;
+	onClose?: () => void;
+	uploaderProps?: ResourceUploaderProps;
+};
 
-function AITabContent(props: {
-  onSelect: (resource: Resource) => void
-}) {
-  const [prompt, setPrompt] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedResource, setGeneratedResource] = useState<Resource | null>(null)
-  const [style, setStyle] = useState<'photorealistic' | 'artistic' | 'cartoon' | 'minimal'>('photorealistic')
-  const [aspectRatio, setAspectRatio] = useState<'1:1' | '16:9' | '9:16' | '4:3'>('1:1')
-  const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('standard')
+function AITabContent(props: { onSelect: (resource: Resource) => void }) {
+	const [prompt, setPrompt] = useState("");
+	const [isGenerating, setIsGenerating] = useState(false);
+	const [generatedResource, setGeneratedResource] = useState<Resource | null>(
+		null,
+	);
+	const [selectedProvider, setSelectedProvider] = useState<string>("");
 
-  // Check if unified AI generation is available
-  const { data: capabilities = { image: [], video: [] } } = useQuery({
-    queryKey: ['ai', 'capabilities'],
-    queryFn: async () => {
-      const response = await apiClient.resources.ai.capabilities.get()
-      if (response.error) throw response.error
-      return response.data
-    },
-  })
+	// Get available AI image providers
+	const { data: providers = [] } = useQuery({
+		queryKey: ["ai", "providers"],
+		queryFn: async () => {
+			const response = await apiClient.resources.ai.providers.get();
+			if (response.error) throw response.error;
+			return response.data;
+		},
+	});
 
-  const queryClient = useQueryClient()
-  const generateMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiClient.resources.ai.generate.post({
-        prompt,
-        style,
-        aspectRatio,
-        quality,
-        isPrivate: true,
-      })
+	// Set default provider when providers load
+	useEffect(() => {
+		if (providers.length > 0 && !selectedProvider) {
+			setSelectedProvider(providers[0]!.id);
+		}
+	}, [providers, selectedProvider]);
 
-      if (response.error) throw response.error
-      return response.data
-    },
-    onSuccess: (data) => {
-      setGeneratedResource(data)
-      setIsGenerating(false)
-      queryClient.invalidateQueries(mediaInfiniteQueryOptions({}))
-    },
-    onError: (error: Error) => {
-      toast.error('Failed to generate image', {
-        description: error.message,
-      })
-      setIsGenerating(false)
-    },
-  })
+	const queryClient = useQueryClient();
+	const generateMutation = useMutation({
+		mutationFn: async () => {
+			if (!selectedProvider) {
+				throw new Error("No provider selected");
+			}
 
-  if (capabilities.image.length === 0) {
-    return (
-      <div className='flex flex-col items-center justify-center h-full text-center p-4'>
-        <PiImage className='w-12 h-12 text-muted-foreground/40' />
-        <h3 className='mt-4 text-sm font-bold'>AI image generation not available</h3>
-        <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
-          Contact your administrator to configure AI image generation.
-        </p>
-      </div>
-    )
-  }
+			const response = await apiClient.resources.ai.generate.post({
+				prompt,
+				providerId: selectedProvider,
+			});
 
-  return (
-    <div className='flex flex-col h-full'>
-      <div className='flex-1 flex items-center justify-center'>
-        {isGenerating ? (
-          <Skeleton className='w-64 h-64 rounded-lg' />
-        ) : generatedResource ? (
-          <div className='relative w-64 h-64'>
-            <ResourcePreview resource={generatedResource} className='w-full h-full rounded-lg' />
-            <Button
-              variant='secondary'
-              size='sm'
-              className='absolute bottom-2 right-2'
-              onClick={() => {
-                props.onSelect(generatedResource)
-                setGeneratedResource(null)
-                setPrompt('')
-              }}
-            >
-              Use Image
-            </Button>
-          </div>
-        ) : (
-          <div className='flex flex-col items-center text-center'>
-            <PiImage className='w-12 h-12 text-muted-foreground/40' />
-            <p className='mt-2 text-sm text-muted-foreground'>
-              Enter a prompt below to generate an image
-            </p>
-          </div>
-        )}
-      </div>
+			if (response.error) throw response.error;
+			return response.data;
+		},
+		onSuccess: (data) => {
+			// Backend returns array of resources, take the first one
+			const resource = data[0];
+			if (resource) {
+				setGeneratedResource(resource);
+			}
+			setIsGenerating(false);
+			queryClient.invalidateQueries(mediaInfiniteQueryOptions({}));
+		},
+		onError: (error: Error) => {
+			toast.error("Failed to generate image", {
+				description: error.message,
+			});
+			setIsGenerating(false);
+		},
+	});
 
-      <div className='space-y-4 pt-4 border-t'>
-        <div className='flex flex-col gap-4'>
-          <Textarea
-            value={prompt}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
-            placeholder='Describe the image you want to generate...'
-            disabled={isGenerating}
-          />
-          
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <label className='text-xs font-medium text-muted-foreground'>Style</label>
-              <Select value={style} onValueChange={setStyle} disabled={isGenerating}>
-                <SelectTrigger className='h-8'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='photorealistic'>Photorealistic</SelectItem>
-                  <SelectItem value='artistic'>Artistic</SelectItem>
-                  <SelectItem value='cartoon'>Cartoon</SelectItem>
-                  <SelectItem value='minimal'>Minimal</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className='space-y-2'>
-              <label className='text-xs font-medium text-muted-foreground'>Aspect Ratio</label>
-              <Select value={aspectRatio} onValueChange={setAspectRatio} disabled={isGenerating}>
-                <SelectTrigger className='h-8'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='1:1'>Square (1:1)</SelectItem>
-                  <SelectItem value='16:9'>Landscape (16:9)</SelectItem>
-                  <SelectItem value='9:16'>Portrait (9:16)</SelectItem>
-                  <SelectItem value='4:3'>Classic (4:3)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-2'>
-              <label className='text-xs font-medium text-muted-foreground'>Quality:</label>
-              <Select value={quality} onValueChange={setQuality} disabled={isGenerating}>
-                <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2 shadow-none text-xs'>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='standard' className='text-xs'>Standard</SelectItem>
-                  <SelectItem value='high' className='text-xs'>High</SelectItem>
-                  <SelectItem value='ultra' className='text-xs'>Ultra</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+	if (providers.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center h-full text-center p-4">
+				<PiImage className="w-12 h-12 text-muted-foreground/40" />
+				<h3 className="mt-4 text-sm font-bold">
+					AI image generation not available
+				</h3>
+				<p className="mt-2 text-xs text-muted-foreground max-w-xs">
+					Contact your administrator to configure AI image generation.
+				</p>
+			</div>
+		);
+	}
 
-            <Button
-              onClick={() => {
-                setIsGenerating(true)
-                generateMutation.mutate()
-              }}
-              disabled={!prompt || isGenerating}
-              className='gap-2'
-            >
-              {isGenerating ? <Spinner /> : <LuWand2 className='h-4 w-4' />}
-              Generate
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+	return (
+		<div className="flex flex-col h-full">
+			<div className="flex-1 flex items-center justify-center">
+				{isGenerating ? (
+					<Skeleton className="w-64 h-64 rounded-lg" />
+				) : generatedResource ? (
+					<div className="relative w-64 h-64">
+						<ResourcePreview
+							resource={generatedResource}
+							className="w-full h-full rounded-lg"
+						/>
+						<Button
+							variant="secondary"
+							size="sm"
+							className="absolute bottom-2 right-2"
+							onClick={() => {
+								props.onSelect(generatedResource);
+								setGeneratedResource(null);
+								setPrompt("");
+							}}
+						>
+							Use Image
+						</Button>
+					</div>
+				) : (
+					<div className="flex flex-col items-center text-center">
+						<PiImage className="w-12 h-12 text-muted-foreground/40" />
+						<p className="mt-2 text-sm text-muted-foreground">
+							Enter a prompt below to generate an image
+						</p>
+					</div>
+				)}
+			</div>
+
+			<div className="space-y-4 pt-4 border-t">
+				<div className="flex flex-col gap-4">
+					<Textarea
+						value={prompt}
+						onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+							setPrompt(e.target.value)
+						}
+						placeholder="Describe the image you want to generate..."
+						disabled={isGenerating}
+					/>
+
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<label className="text-xs font-medium text-muted-foreground">
+								Provider:
+							</label>
+							<Select
+								value={selectedProvider}
+								onValueChange={(value: string) => setSelectedProvider(value)}
+								disabled={isGenerating}
+							>
+								<SelectTrigger className="h-6 gap-2 rounded-sm w-auto px-2 shadow-none text-xs">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{providers.map((provider) => (
+										<SelectItem
+											key={provider.id}
+											value={provider.id}
+											className="text-xs"
+										>
+											{provider.name} ({provider.model})
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<Button
+							onClick={() => {
+								setIsGenerating(true);
+								generateMutation.mutate();
+							}}
+							disabled={!prompt || isGenerating || !selectedProvider}
+							className="gap-2"
+						>
+							{isGenerating ? (
+								<Spinner />
+							) : (
+								<LuWandSparkles className="h-4 w-4" />
+							)}
+							Generate
+						</Button>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 const RESOURCE_UPLOADER_TABS: ResourceUploaderTabConfig[] = [
-  {
-    id: 'upload',
-    label: 'Upload',
-    icon: PiUploadSimple,
-    content: (props: TabContentProps) => (
-      <ResourceDropzone
-        {...props.uploaderProps}
-        className='h-full items-center justify-center'
-        onUploaded={(resources) => {
-          props.onUploaded?.(resources)
-        }}
-      />
-    ),
-  },
-  {
-    id: 'stock',
-    label: 'Stock',
-    icon: PiImage,
-    content: (props: TabContentProps) => (
-      <StockTabContent
-        onSelect={async (image) => {
-          const response = await apiClient.resources.stock.index.post({
-            url: image.url,
-            name: image.author,
-            caption: image.alt,
-            isPrivate: true,
-          })
+	{
+		id: "upload",
+		label: "Upload",
+		icon: PiUploadSimple,
+		content: (props: TabContentProps) => (
+			<ResourceDropzone
+				{...props.uploaderProps}
+				className="h-full items-center justify-center"
+				onUploaded={(resources) => {
+					props.onUploaded?.(resources);
+				}}
+			/>
+		),
+	},
+	{
+		id: "stock",
+		label: "Stock",
+		icon: PiImage,
+		content: (props: TabContentProps) => (
+			<StockTabContent
+				onSelect={async (image) => {
+					const response = await apiClient.resources.stock.post({
+						url: image.url,
+						name: image.author,
+						caption: image.alt,
+						isPrivate: true,
+					});
 
-          if (response.error) {
-            throw new Error(response.error.value.message)
-          }
+					if (response.error) {
+						throw new Error(response.error.value.message);
+					}
 
-          props.onSelect?.(response.data)
-        }}
-      />
-    ),
-  },
-  {
-    id: 'library',
-    label: 'Library',
-    icon: PiFolder,
-    content: (props: TabContentProps) => (
-      <LibraryTabContent
-        onSelect={(resource) => {
-          props.onSelect?.(resource)
-        }}
-      />
-    ),
-  },
-  {
-    id: 'ai',
-    label: 'AI Image',
-    icon: PiSparkle,
-    content: (props: TabContentProps) => (
-      <AITabContent
-        onSelect={(resource) => {
-          props.onSelect?.(resource)
-        }}
-      />
-    ),
-  },
-]
+					props.onSelect?.(response.data);
+				}}
+			/>
+		),
+	},
+	{
+		id: "library",
+		label: "Library",
+		icon: PiFolder,
+		content: (props: TabContentProps) => (
+			<LibraryTabContent
+				onSelect={(resource) => {
+					props.onSelect?.(resource);
+				}}
+			/>
+		),
+	},
+	{
+		id: "ai",
+		label: "AI Image",
+		icon: PiSparkle,
+		content: (props: TabContentProps) => (
+			<AITabContent
+				onSelect={(resource) => {
+					props.onSelect?.(resource);
+				}}
+			/>
+		),
+	},
+];
 
 export function ResourceUploadDialog({
-  open,
-  onOpenChange,
-  onUploaded,
-  hideTabs = [],
-  ...props
+	open,
+	onOpenChange,
+	onUploaded,
+	hideTabs = [],
+	...props
 }: ResourceUploaderProps & {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<ResourceUploaderTab>('upload')
-  const availableTabs = RESOURCE_UPLOADER_TABS.filter((tab) => !hideTabs.includes(tab.id))
+	const [activeTab, setActiveTab] = useState<ResourceUploaderTab>("upload");
+	const availableTabs = RESOURCE_UPLOADER_TABS.filter(
+		(tab) => !hideTabs.includes(tab.id),
+	);
 
-  useEffect(() => {
-    if (hideTabs.includes(activeTab) && availableTabs.length > 0) {
-      setActiveTab(availableTabs[0]!.id)
-    }
-  }, [hideTabs, activeTab, availableTabs])
+	useEffect(() => {
+		if (hideTabs.includes(activeTab) && availableTabs.length > 0) {
+			setActiveTab(availableTabs[0]!.id);
+		}
+	}, [hideTabs, activeTab, availableTabs]);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-4xl'>
-        <DialogHeader>
-          <DialogTitle>Select Resource</DialogTitle>
-        </DialogHeader>
-        <div className='flex md:flex-row flex-col h-[600px] gap-4 md:gap-2'>
-          <div className='flex md:flex-col md:w-48 w-full gap-2 md:h-full pr-4 md:border-border md:border-r'>
-            {availableTabs.map((tab) => (
-              <Card
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors',
-                  activeTab === tab.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted'
-                )}
-                asChild
-              >
-                <button type='button'>
-                  <tab.icon className='h-5 w-5' />
-                  <span className='text-sm w-full line-clamp-1 text-ellipsis font-bold'>
-                    {tab.label}
-                  </span>
-                </button>
-              </Card>
-            ))}
-          </div>
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-4xl">
+				<DialogHeader>
+					<DialogTitle>Select Resource</DialogTitle>
+				</DialogHeader>
+				<div className="flex md:flex-row flex-col h-[600px] gap-4 md:gap-2">
+					<div className="flex md:flex-col md:w-48 w-full gap-2 md:h-full pr-4 md:border-border md:border-r">
+						{availableTabs.map((tab) => (
+							<Card
+								key={tab.id}
+								onClick={() => setActiveTab(tab.id)}
+								className={cn(
+									"flex md:flex-row flex-col flex-1 md:flex-none items-center gap-2 p-4 rounded-lg border transition-colors",
+									activeTab === tab.id
+										? "bg-primary/10 border-primary"
+										: "hover:bg-muted",
+								)}
+								asChild
+							>
+								<button type="button">
+									<tab.icon className="h-5 w-5" />
+									<span className="text-sm w-full line-clamp-1 text-ellipsis font-bold">
+										{tab.label}
+									</span>
+								</button>
+							</Card>
+						))}
+					</div>
 
-          <div className='flex-1'>
-            {RESOURCE_UPLOADER_TABS.find((tab) => tab.id === activeTab)?.content({
-              onSelect: (resource) => {
-                onUploaded?.([resource])
-                onOpenChange(false)
-              },
-              onUploaded,
-              onClose: () => onOpenChange(false),
-              uploaderProps: props,
-            })}
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
+					<div className="flex-1">
+						{RESOURCE_UPLOADER_TABS.find(
+							(tab) => tab.id === activeTab,
+						)?.content({
+							onSelect: (resource) => {
+								onUploaded?.([resource]);
+								onOpenChange(false);
+							},
+							onUploaded,
+							onClose: () => onOpenChange(false),
+							uploaderProps: props,
+						})}
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
 }
 
 export function ResourceButtonUpload(
-  props: ResourceUploaderProps & {
-    buttonProps?: React.ComponentProps<typeof Button>
-  }
+	props: ResourceUploaderProps & {
+		buttonProps?: React.ComponentProps<typeof Button>;
+	},
 ) {
-  const [open, setOpen] = useState(false)
+	const [open, setOpen] = useState(false);
 
-  return (
-    <>
-      <Button
-        disabled={props.disabled}
-        {...props.buttonProps}
-        type='button'
-        onClick={() => setOpen(true)}
-        className={cn('border', props.buttonProps?.className)}
-      >
-        <PiUploadSimple className='mr-2' />
-        Upload files
-      </Button>
+	return (
+		<>
+			<Button
+				disabled={props.disabled}
+				{...props.buttonProps}
+				type="button"
+				onClick={() => setOpen(true)}
+				className={cn("border", props.buttonProps?.className)}
+			>
+				<PiUploadSimple className="mr-2" />
+				Upload files
+			</Button>
 
-      <ResourceUploadDialog open={open} onOpenChange={setOpen} {...props} />
-    </>
-  )
+			<ResourceUploadDialog open={open} onOpenChange={setOpen} {...props} />
+		</>
+	);
 }
 
 function LibraryTabContent(props: { onSelect: (resource: Resource) => void }) {
-  const [search, setSearch] = useState('')
-  const debouncedSearch = useDebouncedValue(search, 500)
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebouncedValue(search, 500);
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
-    mediaInfiniteQueryOptions({ search: debouncedSearch })
-  )
+	const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+		useInfiniteQuery(mediaInfiniteQueryOptions({ search: debouncedSearch }));
 
-  const resources = data?.pages.flatMap((page) => page.data) ?? []
+	const resources = data?.pages.flatMap((page) => page.items) ?? [];
 
-  return (
-    <div className='space-y-4 h-full flex flex-col'>
-      <Input
-        type='search'
-        value={search}
-        placeholder='Search resources...'
-        onChange={(e) => setSearch(e.target.value)}
-        before={<PiMagnifyingGlass className='ml-3 text-muted-foreground' />}
-      />
+	return (
+		<div className="space-y-4 h-full flex flex-col">
+			<Input
+				type="search"
+				value={search}
+				placeholder="Search resources..."
+				onChange={(e) => setSearch(e.target.value)}
+				before={<PiMagnifyingGlass className="ml-3 text-muted-foreground" />}
+			/>
 
-      <div className='overflow-y-auto flex-1'>
-        {isLoading ? (
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-            {Array.from({ length: 8 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-              <Skeleton key={i} className='aspect-square rounded-lg' />
-            ))}
-          </div>
-        ) : resources.length === 0 ? (
-          <div className='h-full flex flex-col items-center justify-center text-center p-4'>
-            <PiFolder className='w-12 h-12 text-muted-foreground/40' />
-            <h3 className='mt-4 text-sm font-bold'>No resources found</h3>
-            <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
-              {search ? 'Try a different search term' : 'Upload some resources to get started'}
-            </p>
-          </div>
-        ) : (
-          <div className='space-y-4'>
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-              {resources.map((resource) => (
-                <Card
-                  key={resource.id}
-                  className='cursor-pointer hover:border-primary transition-colors'
-                  onClick={() => props.onSelect(resource)}
-                >
-                  <ResourcePreview
-                    resource={resource}
-                    className='w-full aspect-square'
-                    hideActions
-                  />
-                </Card>
-              ))}
-            </div>
+			<div className="overflow-y-auto flex-1">
+				{isLoading ? (
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+						{Array.from({ length: 8 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+							<Skeleton key={i} className="aspect-square rounded-lg" />
+						))}
+					</div>
+				) : resources.length === 0 ? (
+					<div className="h-full flex flex-col items-center justify-center text-center p-4">
+						<PiFolder className="w-12 h-12 text-muted-foreground/40" />
+						<h3 className="mt-4 text-sm font-bold">No resources found</h3>
+						<p className="mt-2 text-xs text-muted-foreground max-w-xs">
+							{search
+								? "Try a different search term"
+								: "Upload some resources to get started"}
+						</p>
+					</div>
+				) : (
+					<div className="space-y-4">
+						<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+							{resources.map((resource) => (
+								<Card
+									key={resource.id}
+									className="cursor-pointer hover:border-primary transition-colors"
+									onClick={() => props.onSelect(resource)}
+								>
+									<ResourcePreview
+										resource={resource}
+										className="w-full aspect-square"
+										hideActions
+									/>
+								</Card>
+							))}
+						</div>
 
-            {hasNextPage && (
-              <div className='flex justify-center py-4'>
-                <Button
-                  variant='outline'
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                  size='sm'
-                >
-                  {isFetchingNextPage ? 'Loading...' : 'Load More'}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
+						{hasNextPage && (
+							<div className="flex justify-center py-4">
+								<Button
+									variant="outline"
+									onClick={() => fetchNextPage()}
+									disabled={isFetchingNextPage}
+									size="sm"
+								>
+									{isFetchingNextPage ? "Loading..." : "Load More"}
+								</Button>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }

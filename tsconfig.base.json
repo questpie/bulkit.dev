@@ -1,41 +1,41 @@
 {
-  "compilerOptions": {
-    // Enable latest features
-    "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
+	"compilerOptions": {
+		// Enable latest features
+		"lib": ["ESNext", "DOM"],
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleDetection": "force",
+		"jsx": "react-jsx",
+		"allowJs": true,
 
-    // Bundler mode
-    "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
+		// Bundler mode
+		"moduleResolution": "bundler",
+		"verbatimModuleSyntax": true,
 
-    // Best practices
-    "strict": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
+		// Best practices
+		"strict": true,
+		"skipLibCheck": true,
+		"strictNullChecks": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUncheckedIndexedAccess": true,
 
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
+		// Some stricter flags (disabled by default)
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false,
 
-    // Here you should add paths to all packages
-    "paths": {
-      "@bulkit/api/*": ["./apps/api/src/*"],
-      "@bulkit/shared/*": ["./packages/shared/src/*"],
-      "@bulkit/translations/*": ["./packages/translations/src/*"],
-      "@bulkit/mail/*": ["./packages/mail/src/*"],
-      "@bulkit/jobs/*": ["./packages/jobs/src/*"],
-      "@bulkit/redis/*": ["./packages/redis/src/*"],
-      "@bulkit/app/*": ["./apps/app/src/*"],
-      "@bulkit/seed/*": ["./packages/seed/src/*"],
-      "@bulkit/ui/*": ["./packages/ui/src/*"],
-      "@bulkit/transactional/*": ["./packages/transactional/src/*"]
-    }
-  }
+		// Here you should add paths to all packages
+		"paths": {
+			"@bulkit/api/*": ["./apps/api/src/*"],
+			"@bulkit/shared/*": ["./packages/shared/src/*"],
+			"@bulkit/translations/*": ["./packages/translations/src/*"],
+			"@bulkit/mail/*": ["./packages/mail/src/*"],
+			"@bulkit/jobs/*": ["./packages/jobs/src/*"],
+			"@bulkit/redis/*": ["./packages/redis/src/*"],
+			"@bulkit/app/*": ["./apps/app/src/*"],
+			"@bulkit/seed/*": ["./packages/seed/src/*"],
+			"@bulkit/ui/*": ["./packages/ui/src/*"],
+			"@bulkit/transactional/*": ["./packages/transactional/src/*"]
+		}
+	}
 }

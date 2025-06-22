@@ -1,19 +1,21 @@
 {
-  "name": "@bulkit/jobs",
-  "module": "src/index.ts",
-  "version": "0.1.0",
-  "files": ["src"],
-  "type": "module",
-  "private": true,
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.36",
-    "@bulkit/shared": "workspace:*",
-    "bullmq": "^5.56.0"
-  }
+	"name": "@bulkit/jobs",
+	"module": "src/index.ts",
+	"version": "0.1.0",
+	"files": [
+		"src"
+	],
+	"type": "module",
+	"private": true,
+	"devDependencies": {
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@sinclair/typebox": "^0.34.34",
+		"@bulkit/shared": "workspace:*",
+		"bullmq": "^5.56.0"
+	}
 }

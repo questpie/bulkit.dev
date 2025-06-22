@@ -1,188 +1,106 @@
-import { t, type Static } from 'elysia'
-import {
-  KNOWLEDGE_STATUS,
-  KNOWLEDGE_TEMPLATE_TYPE,
-  KNOWLEDGE_VERSION_CHANGE_TYPE,
-  KNOWLEDGE_REFERENCE_TYPE,
-} from '@bulkit/shared/constants/db.constants'
+import { MentionSchema } from "@bulkit/shared/modules/mentions/mentions.schemas";
+import { Nullish, StringLiteralEnum } from "@bulkit/shared/schemas/misc";
+import { type Static, Type } from "@sinclair/typebox";
 
-// Base knowledge mention schema (similar to comment mentions)
-export const KnowledgeMentionSchema = t.Object({
-  type: t.Union([
-    t.Literal('user'),
-    t.Literal('post'),
-    t.Literal('task'),
-    t.Literal('knowledge'),
-    t.Literal('media'),
-  ]),
-  id: t.String(),
-  name: t.String(),
-  startIndex: t.Number(),
-  endIndex: t.Number(),
-})
+export const KNOWLEDGE_STATUS = ["draft", "published", "archived"] as const;
+export type KnowledgeStatus = (typeof KNOWLEDGE_STATUS)[number];
 
-// Knowledge metadata schema
-export const KnowledgeMetadataSchema = t.Object({
-  tags: t.Optional(t.Array(t.String())),
-  category: t.Optional(t.String()),
-  sourceUrl: t.Optional(t.String()),
-  extractedData: t.Optional(t.Record(t.String(), t.Any())),
-  summary: t.Optional(t.String()),
-  keyPoints: t.Optional(t.Array(t.String())),
-  relatedTopics: t.Optional(t.Array(t.String())),
-})
+// User reference schema
+export const UserReferenceSchema = Type.Object({
+	id: Type.String(),
+	displayName: Type.String(),
+	email: Type.String(),
+});
+
+// Base knowledge schema
+export const KnowledgeSchema = Type.Object({
+	id: Type.String(),
+	title: Type.String(),
+	content: Type.String(),
+	excerpt: Nullish(Type.String()),
+	status: StringLiteralEnum(KNOWLEDGE_STATUS),
+	mentions: Type.Array(MentionSchema),
+	organizationId: Type.String(),
+	createdByUserId: Type.String(),
+	lastEditedByUserId: Nullish(Type.String()),
+	createdAt: Type.String(),
+	updatedAt: Type.String(),
+	// Folder fields
+	folderId: Nullish(Type.String()),
+	folderOrder: Type.Number(),
+	addedToFolderAt: Nullish(Type.String()),
+	addedToFolderByUserId: Nullish(Type.String()),
+});
+
+// Knowledge template schema - just uses name, no template types
+export const KnowledgeTemplateSchema = Type.Object({
+	id: Type.String(),
+	name: Type.String(),
+	description: Type.Optional(Type.String()),
+	contentTemplate: Type.String(),
+});
 
 // Create knowledge document schema
-export const CreateKnowledgeSchema = t.Object({
-  title: t.String({ minLength: 1, maxLength: 255 }),
-  content: t.String({ minLength: 1 }),
-  excerpt: t.Optional(t.String({ maxLength: 500 })),
-  templateType: t.Optional(t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type)))),
-  status: t.Optional(t.Union(KNOWLEDGE_STATUS.map((status) => t.Literal(status)))),
-  mentions: t.Optional(t.Array(KnowledgeMentionSchema)),
-  metadata: t.Optional(KnowledgeMetadataSchema),
-})
+export const CreateKnowledgeSchema = Type.Object({
+	title: Type.String({ minLength: 1, maxLength: 255 }),
+	content: Type.String({ minLength: 1 }),
+	excerpt: Type.Optional(Type.String({ maxLength: 500 })),
+	status: Type.Optional(StringLiteralEnum(KNOWLEDGE_STATUS)),
+	mentions: Type.Optional(Type.Array(MentionSchema)),
+});
+
+// Service create knowledge schema (includes organization and user context)
+export const ServiceCreateKnowledgeSchema = Type.Composite([
+	CreateKnowledgeSchema,
+	Type.Object({
+		organizationId: Type.String(),
+		userId: Type.String(),
+	}),
+]);
 
 // Update knowledge document schema
-export const UpdateKnowledgeSchema = t.Object({
-  title: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
-  content: t.Optional(t.String({ minLength: 1 })),
-  excerpt: t.Optional(t.String({ maxLength: 500 })),
-  templateType: t.Optional(t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type)))),
-  status: t.Optional(t.Union(KNOWLEDGE_STATUS.map((status) => t.Literal(status)))),
-  mentions: t.Optional(t.Array(KnowledgeMentionSchema)),
-  metadata: t.Optional(KnowledgeMetadataSchema),
-  changeDescription: t.Optional(t.String({ maxLength: 500 })),
-})
+export const UpdateKnowledgeSchema = Type.Object({
+	title: Type.Optional(Type.String({ minLength: 1, maxLength: 255 })),
+	content: Type.Optional(Type.String({ minLength: 1 })),
+	excerpt: Type.Optional(Type.String({ maxLength: 500 })),
+	status: Type.Optional(StringLiteralEnum(KNOWLEDGE_STATUS)),
+	mentions: Type.Optional(Type.Array(MentionSchema)),
+});
+
+// Service update knowledge schema (includes id and context)
+export const ServiceUpdateKnowledgeSchema = Type.Composite([
+	UpdateKnowledgeSchema,
+	Type.Object({
+		knowledgeId: Type.String(),
+		organizationId: Type.String(),
+		userId: Type.String(),
+	}),
+]);
 
 // Knowledge list query schema
-export const KnowledgeListQuerySchema = t.Object({
-  page: t.Optional(t.Number({ minimum: 1 })),
-  limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
-  search: t.Optional(t.String()),
-  status: t.Optional(t.Union(KNOWLEDGE_STATUS.map((status) => t.Literal(status)))),
-  templateType: t.Optional(t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type)))),
-  createdBy: t.Optional(t.String()),
-  tags: t.Optional(t.Array(t.String())),
-  sortBy: t.Optional(
-    t.Union([
-      t.Literal('title'),
-      t.Literal('createdAt'),
-      t.Literal('updatedAt'),
-      t.Literal('viewCount'),
-    ])
-  ),
-  sortOrder: t.Optional(t.Union([t.Literal('asc'), t.Literal('desc')])),
-})
+export const KnowledgeListQuerySchema = Type.Object({
+	page: Type.Optional(Type.Number({ minimum: 1 })),
+	limit: Type.Optional(Type.Number({ minimum: 1, maximum: 100 })),
+	search: Type.Optional(Type.String()),
+	status: Type.Optional(StringLiteralEnum(KNOWLEDGE_STATUS)),
+	createdBy: Type.Optional(Type.String()),
+	tags: Type.Optional(Type.Array(Type.String())),
+	sortBy: Type.Optional(StringLiteralEnum(["title", "createdAt", "updatedAt"])),
+	sortOrder: Type.Optional(StringLiteralEnum(["asc", "desc"])),
+});
 
-// Knowledge template schema
-export const CreateKnowledgeTemplateSchema = t.Object({
-  name: t.String({ minLength: 1, maxLength: 255 }),
-  description: t.Optional(t.String({ maxLength: 500 })),
-  templateType: t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type))),
-  contentTemplate: t.String({ minLength: 1 }),
-  metadataTemplate: t.Optional(KnowledgeMetadataSchema),
-  isPublic: t.Optional(t.Boolean()),
-})
-
-export const UpdateKnowledgeTemplateSchema = t.Object({
-  name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
-  description: t.Optional(t.String({ maxLength: 500 })),
-  templateType: t.Optional(t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type)))),
-  contentTemplate: t.Optional(t.String({ minLength: 1 })),
-  metadataTemplate: t.Optional(KnowledgeMetadataSchema),
-  isPublic: t.Optional(t.Boolean()),
-})
-
-// Knowledge version schema
-export const KnowledgeVersionSchema = t.Object({
-  id: t.String(),
-  knowledgeId: t.String(),
-  version: t.Number(),
-  title: t.String(),
-  content: t.String(),
-  excerpt: t.Optional(t.String()),
-  templateType: t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type))),
-  status: t.Union(KNOWLEDGE_STATUS.map((status) => t.Literal(status))),
-  changeType: t.Union(KNOWLEDGE_VERSION_CHANGE_TYPE.map((type) => t.Literal(type))),
-  changeDescription: t.Optional(t.String()),
-  changedByUserId: t.String(),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-})
-
-// Knowledge reference schema
-export const CreateKnowledgeReferenceSchema = t.Object({
-  referencedEntityId: t.String(),
-  referencedEntityType: t.String(),
-  referenceType: t.Union(KNOWLEDGE_REFERENCE_TYPE.map((type) => t.Literal(type))),
-  contextSnippet: t.Optional(t.String({ maxLength: 300 })),
-})
-
-// Knowledge search result schema
-export const KnowledgeSearchResultSchema = t.Object({
-  id: t.String(),
-  title: t.String(),
-  excerpt: t.Optional(t.String()),
-  templateType: t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type))),
-  status: t.Union(KNOWLEDGE_STATUS.map((status) => t.Literal(status))),
-  createdAt: t.String(),
-  updatedAt: t.String(),
-  viewCount: t.Number(),
-  relevanceScore: t.Optional(t.Number()), // For search ranking
-  matchSnippets: t.Optional(t.Array(t.String())), // Highlighted text matches
-})
-
-// Web scraping request schema
-export const WebScrapingRequestSchema = t.Object({
-  url: t.String({ format: 'uri' }),
-  title: t.Optional(t.String({ maxLength: 255 })),
-  extractContent: t.Optional(t.Boolean()), // Whether to extract main content
-  extractMetadata: t.Optional(t.Boolean()), // Whether to extract meta tags, etc.
-  templateType: t.Optional(t.Union(KNOWLEDGE_TEMPLATE_TYPE.map((type) => t.Literal(type)))),
-  category: t.Optional(t.String()),
-  tags: t.Optional(t.Array(t.String())),
-})
-
-// Knowledge analytics schema
-export const KnowledgeAnalyticsSchema = t.Object({
-  totalDocuments: t.Number(),
-  documentsByStatus: t.Record(t.String(), t.Number()),
-  documentsByTemplate: t.Record(t.String(), t.Number()),
-  mostViewedDocuments: t.Array(
-    t.Object({
-      id: t.String(),
-      title: t.String(),
-      viewCount: t.Number(),
-    })
-  ),
-  recentActivity: t.Array(
-    t.Object({
-      type: t.String(), // 'created', 'updated', 'viewed'
-      documentId: t.String(),
-      documentTitle: t.String(),
-      userId: t.String(),
-      timestamp: t.String(),
-    })
-  ),
-  popularTags: t.Array(
-    t.Object({
-      tag: t.String(),
-      count: t.Number(),
-    })
-  ),
-})
+// Parameter schemas
 
 // Type exports
-export type KnowledgeMention = Static<typeof KnowledgeMentionSchema>
-export type KnowledgeMetadata = Static<typeof KnowledgeMetadataSchema>
-export type CreateKnowledge = Static<typeof CreateKnowledgeSchema>
-export type UpdateKnowledge = Static<typeof UpdateKnowledgeSchema>
-export type KnowledgeListQuery = Static<typeof KnowledgeListQuerySchema>
-export type CreateKnowledgeTemplate = Static<typeof CreateKnowledgeTemplateSchema>
-export type UpdateKnowledgeTemplate = Static<typeof UpdateKnowledgeTemplateSchema>
-export type KnowledgeVersion = Static<typeof KnowledgeVersionSchema>
-export type CreateKnowledgeReference = Static<typeof CreateKnowledgeReferenceSchema>
-export type KnowledgeSearchResult = Static<typeof KnowledgeSearchResultSchema>
-export type WebScrapingRequest = Static<typeof WebScrapingRequestSchema>
-export type KnowledgeAnalytics = Static<typeof KnowledgeAnalyticsSchema>
+export type Knowledge = Static<typeof KnowledgeSchema>;
+export type KnowledgeTemplate = Static<typeof KnowledgeTemplateSchema>;
+export type CreateKnowledge = Static<typeof CreateKnowledgeSchema>;
+export type ServiceCreateKnowledge = Static<
+	typeof ServiceCreateKnowledgeSchema
+>;
+export type UpdateKnowledge = Static<typeof UpdateKnowledgeSchema>;
+export type ServiceUpdateKnowledge = Static<
+	typeof ServiceUpdateKnowledgeSchema
+>;
+export type KnowledgeListQuery = Static<typeof KnowledgeListQuerySchema>;
+export type UserReference = Static<typeof UserReferenceSchema>;

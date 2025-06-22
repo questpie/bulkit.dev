@@ -270,7 +270,7 @@ export function postsInfiniteQueryOptions(opts: {
   return infiniteQueryOptions({
     queryKey: [POSTS_QUERY_KEY, 'infinite'],
     queryFn: async ({ pageParam }) => {
-      const res = await apiClient.posts.index.get({
+      const res = await apiClient.posts.get({
         query: { limit: 25, cursor: pageParam ?? 0 },
       })
       if (res.error) throw res.error
@@ -316,7 +316,7 @@ export function PostFormProvider(props: {
   const debouncedValues = useDebouncedValue(values, 500)
 
   const updateMutation = useMutation({
-    mutationFn: apiClient.posts.index.put,
+    mutationFn: apiClient.posts.put,
     onSuccess: (res) => {
       if (res.error?.status === 400 && res.error.value.data.errors) {
         setPostValidationErrors(form, res.error.value.data.errors)
@@ -451,7 +451,7 @@ export function PostsTable(props: {
 // apps/app/src/app/(main)/posts/page.tsx - Server Component
 export default async function PostsPage() {
   // Server-side data fetching
-  const initialPosts = await apiServer.posts.index.get({
+  const initialPosts = await apiServer.posts.get({
     query: { limit: 25, cursor: 0 },
   })
 
