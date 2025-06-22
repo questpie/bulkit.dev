@@ -13,6 +13,6 @@
     "ioredis": "^5.4.1"
   },
   "dependencies": {
-    "lru-cache": "^11.0.2"
+    "lru-cache": "^11.1.0"
   }
 }
