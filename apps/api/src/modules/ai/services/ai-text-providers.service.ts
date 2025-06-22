@@ -1,10 +1,10 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { aiTextProvidersTable } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { AICapability } from '@bulkit/shared/modules/admin/schemas/ai-providers.schemas'
 import { and, arrayContains, eq } from 'drizzle-orm'
 
-export class AIProvidersService {
+export class AITextProvidersService {
   async getFirstMatchingProvider(db: TransactionLike, capabilities: AICapability[]) {
     for (const capability of capabilities) {
       const provider = await db.query.aiTextProvidersTable.findFirst({
@@ -51,6 +51,6 @@ export class AIProvidersService {
   }
 }
 
-export const injectAIProvidersService = iocRegister('aiProvidersService', () => {
-  return new AIProvidersService()
+export const injectAITextProvidersService = ioc.register('aiTextProvidersService', () => {
+  return new AITextProvidersService()
 })

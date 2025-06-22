@@ -32,3 +32,17 @@ export function formatCurrency(cents: number, currency: string, locale?: string)
     roundTo(cents / 100, 2)
   )
 }
+
+export function slugify(str: string): string {
+  return (
+    str
+      .toLowerCase()
+      .trim()
+      .normalize('NFD') // Convert accented characters to base form
+      // biome-ignore lint/suspicious/noMisleadingCharacterClass: <explanation>
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/[^a-z0-9\s-]/g, '') // Remove non-alphanumeric chars except spaces and hyphens
+      .replace(/[\s_]+/g, '-') // Replace spaces and underscores with single hyphen
+      .replace(/^-+|-+$/g, '')
+  ) // Remove leading/trailing hyphens
+}

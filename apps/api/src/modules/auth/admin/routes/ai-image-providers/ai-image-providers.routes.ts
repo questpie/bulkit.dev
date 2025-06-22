@@ -2,6 +2,7 @@ import { injectApiKeyManager } from '@bulkit/api/common/api-key.manager'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { aiImageProvidersTable } from '@bulkit/api/db/db.schema'
+import { bindContainer } from '@bulkit/api/ioc'
 import { adminMiddleware } from '@bulkit/api/modules/auth/admin/admin.middleware'
 import {
   AddAIImageProviderSchema,
@@ -15,8 +16,7 @@ import { HttpError } from 'elysia-http-error'
 
 export const aiImageProvidersRoutes = new Elysia({ prefix: '/ai-image-providers' })
   .use(adminMiddleware)
-  .use(injectDatabase)
-  .use(injectApiKeyManager)
+  .use(bindContainer([injectDatabase, injectApiKeyManager]))
   .get(
     '/',
     async ({ db }) => {
@@ -47,8 +47,6 @@ export const aiImageProvidersRoutes = new Elysia({ prefix: '/ai-image-providers'
           capabilities: body.capabilities,
           isActive: body.isActive,
           costPerImage: body.costPerImage,
-          inputMapping: body.inputMapping,
-          defaultInput: body.defaultInput,
           //   outputMapping: body.outputMapping,
         })
         .returning({
@@ -60,8 +58,6 @@ export const aiImageProvidersRoutes = new Elysia({ prefix: '/ai-image-providers'
           capabilities: aiImageProvidersTable.capabilities,
           isActive: aiImageProvidersTable.isActive,
           costPerImage: aiImageProvidersTable.costPerImage,
-          inputMapping: aiImageProvidersTable.inputMapping,
-          defaultInput: aiImageProvidersTable.defaultInput,
           //   outputMapping: aiImageProvidersTable.outputMapping,
         })
         .then((r) => r[0]!)
@@ -83,8 +79,6 @@ export const aiImageProvidersRoutes = new Elysia({ prefix: '/ai-image-providers'
         capabilities: body.capabilities,
         isActive: body.isActive,
         costPerImage: body.costPerImage,
-        inputMapping: body.inputMapping,
-        defaultInput: body.defaultInput,
       }
 
       if (body.apiKey) {
@@ -104,8 +98,6 @@ export const aiImageProvidersRoutes = new Elysia({ prefix: '/ai-image-providers'
           capabilities: aiImageProvidersTable.capabilities,
           isActive: aiImageProvidersTable.isActive,
           costPerImage: aiImageProvidersTable.costPerImage,
-          defaultInput: aiImageProvidersTable.defaultInput,
-          inputMapping: aiImageProvidersTable.inputMapping,
         })
         .then((r) => r[0])
 

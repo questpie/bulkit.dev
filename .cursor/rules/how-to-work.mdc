@@ -25,9 +25,7 @@ This is a TypeScript monorepo using Bun as package manager with the following st
 - Database schemas live in `apps/api/src/db/schema/`
 - Each module has its own schema file (e.g., `posts.table.ts`, `users.table.ts`)
 - Export schemas from `apps/api/src/db/db.schema.ts`
-- Migrations are auto-generated in `apps/api/src/db/migrations/`
-- Use `bun db:generate` to create migrations
-- Use `bun db:migrate` to run migrations
+- Don't generate migrations, we are syncing schema to db locally with push command, migrations are always created by the user
 
 ## New Feature Development Pattern
 
@@ -552,3 +550,6 @@ export const postsRoutes = new Elysia()
     body: PostSchema,
   })
 ```
+
+APi client is located in [api.client.ts](mdc:apps/app/src/api/api.client.ts) for client components and [api.server.ts](mdc:apps/app/src/api/api.server.ts) for server components
+their types are auto inferred from elysia routes

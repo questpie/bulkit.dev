@@ -24,6 +24,7 @@ import { channelsTable } from './channels.table'
 import { commentsTable } from './comments.table'
 import { organizationsTable } from './organizations.table'
 import { resourcesTable } from './resources.table'
+import { folderableCols, folderableIndexes } from './folders.table'
 
 // Modified Posts table
 export const postsTable = pgTable(
@@ -45,8 +46,9 @@ export const postsTable = pgTable(
 
     // workflowId: text('workflow_id').references(() => workflowsTable.id),
     ...timestampCols(),
+    ...folderableCols(),
   },
-  (table) => [index().on(table.organizationId), index().on(table.type)]
+  (table) => [index().on(table.organizationId), index().on(table.type), ...folderableIndexes(table)]
 )
 
 export type SelectPost = typeof postsTable.$inferSelect

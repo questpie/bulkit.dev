@@ -1,6 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { creditTransactionsTable, plansTable, subscriptionsTable } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, eq, gt, sql } from 'drizzle-orm'
@@ -13,7 +13,7 @@ export const injectAllocateMonthlyCreditsJob = iocJobRegister('allocateMonthlyCr
     pattern: '*/1 * * * *',
   },
   handler: async (job) => {
-    const { db } = iocResolve(ioc.use(injectDatabase))
+    const { db } = ioc.resolve([injectDatabase])
 
     await job.log('Starting monthly credits allocation')
 

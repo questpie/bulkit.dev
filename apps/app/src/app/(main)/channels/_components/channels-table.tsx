@@ -39,7 +39,7 @@ export function ChannelsTable(props: ChannelsTableProps) {
     },
   })
 
-  const allChannels = channelsQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
+  const allChannels = channelsQuery.data?.pages.flatMap((page) => page.items ?? []) ?? []
 
   return (
     <DataTable

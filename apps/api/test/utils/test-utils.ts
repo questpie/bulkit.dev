@@ -30,11 +30,12 @@ export async function setupTestApp(options: SetupTestDependenciesOptions = {}) {
   await RedisManager.enableMock()
 
   // Setup IoC
-  ioc
-    .use(db.injectDatabase)
-    .use(injectMockDrive)
-    .use(injectMockAuth(options.mockUser))
-    .use(injectMockOrganization(options.mockOrganization))
+  ioc.resolve([
+    db.injectDatabase,
+    injectMockDrive,
+    injectMockAuth(options.mockUser),
+    injectMockOrganization(options.mockOrganization),
+  ])
 
   const client = treaty(api)
   return {

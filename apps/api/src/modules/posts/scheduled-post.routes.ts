@@ -1,12 +1,13 @@
-import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { coalesce } from '@bulkit/api/db/db-utils'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { channelsTable, postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
+import { bindContainer } from '@bulkit/api/ioc'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPostService } from '@bulkit/api/modules/posts/services/posts.service'
 import { PLATFORMS, SCHEDULED_POST_STATUS } from '@bulkit/shared/constants/db.constants'
 import { ScheduledPostSchema } from '@bulkit/shared/modules/posts/scheduled-posts.schemas'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { StringLiteralEnum, PaginationQuerySchema } from '@bulkit/shared/schemas/misc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, desc, eq, gte, isNotNull, lte } from 'drizzle-orm'
 import Elysia, { t } from 'elysia'
@@ -15,8 +16,7 @@ export const scheduledPostsRoutes = new Elysia({
   prefix: '/scheduled-posts',
   detail: { tags: ['Scheduled Posts'] },
 })
-  .use(injectPostService)
-  .use(injectChannelService)
+  .use(bindContainer([injectPostService, injectChannelService, injectDatabase]))
   .use(organizationMiddleware)
   .get(
     '/',
@@ -83,7 +83,7 @@ export const scheduledPostsRoutes = new Elysia({
     },
     {
       query: t.Composite([
-        PaginationSchema,
+        PaginationQuerySchema,
         t.Object({
           platform: t.Optional(StringLiteralEnum(PLATFORMS)),
           status: t.Optional(StringLiteralEnum(SCHEDULED_POST_STATUS)),

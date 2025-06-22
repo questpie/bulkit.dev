@@ -1,5 +1,5 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 
 export class AppSettingsService {
   /**
@@ -22,6 +22,6 @@ export class AppSettingsService {
   }
 }
 
-export const injectAppSettingsService = iocRegister('appSettingsService', () => {
+export const injectAppSettingsService = ioc.register('appSettingsService', () => {
   return new AppSettingsService()
 })

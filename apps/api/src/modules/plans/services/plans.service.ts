@@ -1,7 +1,7 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { plansTable, subscriptionsTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import {
   injectLemonSqueezy,
   type LemonSqueezyService,
@@ -18,7 +18,7 @@ export class PlansService {
       throw HttpError.BadRequest('Lemon Squeezy is not available in self-hosted version')
     }
 
-    return iocResolve(ioc.use(injectLemonSqueezy)).lemonSqueezy
+    return ioc.resolve([injectLemonSqueezy]).lemonSqueezy
   }
 
   async getAvailablePlans(db: TransactionLike): Promise<AvailablePlan[]> {
@@ -161,6 +161,4 @@ export class PlansService {
   }
 }
 
-export const injectPlanService = iocRegister('planService', () => {
-  return new PlansService()
-})
+export const injectPlanService = ioc.register('planService', () => new PlansService())

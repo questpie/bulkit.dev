@@ -7,11 +7,11 @@ import {
   type InsertChannel,
   type InsertSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type { OAuth1Provider } from '@bulkit/api/modules/channels/abstract/oauth/oauth1.provider'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
+import type { ChannelWithIntegration } from '@bulkit/shared/modules/channels/channels.schemas'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import type { InferContext } from 'elysia'
@@ -24,7 +24,7 @@ export class OAuth1Authenticator extends ChannelAuthenticator {
 
   constructor(private readonly oAuth1Provider: OAuth1Provider) {
     super()
-    const container = iocResolve(ioc.use(injectApiKeyManager))
+    const container = ioc.resolve([injectApiKeyManager])
     this.apiKeyService = container.apiKeyManager
   }
 

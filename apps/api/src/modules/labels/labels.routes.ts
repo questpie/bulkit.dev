@@ -1,17 +1,21 @@
-import { Elysia, t } from 'elysia'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { labelsService } from './services/labels.service'
+import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import {
-  LabelFiltersSchema,
+  LabelSchema,
   CreateLabelSchema,
   UpdateLabelSchema,
-  LabelSchema,
-  AddLabelsToResourceSchema,
-  RemoveLabelsFromResourceSchema,
-  BulkLabelOperationSchema,
-  CreateLabelCategorySchema,
-  LabelCategorySchema,
+  LabelsQuerySchema,
+  AttachLabelsSchema,
+  DetachLabelsSchema,
+  LabelWithUsageSchema,
 } from '@bulkit/shared/modules/labels/labels.schemas'
+import { PaginatedResponseSchema } from '@bulkit/shared/schemas/misc'
+import { LABEL_RESOURCE_TYPES } from '@bulkit/shared/constants/db.constants'
+import { injectLabelsService, LabelsService } from './services/labels.service'
+import { Elysia, t } from 'elysia'
+import { HttpError } from 'elysia-http-error'
+import { bindContainer } from '@bulkit/api/ioc'
 
 export const labelsRoutes = new Elysia({
   prefix: '/labels',
@@ -20,36 +24,36 @@ export const labelsRoutes = new Elysia({
   },
 })
   .use(organizationMiddleware)
+  .use(protectedMiddleware)
+  .use(bindContainer([injectDatabase, injectLabelsService]))
 
-  // Get all labels with filtering
+  // Get all labels
   .get(
     '/',
     async (ctx) => {
-      const { search, limit = 50, offset = 0 } = ctx.query
-
-      const result = await labelsService.list(ctx.db, {
+      return ctx.labelsService.getAll(ctx.db, {
         organizationId: ctx.organization!.id,
-        filters: { search },
-        limit,
-        offset,
+        query: ctx.query,
       })
-
-      return {
-        data: result.labels,
-        pagination: {
-          total: result.total,
-          limit,
-          offset,
-          hasMore: offset + limit < result.total,
-        },
-      }
     },
     {
-      query: t.Object({
-        search: t.Optional(t.String()),
-        limit: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),
-        offset: t.Optional(t.Integer({ minimum: 0 })),
-      }),
+      query: LabelsQuerySchema,
+      response: PaginatedResponseSchema(LabelSchema),
+    }
+  )
+
+  // Get labels with usage stats
+  .get(
+    '/with-usage',
+    async (ctx) => {
+      return ctx.labelsService.getAllWithUsage(ctx.db, {
+        organizationId: ctx.organization!.id,
+        query: ctx.query,
+      })
+    },
+    {
+      query: LabelsQuerySchema,
+      response: PaginatedResponseSchema(LabelWithUsageSchema),
     }
   )
 
@@ -57,26 +61,20 @@ export const labelsRoutes = new Elysia({
   .get(
     '/:id',
     async (ctx) => {
-      const label = await labelsService.getById(ctx.db, {
-        labelId: ctx.params.id,
+      const label = await ctx.labelsService.getById(ctx.db, {
+        id: ctx.params.id,
         organizationId: ctx.organization!.id,
       })
 
       if (!label) {
-        ctx.set.status = 404
-        return { error: 'Label not found' }
+        throw HttpError.NotFound('Label not found')
       }
 
       return label
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
-      response: {
-        200: LabelSchema,
-        404: t.Object({ error: t.String() }),
-      },
+      params: t.Object({ id: t.String() }),
+      response: LabelSchema,
     }
   )
 
@@ -84,41 +82,37 @@ export const labelsRoutes = new Elysia({
   .post(
     '/',
     async (ctx) => {
-      const label = await labelsService.create(ctx.db, {
-        ...ctx.body,
+      return ctx.labelsService.create(ctx.db, {
         organizationId: ctx.organization!.id,
+        data: ctx.body,
       })
-
-      return label
     },
     {
       body: CreateLabelSchema,
-      response: {
-        200: LabelSchema,
-      },
+      response: LabelSchema,
     }
   )
 
   // Update label
-  .put(
+  .patch(
     '/:id',
     async (ctx) => {
-      const label = await labelsService.update(ctx.db, {
-        ...ctx.body,
+      const label = await ctx.labelsService.update(ctx.db, {
         id: ctx.params.id,
         organizationId: ctx.organization!.id,
+        data: ctx.body,
       })
+
+      if (!label) {
+        throw HttpError.NotFound('Label not found')
+      }
 
       return label
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
+      params: t.Object({ id: t.String() }),
       body: UpdateLabelSchema,
-      response: {
-        200: LabelSchema,
-      },
+      response: LabelSchema,
     }
   )
 
@@ -126,176 +120,95 @@ export const labelsRoutes = new Elysia({
   .delete(
     '/:id',
     async (ctx) => {
-      // Check if label is in use
-      const usageCount = await labelsService.getUsageCount(ctx.db, {
-        labelId: ctx.params.id,
+      const deleted = await ctx.labelsService.delete(ctx.db, {
+        id: ctx.params.id,
+        organizationId: ctx.organization!.id,
       })
 
-      if (usageCount > 0) {
-        ctx.set.status = 400
-        return {
-          error: `Cannot delete label. It is currently used by ${usageCount} resource(s).`,
-          usageCount,
-        }
+      if (!deleted) {
+        throw HttpError.NotFound('Label not found')
       }
 
-      await labelsService.delete(ctx.db, {
-        labelId: ctx.params.id,
-        organizationId: ctx.organization!.id,
-      })
-
       return { success: true }
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      response: t.Object({ success: t.Boolean() }),
+    }
+  )
+
+  // Get labels for a resource
+  .get(
+    '/resource/:resourceType/:resourceId',
+    async (ctx) => {
+      return ctx.labelsService.getResourceLabels(ctx.db, {
+        organizationId: ctx.organization!.id,
+        resourceId: ctx.params.resourceId,
+        resourceType: ctx.params.resourceType,
+      })
     },
     {
       params: t.Object({
-        id: t.String(),
+        resourceType: t.Union(LABEL_RESOURCE_TYPES.map((type) => t.Literal(type))),
+        resourceId: t.String(),
       }),
-      response: {
-        200: t.Object({ success: t.Boolean() }),
-        400: t.Object({
-          error: t.String(),
-          usageCount: t.Number(),
-        }),
-      },
+      response: t.Array(LabelSchema),
     }
   )
 
-  // Get usage count for label (across all resource types or specific type)
-  .get(
-    '/:id/usage/count',
-    async (ctx) => {
-      const usageCount = await labelsService.getUsageCount(ctx.db, {
-        labelId: ctx.params.id,
-        resourceType: ctx.query.resourceType,
-      })
-
-      return { count: usageCount }
-    },
-    {
-      params: t.Object({
-        id: t.String(),
-      }),
-      query: t.Object({
-        resourceType: t.Optional(t.String()),
-      }),
-      response: {
-        200: t.Object({ count: t.Number() }),
-      },
-    }
-  )
-
-  // Add labels to resource
+  // Attach labels to a resource
   .post(
-    '/resources/add',
+    '/attach',
     async (ctx) => {
-      await labelsService.addLabelsToResource(ctx.db, {
-        ...ctx.body,
+      await ctx.labelsService.attachLabels(ctx.db, {
         organizationId: ctx.organization!.id,
+        data: ctx.body,
       })
 
       return { success: true }
     },
     {
-      body: AddLabelsToResourceSchema,
-      response: {
-        200: t.Object({ success: t.Boolean() }),
-      },
+      body: AttachLabelsSchema,
+      response: t.Object({ success: t.Boolean() }),
     }
   )
 
-  // Remove labels from resource
+  // Detach labels from a resource
   .post(
-    '/resources/remove',
+    '/detach',
     async (ctx) => {
-      await labelsService.removeLabelsFromResource(ctx.db, {
-        ...ctx.body,
+      await ctx.labelsService.detachLabels(ctx.db, {
         organizationId: ctx.organization!.id,
+        data: ctx.body,
       })
 
       return { success: true }
     },
     {
-      body: RemoveLabelsFromResourceSchema,
-      response: {
-        200: t.Object({ success: t.Boolean() }),
-      },
+      body: DetachLabelsSchema,
+      response: t.Object({ success: t.Boolean() }),
     }
   )
 
-  // Get labels for resources
-  .get(
-    '/resources',
+  // Replace all labels for a resource
+  .post(
+    '/replace',
     async (ctx) => {
-      const result = await labelsService.getResourceLabels(ctx.db, {
-        resourceId: ctx.query.resourceId,
-        resourceType: ctx.query.resourceType,
-        resourceIds: ctx.query.resourceIds,
+      await ctx.labelsService.replaceLabels(ctx.db, {
         organizationId: ctx.organization!.id,
+        resourceId: ctx.body.resourceId,
+        resourceType: ctx.body.resourceType,
+        labelIds: ctx.body.labelIds,
       })
 
-      return { data: result }
+      return { success: true }
     },
     {
-      query: t.Object({
-        resourceId: t.Optional(t.String()),
-        resourceType: t.Optional(t.String()),
-        resourceIds: t.Optional(t.Array(t.String())),
+      body: t.Object({
+        resourceId: t.String(),
+        resourceType: t.Union(LABEL_RESOURCE_TYPES.map((type) => t.Literal(type))),
+        labelIds: t.Array(t.String()),
       }),
-    }
-  )
-
-  // Bulk label operations
-  .post(
-    '/bulk',
-    async (ctx) => {
-      await labelsService.bulkLabelOperation(ctx.db, {
-        ...ctx.body,
-        organizationId: ctx.organization!.id,
-      })
-
-      return { success: true }
-    },
-    {
-      body: BulkLabelOperationSchema,
-      response: {
-        200: t.Object({ success: t.Boolean() }),
-      },
-    }
-  )
-
-  // Label categories
-  .get(
-    '/categories',
-    async (ctx) => {
-      const categories = await labelsService.getCategories(ctx.db, {
-        organizationId: ctx.organization!.id,
-      })
-
-      return { data: categories }
-    },
-    {
-      response: {
-        200: t.Object({
-          data: t.Array(LabelCategorySchema),
-        }),
-      },
-    }
-  )
-
-  .post(
-    '/categories',
-    async (ctx) => {
-      const category = await labelsService.createCategory(ctx.db, {
-        ...ctx.body,
-        organizationId: ctx.organization!.id,
-      })
-
-      return category
-    },
-    {
-      body: CreateLabelCategorySchema,
-      response: {
-        200: LabelCategorySchema,
-      },
+      response: t.Object({ success: t.Boolean() }),
     }
   )

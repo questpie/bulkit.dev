@@ -6,7 +6,7 @@ import {
   usersTable,
   type InsertUser,
 } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { and, eq } from 'drizzle-orm'
 import { HttpError } from 'elysia-http-error'
 import { createDate, isWithinExpirationDate, TimeSpan } from 'oslo'
@@ -140,6 +140,6 @@ class AuthService {
   // async deleteSuperAdmin(db: TransactionLike, userId: string) {...}
 }
 
-export const injectAuthService = iocRegister('authService', () => {
+export const injectAuthService = ioc.register('authService', () => {
   return new AuthService()
 })

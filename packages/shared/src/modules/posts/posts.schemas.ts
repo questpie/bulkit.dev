@@ -5,8 +5,10 @@ import {
   SCHEDULED_POST_STATUS,
   type PostType,
 } from '@bulkit/shared/constants/db.constants'
+import { ORDER_TYPE } from '@bulkit/shared/constants/misc.constants'
+import { POST_SORTABLE_FIELDS } from '@bulkit/shared/modules/posts/posts.constants'
 import { ResourceSchema } from '@bulkit/shared/modules/resources/resources.schemas'
-import { Nullable, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { MaybeArraySchema, Nullable, StringLiteralEnum } from '@bulkit/shared/schemas/misc'
 import { Type, type Static } from '@sinclair/typebox'
 
 export const PostMediaSchema = Type.Object({
@@ -142,6 +144,24 @@ export const PostListItemSchema = Type.Composite([
   }),
 ])
 
+export const PostGetAllQuerySchema = Type.Object({
+  limit: Type.Number(),
+  cursor: Type.Number(),
+  type: Type.Optional(MaybeArraySchema(StringLiteralEnum(POST_TYPE))),
+  status: Type.Optional(MaybeArraySchema(StringLiteralEnum(POST_STATUS))),
+  channelId: Type.Optional(MaybeArraySchema(Type.String())),
+  dateFrom: Type.Optional(Type.String()),
+  dateTo: Type.Optional(Type.String()),
+  sort: Type.Optional(
+    MaybeArraySchema(
+      Type.Object({
+        order: Type.Optional(StringLiteralEnum(ORDER_TYPE, { default: 'desc' })),
+        by: Type.Optional(StringLiteralEnum(POST_SORTABLE_FIELDS, { default: 'createdAt' })),
+      })
+    )
+  ),
+})
+
 export type RegularPost = Static<typeof RegularPostSchema>
 export type ReelPost = Static<typeof ReelPostSchema>
 export type ThreadPost = Static<typeof ThreadPostSchema>
@@ -154,3 +174,6 @@ export type PostWithType<T extends PostType> = Extract<Post, { type: T }>
 export type PostListItem = Static<typeof PostListItemSchema>
 
 export type PostMedia = Static<typeof PostMediaSchema>
+export type PostSortableField = (typeof POST_SORTABLE_FIELDS)[number]
+
+export type PostGetAllQuery = Static<typeof PostGetAllQuerySchema>

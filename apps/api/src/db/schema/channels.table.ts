@@ -23,7 +23,7 @@ export const socialMediaIntegrationsTable = pgTable(
     refreshToken: text('refresh_token'),
     tokenExpiry: timestamp('token_expiry', { mode: 'string', withTimezone: true }),
     scope: text('scope'),
-    additionalData: jsonb('additional_data').default(sql`'{}'::jsonb`),
+    additionalData: jsonb('additional_data').$type<Record<string, any>>().default({}).notNull(),
     organizationId: text('organization_id')
       .notNull()
       .references(() => organizationsTable.id, {

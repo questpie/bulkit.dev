@@ -1,4 +1,3 @@
-import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
@@ -14,6 +13,8 @@ import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 import { Type } from '@sinclair/typebox'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
+import { PaginationQuerySchema } from '@bulkit/shared/schemas/misc'
+import { bindContainer } from '@bulkit/api/ioc'
 
 export const resourceRoutes = new Elysia({
   prefix: '/resources',
@@ -32,12 +33,11 @@ export const resourceRoutes = new Elysia({
       },
     })
   )
-  .use(injectDatabase)
-  .use(injectResourcesService)
   .use(organizationMiddleware)
   .use(resourceStockRoutes)
   .use(resourceAIRoutes)
   .use(protectedMiddleware)
+  .use(bindContainer([injectDatabase, injectResourcesService]))
   .get(
     '/',
     async (ctx) => {
@@ -48,7 +48,7 @@ export const resourceRoutes = new Elysia({
     },
     {
       query: t.Composite([
-        PaginationSchema,
+        PaginationQuerySchema,
         t.Object({
           search: t.Optional(t.String()),
         }),

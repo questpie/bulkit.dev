@@ -1,35 +1,32 @@
-import { and, desc, eq, isNull, sql, count, or, type SQL } from 'drizzle-orm'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
-import {
-  tasksTable,
-  taskDependenciesTable,
-  taskCommentsTable,
-  taskActivityTable,
-  taskTimeEntriesTable,
-  type SelectTask,
-  type InsertTask,
-  type SelectTaskDependency,
-  type InsertTaskDependency,
-  type InsertTaskActivity,
-} from '@bulkit/api/db/schema/tasks.table'
-import { labelsService } from '@bulkit/api/modules/labels/services/labels.service'
 import { usersTable } from '@bulkit/api/db/schema/auth.table'
+import {
+  taskActivityTable,
+  taskCommentsTable,
+  taskDependenciesTable,
+  tasksTable,
+  taskTimeEntriesTable,
+  type InsertTaskActivity,
+  type SelectTaskDependency,
+} from '@bulkit/api/db/schema/tasks.table'
+import { and, count, desc, eq, isNull, or, sql, type SQL } from 'drizzle-orm'
 import { alias, type PgColumn } from 'drizzle-orm/pg-core'
 
 // Import shared types
+import { ioc } from '@bulkit/api/ioc'
+import {
+  injectLabelsService,
+  type LabelsService,
+} from '@bulkit/api/modules/labels/services/labels.service'
 import type {
-  TaskWithRelations,
   ServiceCreateTaskInput,
   ServiceUpdateTaskInput,
   TaskFilters,
-  TaskStats,
-  CreateDependencyInput,
-  ReorderTasksInput,
-  CreateTaskInput,
-  UpdateTaskInput,
   TaskListItem,
+  TaskStats,
+  TaskWithRelations,
+  DependencyType,
 } from '@bulkit/shared/modules/tasks/tasks.schemas'
-import type { DependencyType } from '@bulkit/shared/constants/db.constants'
 
 export type TaskSortOptions = {
   field: 'title' | 'status' | 'priority' | 'dueDate' | 'createdAt' | 'orderIndex'
@@ -37,6 +34,8 @@ export type TaskSortOptions = {
 }
 
 export class TasksService {
+  constructor(private readonly labelsService: LabelsService) {}
+
   async create(db: TransactionLike, input: ServiceCreateTaskInput): Promise<TaskWithRelations> {
     return db.transaction(async (trx) => {
       // Calculate order index for new task
@@ -63,10 +62,12 @@ export class TasksService {
 
       // Add labels if provided
       if (input.labelIds && input.labelIds.length > 0) {
-        await labelsService.addLabelsToResource(trx, {
-          resourceId: task.id,
-          resourceType: 'task',
-          labelIds: input.labelIds,
+        await this.labelsService.attachLabels(trx, {
+          data: {
+            labelIds: input.labelIds,
+            resourceType: 'task',
+            resourceId: task.id,
+          },
           organizationId: input.organizationId,
         })
       }
@@ -179,12 +180,12 @@ export class TasksService {
       .orderBy(tasksTable.orderIndex)
 
     // Get labels using the generic labels service
-    const labelsResult = await labelsService.getResourceLabels(db, {
+    const labelsResult = await this.labelsService.getResourceLabels(db, {
       resourceId: task.id,
       resourceType: 'task',
       organizationId: opts.organizationId,
     })
-    const labels = labelsResult.length > 0 ? labelsResult[0]!.labels : []
+    const labels = labelsResult.length > 0 ? labelsResult : []
 
     // Get comment count
     const commentCount = await db
@@ -374,12 +375,12 @@ export class TasksService {
           .then((res) => res[0]?.count || 0)
 
         // Get labels using the generic labels service
-        const labelsResult = await labelsService.getResourceLabels(db, {
+        const labelsResult = await this.labelsService.getResourceLabels(db, {
           resourceId: task.id,
           resourceType: 'task',
           organizationId: organizationId,
         })
-        const labels = labelsResult.length > 0 ? labelsResult[0]!.labels : []
+        const labels = labelsResult.length > 0 ? labelsResult : []
 
         return {
           ...task,
@@ -456,9 +457,8 @@ export class TasksService {
       // Update labels if provided
       if (input.labelIds !== undefined) {
         // Use bulk operation to replace all labels
-        await labelsService.bulkLabelOperation(trx, {
-          operation: 'replace',
-          resourceIds: [input.id],
+        await this.labelsService.replaceLabels(trx, {
+          resourceId: input.id,
           resourceType: 'task',
           labelIds: input.labelIds,
           organizationId: existingTask.organizationId,
@@ -728,4 +728,7 @@ export class TasksService {
   }
 }
 
-export const tasksService = new TasksService()
+export const injectTasksService = ioc.register(
+  'tasksService',
+  () => new TasksService(ioc.resolve([injectLabelsService]).labelsService)
+)

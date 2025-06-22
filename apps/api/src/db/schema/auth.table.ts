@@ -6,12 +6,15 @@ import { relations } from 'drizzle-orm'
 import { text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import { pgTable, jsonb } from 'drizzle-orm/pg-core'
 
+const USER_TYPES = ['user', 'ai'] as const
+
 export const usersTable = pgTable(
   'users',
   {
     id: primaryKeyCol(),
     email: text('email').notNull(),
     name: text('name').notNull(),
+    type: text('type', { enum: USER_TYPES }).default('user').notNull(),
     ...timestampCols(),
   },
   (table) => ({

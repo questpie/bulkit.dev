@@ -1,7 +1,8 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
-import { injectAIProvidersService } from '@bulkit/api/modules/ai/services/ai-providers.service'
-import { injectCompletionService } from '@bulkit/api/modules/ai/services/completion.service'
+import { bindContainer } from '@bulkit/api/ioc'
+import { injectAITextGenerationService } from '@bulkit/api/modules/ai/services/ai-text-generation.service'
+import { injectAITextProvidersService } from '@bulkit/api/modules/ai/services/ai-text-providers.service'
 import { injectCreditService } from '@bulkit/api/modules/credits/services/credit.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -21,9 +22,13 @@ export const aiRoutes = new Elysia({ prefix: '/ai', detail: { tags: ['AI'] } })
     })
   )
   .use(organizationMiddleware)
-  .use(injectCompletionService)
-  .use(injectCreditService)
-  .use(injectAIProvidersService)
+  .use(
+    bindContainer([
+      injectAITextGenerationService,
+      injectCreditService,
+      injectAITextProvidersService,
+    ])
+  )
   .post(
     '/improve',
     async (ctx) => {
@@ -34,7 +39,7 @@ export const aiRoutes = new Elysia({ prefix: '/ai', detail: { tags: ['AI'] } })
           throw HttpError.BadRequest('Text cannot be empty')
         }
 
-        const aiProviderMatch = await ctx.aiProvidersService.getFirstMatchingProvider(ctx.db, [
+        const aiProviderMatch = await ctx.aiTextProvidersService.getFirstMatchingProvider(ctx.db, [
           'general-purpose',
         ])
 
@@ -64,7 +69,7 @@ export const aiRoutes = new Elysia({ prefix: '/ai', detail: { tags: ['AI'] } })
           },
         ]
 
-        const result = await ctx.completionService.generateText(
+        const result = await ctx.aiTextGenerationService.generateText(
           {
             messages,
             temperature: 0.7,

@@ -3,7 +3,7 @@ import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { sql } from 'drizzle-orm'
 import path from 'node:path'
@@ -63,7 +63,7 @@ export function createDbClient(dbNameOverride?: string) {
     )
   }
 
-  const injectDatabase = iocRegister('db', () => getDbInstance())
+  const injectDatabase = ioc.register('db', () => getDbInstance())
 
   return {
     runMigrations,

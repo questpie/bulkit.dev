@@ -1,7 +1,5 @@
-import { Elysia, t } from 'elysia'
+import { Elysia } from 'elysia'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { tasksService } from './services/tasks.service'
-import { TASK_STATUS, TASK_PRIORITY, DEPENDENCY_TYPE } from '@bulkit/shared/constants/db.constants'
 import {
   TaskFiltersSchema,
   CreateTaskSchema,
@@ -10,13 +8,26 @@ import {
   CreateDependencySchema,
   TaskStatsSchema,
   TaskDependencySchema,
-  TaskSchema,
-  TaskListItemSchema,
+  TaskListResponseSchema,
+  TaskResponseSchema,
+  TasksSuccessResponseSchema,
+  TaskIdParamSchema,
+  DependencyIdParamSchema,
+  BulkUpdateTasksSchema,
+  BulkAssignTasksSchema,
+  BulkStatusUpdateSchema,
+  BulkDeleteTasksSchema,
+  TaskAssignmentSchema,
+  TaskStatusUpdateSchema,
+  BulkTasksResponseSchema,
+  SubtasksQuerySchema,
 } from '@bulkit/shared/modules/tasks/tasks.schemas'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import { injectTasksService } from '@bulkit/api/modules/tasks/services/tasks.service'
+import { bindContainer } from '@bulkit/api/ioc'
 
 export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .use(organizationMiddleware)
+  .use(bindContainer([injectTasksService]))
 
   // Get all tasks with filtering and pagination
   .get(
@@ -37,7 +48,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
         sortDirection = 'asc',
       } = ctx.query
 
-      const result = await tasksService.list(ctx.db, {
+      const result = await ctx.tasksService.list(ctx.db, {
         organizationId: ctx.organization!.id,
         filters: {
           status,
@@ -70,15 +81,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     {
       query: TaskFiltersSchema,
       response: {
-        200: t.Object({
-          data: t.Array(TaskListItemSchema),
-          pagination: t.Object({
-            total: t.Number(),
-            limit: t.Number(),
-            offset: t.Number(),
-            hasMore: t.Boolean(),
-          }),
-        }),
+        200: TaskListResponseSchema,
       },
     }
   )
@@ -87,7 +90,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .get(
     '/:id',
     async (ctx) => {
-      const task = await tasksService.getById(ctx.db, {
+      const task = await ctx.tasksService.getById(ctx.db, {
         taskId: ctx.params.id,
         organizationId: ctx.organization!.id,
       })
@@ -95,9 +98,10 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return { data: task }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
+      params: TaskIdParamSchema,
+      response: {
+        200: TaskResponseSchema,
+      },
     }
   )
 
@@ -105,7 +109,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .post(
     '/',
     async (ctx) => {
-      const task = await tasksService.create(ctx.db, {
+      const task = await ctx.tasksService.create(ctx.db, {
         ...ctx.body,
         organizationId: ctx.organization!.id,
         createdByUserId: ctx.auth.user.id,
@@ -115,6 +119,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     },
     {
       body: CreateTaskSchema,
+      response: {
+        200: TaskResponseSchema,
+      },
     }
   )
 
@@ -122,7 +129,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .put(
     '/:id',
     async (ctx) => {
-      const task = await tasksService.update(ctx.db, {
+      const task = await ctx.tasksService.update(ctx.db, {
         id: ctx.params.id,
         ...ctx.body,
         createdByUserId: ctx.auth.user.id, // For activity logging
@@ -131,10 +138,11 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return { data: task }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
+      params: TaskIdParamSchema,
       body: UpdateTaskSchema,
+      response: {
+        200: TaskResponseSchema,
+      },
     }
   )
 
@@ -142,7 +150,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .delete(
     '/:id',
     async (ctx) => {
-      await tasksService.delete(ctx.db, {
+      await ctx.tasksService.delete(ctx.db, {
         taskId: ctx.params.id,
         organizationId: ctx.organization!.id,
       })
@@ -150,9 +158,10 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return { success: true }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
+      params: TaskIdParamSchema,
+      response: {
+        200: TasksSuccessResponseSchema,
+      },
     }
   )
 
@@ -160,7 +169,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .get(
     '/stats',
     async (ctx) => {
-      const stats = await tasksService.getStats(ctx.db, {
+      const stats = await ctx.tasksService.getStats(ctx.db, {
         organizationId: ctx.organization!.id,
       })
 
@@ -177,7 +186,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .post(
     '/reorder',
     async (ctx) => {
-      await tasksService.reorderTasks(ctx.db, {
+      await ctx.tasksService.reorderTasks(ctx.db, {
         ...ctx.body,
         organizationId: ctx.organization!.id,
       })
@@ -187,9 +196,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     {
       body: ReorderTasksSchema,
       response: {
-        200: t.Object({
-          success: t.Boolean(),
-        }),
+        200: TasksSuccessResponseSchema,
       },
     }
   )
@@ -198,7 +205,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .post(
     '/dependencies',
     async (ctx) => {
-      const dependency = await tasksService.addDependency(ctx.db, {
+      const dependency = await ctx.tasksService.addDependency(ctx.db, {
         ...ctx.body,
         organizationId: ctx.organization!.id,
       })
@@ -216,7 +223,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .delete(
     '/dependencies/:id',
     async (ctx) => {
-      await tasksService.removeDependency(ctx.db, {
+      await ctx.tasksService.removeDependency(ctx.db, {
         dependencyId: ctx.params.id,
         organizationId: ctx.organization!.id,
       })
@@ -224,13 +231,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return { success: true }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
+      params: DependencyIdParamSchema,
       response: {
-        200: t.Object({
-          success: t.Boolean(),
-        }),
+        200: TasksSuccessResponseSchema,
       },
     }
   )
@@ -241,7 +244,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     async (ctx) => {
       const { limit = 50, offset = 0 } = ctx.query
 
-      const result = await tasksService.list(ctx.db, {
+      const result = await ctx.tasksService.list(ctx.db, {
         organizationId: ctx.organization!.id,
         filters: {
           parentTaskId: ctx.params.id,
@@ -265,13 +268,11 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
-      query: t.Object({
-        limit: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),
-        offset: t.Optional(t.Integer({ minimum: 0 })),
-      }),
+      params: TaskIdParamSchema,
+      query: SubtasksQuerySchema,
+      response: {
+        200: TaskListResponseSchema,
+      },
     }
   )
 
@@ -279,23 +280,19 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .post(
     '/:id/assign',
     async (ctx) => {
-      const task = await tasksService.update(ctx.db, {
+      const task = await ctx.tasksService.update(ctx.db, {
         id: ctx.params.id,
         assignedToUserId: ctx.body.userId,
         createdByUserId: ctx.auth.user.id,
       })
 
-      return task
+      return { data: task }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
-      body: t.Object({
-        userId: t.String(),
-      }),
+      params: TaskIdParamSchema,
+      body: TaskAssignmentSchema,
       response: {
-        200: TaskSchema,
+        200: TaskResponseSchema,
       },
     }
   )
@@ -304,23 +301,19 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
   .post(
     '/:id/status',
     async (ctx) => {
-      const task = await tasksService.update(ctx.db, {
+      const task = await ctx.tasksService.update(ctx.db, {
         id: ctx.params.id,
         status: ctx.body.status,
         createdByUserId: ctx.auth.user.id,
       })
 
-      return task
+      return { data: task }
     },
     {
-      params: t.Object({
-        id: t.String(),
-      }),
-      body: t.Object({
-        status: StringLiteralEnum(TASK_STATUS),
-      }),
+      params: TaskIdParamSchema,
+      body: TaskStatusUpdateSchema,
       response: {
-        200: TaskSchema,
+        200: TaskResponseSchema,
       },
     }
   )
@@ -331,7 +324,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     async (ctx) => {
       const results = await Promise.all(
         ctx.body.updates.map(async (update) => {
-          return tasksService.update(ctx.db, {
+          return ctx.tasksService.update(ctx.db, {
             ...update,
             createdByUserId: ctx.auth.user.id,
           })
@@ -341,21 +334,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return results
     },
     {
-      body: t.Object({
-        updates: t.Array(
-          t.Object({
-            id: t.String(),
-            title: t.Optional(t.String()),
-            description: t.Optional(t.String()),
-            status: t.Optional(t.Union(TASK_STATUS.map((s) => t.Literal(s)))),
-            priority: t.Optional(t.Union(TASK_PRIORITY.map((p) => t.Literal(p)))),
-            assignedToUserId: t.Optional(t.String()),
-            dueDate: t.Optional(t.String()),
-          })
-        ),
-      }),
+      body: BulkUpdateTasksSchema,
       response: {
-        200: t.Array(TaskSchema),
+        200: BulkTasksResponseSchema,
       },
     }
   )
@@ -365,7 +346,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     async (ctx) => {
       const results = await Promise.all(
         ctx.body.taskIds.map(async (taskId) => {
-          return tasksService.update(ctx.db, {
+          return ctx.tasksService.update(ctx.db, {
             id: taskId,
             assignedToUserId: ctx.body.userId,
             createdByUserId: ctx.auth.user.id,
@@ -376,12 +357,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return results
     },
     {
-      body: t.Object({
-        taskIds: t.Array(t.String()),
-        userId: t.String(),
-      }),
+      body: BulkAssignTasksSchema,
       response: {
-        200: t.Array(TaskSchema),
+        200: BulkTasksResponseSchema,
       },
     }
   )
@@ -391,7 +369,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     async (ctx) => {
       const results = await Promise.all(
         ctx.body.taskIds.map(async (taskId) => {
-          return tasksService.update(ctx.db, {
+          return ctx.tasksService.update(ctx.db, {
             id: taskId,
             status: ctx.body.status,
             createdByUserId: ctx.auth.user.id,
@@ -402,12 +380,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return results
     },
     {
-      body: t.Object({
-        taskIds: t.Array(t.String()),
-        status: t.Union(TASK_STATUS.map((s) => t.Literal(s))),
-      }),
+      body: BulkStatusUpdateSchema,
       response: {
-        200: t.Array(TaskSchema),
+        200: BulkTasksResponseSchema,
       },
     }
   )
@@ -417,7 +392,7 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
     async (ctx) => {
       await Promise.all(
         ctx.body.taskIds.map(async (taskId) => {
-          return tasksService.delete(ctx.db, {
+          return ctx.tasksService.delete(ctx.db, {
             taskId,
             organizationId: ctx.organization!.id,
           })
@@ -427,8 +402,9 @@ export const tasksRoutes = new Elysia({ prefix: '/tasks' })
       return { success: true }
     },
     {
-      body: t.Object({
-        taskIds: t.Array(t.String()),
-      }),
+      body: BulkDeleteTasksSchema,
+      response: {
+        200: TasksSuccessResponseSchema,
+      },
     }
   )

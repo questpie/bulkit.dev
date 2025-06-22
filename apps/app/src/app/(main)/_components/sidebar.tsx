@@ -3,6 +3,11 @@
 import { useAuthActions, useAuthData } from '@bulkit/app/app/(auth)/use-auth'
 import { OrganizationSelect } from '@bulkit/app/app/(main)/_components/organizations-select'
 import { ProfileDropdown } from '@bulkit/app/app/(main)/_components/profile-dropdown'
+import {
+  ChatToggleButton,
+  ChatToggleButtonCompact,
+} from '@bulkit/app/app/(main)/chat/_components/chat-toggle-button'
+import { NotificationCenter } from '@bulkit/app/app/(main)/chat/_components/notification-center'
 import { cn } from '@bulkit/ui/lib'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -16,6 +21,8 @@ import {
   PiImages,
   PiKanban,
   PiPaperPlane,
+  PiBookOpen,
+  PiFolder,
 } from 'react-icons/pi'
 
 const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }[] = [
@@ -45,9 +52,19 @@ const NAV_ITEMS: { name: string; icon: IconType; href: string; admin?: boolean }
     href: '/posts',
   },
   {
+    name: 'Files',
+    icon: PiFolder,
+    href: '/files',
+  },
+  {
     name: 'Media Library',
     icon: PiImages,
     href: '/media',
+  },
+  {
+    name: 'Knowledge',
+    icon: PiBookOpen,
+    href: '/knowledge',
   },
   // {
   //   name: 'Organization settings',
@@ -107,6 +124,25 @@ export function Sidebar() {
           <OrganizationSelect />
         </div>
 
+        {/* Chat and Notifications */}
+        <div className='px-1 lg:px-2 mb-4 space-y-2'>
+          {/* Chat Toggle Button */}
+          <div className='hidden lg:block w-full'>
+            <ChatToggleButton variant='ghost' size='default' className='w-full justify-start' />
+          </div>
+          <div className='lg:hidden flex justify-center'>
+            <ChatToggleButtonCompact />
+          </div>
+
+          {/* Notification Center */}
+          <div className='hidden lg:flex w-full justify-center'>
+            <NotificationCenter className='w-full' />
+          </div>
+          <div className='lg:hidden flex justify-center'>
+            <NotificationCenter />
+          </div>
+        </div>
+
         <ul className='flex gap-4  flex-col  border-t py-2 '>
           <li className='w-full'>
             <ProfileDropdown />
@@ -116,12 +152,37 @@ export function Sidebar() {
 
       <div className='sm:hidden z-10 fixed bottom-0 left-0 h-14 right-0 bg-background border-t border-border'>
         <nav className='flex justify-around items-start h-full py-1'>
-          {NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.slice(0, 3).map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex px-4 w-20 flex-col rounded-xl items-center justify-center h-full cursor-pointer',
+                'flex px-2 w-16 flex-col rounded-xl items-center justify-center h-full cursor-pointer',
+                {
+                  'text-primary bg-primary/20': item.href === pathname,
+                }
+              )}
+            >
+              <item.icon className='size-5' />
+              <span className='text-xs'>{item.name}</span>
+            </Link>
+          ))}
+
+          {/* Chat toggle button */}
+          <div className='flex px-2 w-16 flex-col rounded-xl items-center justify-center h-full'>
+            <div className='flex items-center gap-1'>
+              <ChatToggleButtonCompact className='p-1' />
+              <NotificationCenter className='p-1' />
+            </div>
+            <span className='text-xs mt-1'>Chat</span>
+          </div>
+
+          {NAV_ITEMS.slice(3).map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex px-2 w-16 flex-col rounded-xl items-center justify-center h-full cursor-pointer',
                 {
                   'text-primary bg-primary/20': item.href === pathname,
                 }
@@ -135,7 +196,7 @@ export function Sidebar() {
           {/* settings */}
           <Link
             href='/settings'
-            className={cn('flex flex-col w-20 items-center h-full justify-center', {
+            className={cn('flex flex-col w-16 items-center h-full justify-center', {
               'text-primary': '/settings' === pathname,
             })}
           >

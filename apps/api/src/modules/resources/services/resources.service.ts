@@ -1,22 +1,21 @@
-import type { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { injectResourceMetadataJob } from '@bulkit/api/modules/resources/jobs/resource-metadata.job'
 import { getResourceUrl } from '@bulkit/api/modules/resources/resource.utils'
 import type { Resource, UpdateResource } from '@bulkit/shared/modules/resources/resources.schemas'
+import type { PaginatedQuery } from '@bulkit/shared/schemas/misc'
 import { extractPathExt } from '@bulkit/shared/utils/string'
 import cuid2 from '@paralleldrive/cuid2'
 import { and, desc, eq, ilike } from 'drizzle-orm'
-import type { Static } from 'elysia'
 import fetch from 'node-fetch'
 
 export class ResourcesService {
   constructor(private readonly drive: Drive) {}
 
   private async dispatchMetadataJob(resourceIds: string[]) {
-    const { jobResourceMetadata } = iocResolve(ioc.use(injectResourceMetadataJob))
+    const { jobResourceMetadata } = ioc.resolve([injectResourceMetadataJob])
 
     await jobResourceMetadata.invoke(
       { resourceIds },
@@ -34,7 +33,7 @@ export class ResourcesService {
     db: TransactionLike,
     opts: {
       organizationId: string
-      query: Static<typeof PaginationSchema> & {
+      query: PaginatedQuery & {
         search?: string
       }
     }
@@ -310,7 +309,7 @@ export class ResourcesService {
   }
 }
 
-export const injectResourcesService = iocRegister('resourcesService', () => {
-  const container = iocResolve(ioc.use(injectDrive))
+export const injectResourcesService = ioc.register('resourcesService', () => {
+  const container = ioc.resolve([injectDrive])
   return new ResourcesService(container.drive)
 })

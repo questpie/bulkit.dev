@@ -1,73 +1,122 @@
-import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
-import { injectDatabase } from '@bulkit/api/db/db.client'
-import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
-import { injectCommentsService } from '@bulkit/api/modules/comments/services/comments.service'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
-import { StringLiteralEnum } from '@bulkit/shared/schemas/misc'
+import {
+  CommentListQuerySchema,
+  CommentReplyQuerySchema,
+  CreateCommentReactionSchema,
+  CreateCommentSchema,
+  UpdateCommentSchema,
+} from '@bulkit/shared/modules/comments/comments.schemas'
 import Elysia, { t } from 'elysia'
+import { injectCommentsService } from './services/comments.service'
+import { bindContainer } from '@bulkit/api/ioc'
+import { injectDatabase } from '@bulkit/api/db/db.client'
 
-export const commentsRoutes = new Elysia({
-  prefix: '/comments',
-  detail: { tags: ['Comments'] },
-})
+export const commentsRoutes = new Elysia()
   .use(organizationMiddleware)
-  .use(protectedMiddleware)
-  .use(injectCommentsService)
-  .use(injectDatabase)
-  .get(
-    '/:postId',
-    async (ctx) => {
-      return ctx.commentsService.getPostComments(ctx.db, {
-        postId: ctx.params.postId,
-        organizationId: ctx.organization.id,
-        timestamp: ctx.query.timestamp,
-        limit: ctx.query.limit ?? 10,
-        order: ctx.query.order ?? 'desc',
+  .use(bindContainer([injectCommentsService, injectDatabase]))
+  .post(
+    '/',
+    async ({ body, auth, organization, db, commentsService }) => {
+      const comment = await commentsService.createComment(db, {
+        userId: auth.user.id,
+        organizationId: organization.id,
+        data: body,
       })
+
+      return comment
     },
     {
-      params: t.Object({
-        postId: t.String(),
-      }),
-      query: t.Object({
-        limit: t.Optional(t.Number({ default: 10 })),
-        timestamp: t.Number({
-          description: 'The timestamp to start the query from, defaults to now',
-        }),
-        order: t.Optional(
-          StringLiteralEnum(['asc', 'desc'], {
-            default: 'desc',
-            description:
-              'The order to sort the comments by. Desc: most recent first, Asc: oldest first',
-          })
-        ),
-      }),
-      response: {
-        200: t.Array(t.Any()),
-        400: HttpErrorSchema(),
-      },
+      body: CreateCommentSchema,
     }
   )
-  .post(
-    '/:postId',
-    async (ctx) => {
-      return ctx.commentsService.create(ctx.db, {
-        postId: ctx.params.postId,
-        userId: ctx.auth.user.id,
-        organizationId: ctx.organization.id,
-        content: ctx.body.content,
+
+  .get(
+    '/',
+    async ({ query, auth, organization, db, commentsService }) => {
+      const comments = await commentsService.getCommentList(db, {
+        ...query,
+        userId: auth.user.id,
+        organizationId: organization.id,
       })
+      return comments
     },
     {
-      params: t.Object({
-        postId: t.String(),
-      }),
-      body: t.Object({
-        content: t.String(),
-      }),
-      response: {
-        200: t.Any(),
-        400: HttpErrorSchema(),
-      },
+      query: CommentListQuerySchema,
+    }
+  )
+
+  .get('/:id', async ({ params, organization, db, commentsService }) => {
+    const comment = await commentsService.getCommentWithUser(db, params.id, organization.id)
+    return comment
+  })
+
+  .put(
+    '/:id',
+    async ({ params, body, auth, organization, db, commentsService }) => {
+      const comment = await commentsService.updateComment(db, {
+        commentId: params.id,
+        userId: auth.user.id,
+        organizationId: organization.id,
+        data: body,
+      })
+
+      return comment
+    },
+    {
+      body: UpdateCommentSchema,
+    }
+  )
+
+  .delete('/:id', async ({ params, auth, organization, db, commentsService }) => {
+    await commentsService.deleteComment(db, {
+      commentId: params.id,
+      userId: auth.user.id,
+      organizationId: organization.id,
+    })
+
+    return { success: true }
+  })
+
+  .get(
+    '/:id/replies',
+    async ({ params, query, organization, db, commentsService }) => {
+      const replies = await commentsService.getCommentReplies(db, params.id, organization.id, query)
+      return replies
+    },
+    {
+      query: CommentReplyQuerySchema,
+    }
+  )
+
+  .post(
+    '/:id/reactions',
+    async ({ params, body, auth, organization, db, commentsService }) => {
+      await commentsService.addReaction(db, {
+        userId: auth.user.id,
+        organizationId: organization.id,
+        data: {
+          commentId: params.id,
+          reactionType: body.reactionType,
+        },
+      })
+
+      return { success: true }
+    },
+    {
+      body: CreateCommentReactionSchema,
+    }
+  )
+
+  .delete(
+    '/:id/reactions/:reactionType',
+    async ({ params, auth, organization, db, commentsService }) => {
+      await commentsService.removeReaction(db, {
+        commentId: params.id,
+        userId: auth.user.id,
+        organizationId: organization.id,
+        reactionType: params.reactionType,
+      })
+
+      return { success: true }
     }
   )

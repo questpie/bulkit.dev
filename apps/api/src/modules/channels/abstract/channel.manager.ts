@@ -1,11 +1,11 @@
 import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
 import { postMetricsHistoryTable, type InsertPostMetricsHistory } from '@bulkit/api/db/db.schema'
 import { injectDrive, type Drive } from '@bulkit/api/drive/drive'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
-import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
+import type { Post } from '@bulkit/shared/modules/posts/posts.schemas'
+import type { ChannelWithIntegration } from '@bulkit/shared/modules/channels/channels.schemas'
 import { and } from 'drizzle-orm'
 import type { InferContext } from 'elysia'
 
@@ -32,7 +32,7 @@ export abstract class ChannelPublisher {
   protected readonly drive: Drive
 
   constructor(private readonly authenticator: ChannelAuthenticator) {
-    const container = iocResolve(ioc.use(injectDrive))
+    const container = ioc.resolve([injectDrive])
     this.drive = container.drive
   }
 
@@ -43,7 +43,7 @@ export abstract class ChannelPublisher {
       channel.socialMediaIntegration.tokenExpiry &&
       Date.now() >= new Date(channel.socialMediaIntegration.tokenExpiry).getTime()
     ) {
-      const { db } = iocResolve(ioc.use(injectDatabase))
+      const { db } = ioc.resolve([injectDatabase])
       refreshedChannel = await this.authenticator.handleRenewal(db, channel)
     }
 
@@ -70,7 +70,7 @@ export abstract class ChannelPublisher {
   }
 
   async saveMetrics(channel: ChannelWithIntegration, scheduledPostId: string) {
-    const { db } = iocResolve(ioc.use(injectDatabase))
+    const { db } = ioc.resolve([injectDatabase])
     const scheduledPost = await db.query.scheduledPostsTable.findFirst({
       where: (scheduledPostsTable, { eq }) =>
         and(

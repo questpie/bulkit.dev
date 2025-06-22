@@ -1,5 +1,6 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
+import { bindContainer } from '@bulkit/api/ioc'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectResourcesService } from '@bulkit/api/modules/resources/services/resources.service'
 import { injectStockImageService } from '@bulkit/api/modules/resources/stock-image/stock-image.service'
@@ -16,10 +17,8 @@ type StockImageSearchResult = {
 }
 
 export const resourceStockRoutes = new Elysia({ prefix: '/stock' })
-  .use(injectDatabase)
-  .use(injectResourcesService)
   .use(organizationMiddleware)
-  .use(injectStockImageService)
+  .use(bindContainer([injectDatabase, injectResourcesService, injectStockImageService]))
   .get('/providers', async (ctx) => {
     return ctx.stockImageService.getAvailableProviders(ctx.db)
   })

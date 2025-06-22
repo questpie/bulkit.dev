@@ -1,4 +1,4 @@
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { injectRedis } from '@bulkit/api/redis/redis-clients'
 import type { RedisClient } from '@bulkit/redis/redis-manager'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -32,7 +32,7 @@ export class RateLimiter {
 
   constructor(private options: RateLimitOptions) {
     this.validateOptions(options)
-    const container = iocResolve(ioc.use(injectRedis))
+    const container = ioc.resolve([injectRedis])
     this.redis = container.redis.get()
   }
 

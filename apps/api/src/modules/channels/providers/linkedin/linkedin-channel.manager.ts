@@ -1,4 +1,4 @@
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { ChannelManager } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { LinkedInAuthenticator } from '@bulkit/api/modules/channels/providers/linkedin/linkedin-channel.authenticator'
 import { LinkedInChannelPublisher } from '@bulkit/api/modules/channels/providers/linkedin/linkedin-channel.publisher'
@@ -9,7 +9,6 @@ class LinkedInChannelManager extends ChannelManager {
   }
 }
 
-export const injectLinkedInChannelManager = iocRegister(
-  'linkedinChannelManager',
-  () => new LinkedInChannelManager()
-)
+export const injectLinkedInChannelManager = ioc.register('linkedinChannelManager', () => {
+  return new LinkedInChannelManager()
+})

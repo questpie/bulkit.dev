@@ -2,7 +2,7 @@ import { injectCache } from '@bulkit/api/cache/cache.helper'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { organizationsTable, userOrganizationsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { DiscriminatedWebhookPayload } from '@bulkit/api/lemon-squeezy/lemon-squeezy.types'
 import type { CacheClient } from '@bulkit/cache/base-cache'
 import * as LemonSqueezy from '@lemonsqueezy/lemonsqueezy.js'
@@ -140,10 +140,10 @@ export class LemonSqueezyService {
 }
 /**
  * This has to be always injected at function level to prevent global namespace pollution for self-hosted instances
- * @example const {lemonSqueezy} = iocResolve(ioc.use(injectLemonSqueezy))
+ * @example const {lemonSqueezy} = ioc.resolve([injectLemonSqueezy])
  */
-export const injectLemonSqueezy = iocRegister('lemonSqueezy', () => {
-  const container = iocResolve(ioc.use(injectCache))
+export const injectLemonSqueezy = ioc.register('lemonSqueezy', () => {
+  const container = ioc.resolve([injectCache])
 
   return new LemonSqueezyService(container.cache)
 })

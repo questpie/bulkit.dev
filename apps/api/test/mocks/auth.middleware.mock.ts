@@ -1,4 +1,4 @@
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { buildAuthObject } from '@bulkit/api/modules/auth/auth.middleware'
 import Elysia from 'elysia'
 import type { Session, User } from 'lucia'
@@ -19,7 +19,6 @@ export const createMockAuthMiddleware = (mockUser?: Partial<User>) => {
       browser: 'test-browser',
       os: 'test-os',
       device: 'test-device',
-      country: 'test-country',
     },
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     fresh: true,
@@ -29,8 +28,8 @@ export const createMockAuthMiddleware = (mockUser?: Partial<User>) => {
     .derive(() => ({
       auth: buildAuthObject({ user, session }),
     }))
-    .as('plugin')
+    .as('scoped')
 }
 
 export const injectMockAuth = (mockUser?: Partial<User>) =>
-  iocRegister('auth', () => createMockAuthMiddleware(mockUser))
+  ioc.register('auth', () => createMockAuthMiddleware(mockUser))

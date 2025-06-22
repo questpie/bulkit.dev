@@ -1,11 +1,11 @@
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { RedisManager } from '@bulkit/redis/redis-manager'
 
 /**
  * For testing purposes, you can enable the mock by calling `RedisManager.enableMock()`
  */
-export const injectRedis = iocRegister(
+export const injectRedis = ioc.register(
   'redis',
   () =>
     new RedisManager({

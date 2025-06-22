@@ -1,6 +1,11 @@
 import { Type, type Static } from '@sinclair/typebox'
 import { StringLiteralEnum, Nullable } from '@bulkit/shared/schemas/misc'
-import { TASK_STATUS, TASK_PRIORITY, DEPENDENCY_TYPE } from '@bulkit/shared/constants/db.constants'
+import {
+  TASK_STATUS,
+  TASK_PRIORITY,
+  DEPENDENCY_TYPE,
+  type DependencyType,
+} from '@bulkit/shared/constants/db.constants'
 import { LabelSchema } from '@bulkit/shared/modules/labels/labels.schemas'
 
 // Base task schema with all fields
@@ -259,9 +264,64 @@ export type BulkDeleteTasksInput = Static<typeof BulkDeleteTasksSchema>
 export type TaskAssignmentInput = Static<typeof TaskAssignmentSchema>
 export type TaskStatusUpdateInput = Static<typeof TaskStatusUpdateSchema>
 
+// Re-export DependencyType from constants for convenience
+export type { DependencyType }
+
 // Note: Label types are now exported from @bulkit/shared/modules/labels/labels.schemas
 
 // Time tracking types
 export type TimeEntry = Static<typeof TimeEntrySchema>
 export type CreateTimeEntryInput = Static<typeof CreateTimeEntrySchema>
 export type UpdateTimeEntryInput = Static<typeof UpdateTimeEntrySchema>
+
+// Additional schemas for API routes
+
+// Parameter schemas
+export const TaskIdParamSchema = Type.Object({
+  id: Type.String(),
+})
+
+export const DependencyIdParamSchema = Type.Object({
+  id: Type.String(),
+})
+
+// Response schemas
+export const TaskResponseSchema = Type.Object({
+  data: TaskWithRelationsSchema,
+})
+
+export const TaskListResponseSchema = Type.Object({
+  data: Type.Array(TaskListItemSchema),
+  pagination: Type.Object({
+    total: Type.Number(),
+    limit: Type.Number(),
+    offset: Type.Number(),
+    hasMore: Type.Boolean(),
+  }),
+})
+
+export const TasksSuccessResponseSchema = Type.Object({
+  success: Type.Boolean(),
+})
+
+export const TasksMessageResponseSchema = Type.Object({
+  message: Type.String(),
+})
+
+export const BulkTasksResponseSchema = Type.Array(TaskWithRelationsSchema)
+
+// Subtasks query schema
+export const SubtasksQuerySchema = Type.Object({
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  offset: Type.Optional(Type.Integer({ minimum: 0 })),
+})
+
+// Export additional types
+export type TaskIdParam = Static<typeof TaskIdParamSchema>
+export type DependencyIdParam = Static<typeof DependencyIdParamSchema>
+export type TaskResponse = Static<typeof TaskResponseSchema>
+export type TaskListResponse = Static<typeof TaskListResponseSchema>
+export type TasksSuccessResponse = Static<typeof TasksSuccessResponseSchema>
+export type TasksMessageResponse = Static<typeof TasksMessageResponseSchema>
+export type BulkTasksResponse = Static<typeof BulkTasksResponseSchema>
+export type SubtasksQuery = Static<typeof SubtasksQuerySchema>

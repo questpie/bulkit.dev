@@ -1,4 +1,4 @@
-import { coalesce } from '@bulkit/api/db/db-utils'
+import { coalesce, selectRelatedEntitiesM2M } from '@bulkit/api/db/db-utils'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   channelsTable,
@@ -14,7 +14,7 @@ import {
   threadPostsTable,
   type InsertThreadMedia,
 } from '@bulkit/api/db/db.schema'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { PostCantBeDeletedException } from '@bulkit/api/modules/posts/exceptions/post-cant-be-deleted.exception'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { getResourceUrl, isMediaTypeAllowed } from '@bulkit/api/modules/resources/resource.utils'
@@ -24,22 +24,166 @@ import {
 } from '@bulkit/api/modules/resources/services/resources.service'
 import { PLATFORMS, type Platform, type PostType } from '@bulkit/shared/constants/db.constants'
 import { DEFAULT_PLATFORM_SETTINGS } from '@bulkit/shared/modules/admin/platform-settings.constants'
+import type { PostSortableField } from '@bulkit/shared/modules/posts/posts.constants'
 import type {
   Post,
   PostChannel,
+  PostGetAllQuery,
+  PostListItem,
   PostValidationErrorSchema,
   PostValidationResultSchema,
   PostWithType,
 } from '@bulkit/shared/modules/posts/posts.schemas'
 import { generateNewPostName, isPostDeletable } from '@bulkit/shared/modules/posts/posts.utils'
+import type { PaginatedQuery, PaginatedResponse } from '@bulkit/shared/schemas/misc'
 import { dedupe } from '@bulkit/shared/types/data'
+import { unwrapMaybeArray } from '@bulkit/shared/utils/misc'
 import { addSeconds, isBefore, max } from 'date-fns'
-import { and, asc, eq, getTableColumns, inArray, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  isNull,
+  sql,
+  type SQLWrapper,
+} from 'drizzle-orm'
 import type { Static } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
+const POST_SORTABLE_COLUMNS: Record<PostSortableField, SQLWrapper> = {
+  likes: coalesce(sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`, sql<number>`0`),
+  impressions: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+    sql<number>`0`
+  ),
+  comments: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+    sql<number>`0`
+  ),
+  shares: coalesce(
+    sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+    sql<number>`0`
+  ),
+  createdAt: postsTable.createdAt,
+  name: postsTable.name,
+  scheduledAt: postsTable.scheduledAt,
+}
+
 export class PostsService {
-  constructor(private readonly resourcesService: ResourcesService) {}
+  async getAll(
+    db: TransactionLike,
+    orgId: string,
+    opts: PostGetAllQuery & PaginatedQuery
+  ): Promise<PaginatedResponse<PostListItem>> {
+    const { limit, cursor, type, status, channelId, dateFrom, dateTo, sort } = opts
+
+    const querySort = unwrapMaybeArray(
+      sort ?? [
+        {
+          by: 'createdAt',
+          order: 'desc',
+        },
+      ]
+    )
+
+    // Build where conditions
+    const whereConditions: any[] = [
+      eq(postsTable.organizationId, orgId),
+      isNull(postsTable.archivedAt),
+    ]
+
+    if (type) {
+      whereConditions.push(inArray(postsTable.type, unwrapMaybeArray(type)))
+    }
+
+    if (status) {
+      whereConditions.push(inArray(postsTable.status, unwrapMaybeArray(status)))
+    }
+
+    if (channelId) {
+      whereConditions.push(inArray(scheduledPostsTable.channelId, unwrapMaybeArray(channelId)))
+    }
+
+    if (dateFrom) {
+      whereConditions.push(sql`${postsTable.createdAt} >= ${dateFrom}`)
+    }
+
+    if (dateTo) {
+      whereConditions.push(sql`${postsTable.createdAt} <= ${dateTo}`)
+    }
+
+    // Get posts with pagination
+    const query = db
+      .select({
+        id: postsTable.id,
+        name: postsTable.name,
+        status: postsTable.status,
+        type: postsTable.type,
+        createdAt: postsTable.createdAt,
+        scheduledAt: postsTable.scheduledAt,
+        channels: selectRelatedEntitiesM2M({
+          select: {
+            id: channelsTable.id,
+            name: channelsTable.name,
+            platform: channelsTable.platform,
+            imageUrl: channelsTable.imageUrl,
+          },
+          joinOn: eq(scheduledPostsTable.channelId, channelsTable.id),
+          joinTable: scheduledPostsTable,
+          table: channelsTable,
+          where: eq(scheduledPostsTable.postId, postsTable.id),
+        }),
+
+        totalLikes: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.likes}) as int)`,
+          sql<number>`0`
+        ),
+        totalImpressions: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.impressions}) as int)`,
+          sql<number>`0`
+        ),
+        totalComments: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.comments}) as int)`,
+          sql<number>`0`
+        ),
+        totalShares: coalesce(
+          sql<number>`cast(sum(${postMetricsHistoryTable.shares}) as int)`,
+          sql<number>`0`
+        ),
+      })
+      .from(postsTable)
+      .where(and(...whereConditions))
+      .leftJoin(scheduledPostsTable, eq(scheduledPostsTable.postId, postsTable.id))
+      .leftJoin(
+        postMetricsHistoryTable,
+        eq(scheduledPostsTable.id, postMetricsHistoryTable.scheduledPostId)
+      )
+      .orderBy(
+        ...querySort.map((q) => {
+          const sortBy = POST_SORTABLE_COLUMNS[q.by ?? 'createdAt']
+          const orderFn = q.order === 'asc' ? asc : desc
+          return orderFn(sortBy)
+        })
+      )
+      .groupBy(postsTable.id)
+      .limit(limit + 1)
+      .offset(cursor)
+
+    const [posts, total] = await Promise.all([query, db.$count(query)])
+
+    const hasNextPage = posts.length > limit
+    const results = posts.slice(0, limit)
+    const nextCursor = hasNextPage ? cursor + limit : null
+
+    return {
+      items: results,
+      total,
+      nextCursor,
+    }
+  }
 
   async getById<
     PType extends PostType = PostType,
@@ -1034,7 +1178,7 @@ export class PostsService {
     }
   ): Promise<Post | null> {
     const post = await this.getById(db, opts)
-    const container = iocResolve(ioc.use(injectPublishPostJob))
+    const container = ioc.resolve([injectPublishPostJob])
 
     if (!post || post.status !== 'scheduled') {
       return null
@@ -1113,7 +1257,7 @@ export class PostsService {
       postId: string
     }
   ): Promise<Post & { scheduledPosts: { scheduledPostId: string; delay: number }[] }> {
-    const container = iocResolve(ioc.use(injectPublishPostJob))
+    const container = ioc.resolve([injectPublishPostJob])
     const post = await this.getById(db, {
       orgId: opts.orgId,
       postId: opts.postId,
@@ -1207,7 +1351,6 @@ export class PostsService {
   }
 }
 
-export const injectPostService = iocRegister('postService', () => {
-  const container = iocResolve(ioc.use(injectResourcesService))
-  return new PostsService(container.resourcesService)
+export const injectPostService = ioc.register('postService', () => {
+  return new PostsService()
 })

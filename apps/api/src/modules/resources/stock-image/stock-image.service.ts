@@ -1,6 +1,6 @@
 import { type ApiKeyManager, injectApiKeyManager } from '@bulkit/api/common/api-key.manager'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { PixabayProvider } from '@bulkit/api/modules/resources/stock-image/providers/pixabay.provider'
 import { UnsplashProvider } from '@bulkit/api/modules/resources/stock-image/providers/unsplash.provider'
 import type { StockImageProviderAdapter } from '@bulkit/api/modules/resources/stock-image/types'
@@ -62,7 +62,7 @@ export class StockImageService {
   }
 }
 
-export const injectStockImageService = iocRegister('stockImageService', () => {
-  const container = iocResolve(ioc.use(injectApiKeyManager))
-  return new StockImageService(container.apiKeyManager)
+export const injectStockImageService = ioc.register('stockImageService', () => {
+  const { apiKeyManager } = ioc.resolve([injectApiKeyManager])
+  return new StockImageService(apiKeyManager)
 })

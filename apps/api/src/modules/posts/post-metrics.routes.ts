@@ -1,5 +1,6 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
+import { bindContainer } from '@bulkit/api/ioc'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPostMetricsService } from '@bulkit/api/modules/posts/services/post-metrics.service'
 import {
@@ -15,7 +16,7 @@ export const postMetricsRoutes = new Elysia({
   detail: { tags: ['Post Metrics'] },
 })
   .use(organizationMiddleware)
-  .use(injectPostMetricsService)
+  .use(bindContainer([injectPostMetricsService]))
   .get(
     '/:id',
     async (ctx) => {

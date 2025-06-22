@@ -10,28 +10,31 @@ import ffmpeg from 'fluent-ffmpeg'
 
 // register pinio logger
 import '@bulkit/api/common/logger'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { injectProcessWebhookJob } from '@bulkit/api/modules/plans/jobs/process-webhook.job'
 import { injectCollectMetricsJob } from '@bulkit/api/modules/posts/jobs/collect-metrics.job'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import { injectAllocateMonthlyCreditsJob } from '@bulkit/api/modules/credits/jobs/allocate-monthly-credits.job'
 import { injectResourceMetadataJob } from '@bulkit/api/modules/resources/jobs/resource-metadata.job'
 import { injectResourceMetadataSyncJob } from '@bulkit/api/modules/resources/jobs/resource-metadata-sync.job'
+import { injectCleanupOrphanedAIUsersJob } from '@bulkit/api/modules/organizations/jobs/cleanup-orphaned-ai-users.job'
+import { injectEnsureAIAssistantsJob } from '@bulkit/api/modules/organizations/jobs/ensure-ai-assistants.job'
 
 ffmpeg.setFfmpegPath(ffmpegPath.path)
 ffmpeg.setFfprobePath(ffprobePath.path)
 
 export async function bootWorker() {
-  const container = iocResolve(
-    ioc
-      .use(injectMailClient)
-      .use(injectPublishPostJob)
-      .use(injectCollectMetricsJob)
-      .use(injectProcessWebhookJob)
-      .use(injectAllocateMonthlyCreditsJob)
-      .use(injectResourceMetadataJob)
-      .use(injectResourceMetadataSyncJob)
-  )
+  const container = ioc.resolve([
+    injectMailClient,
+    injectPublishPostJob,
+    injectCollectMetricsJob,
+    injectProcessWebhookJob,
+    injectAllocateMonthlyCreditsJob,
+    injectResourceMetadataJob,
+    injectResourceMetadataSyncJob,
+    injectEnsureAIAssistantsJob,
+    injectCleanupOrphanedAIUsersJob,
+  ])
 
   // mails
   container.mailClient.registerWorker()
@@ -42,6 +45,10 @@ export async function bootWorker() {
   // posts
   container.jobPublishPost.registerWorker()
   container.jobCollectMetrics.registerWorker()
+
+  // ai assistants
+  container.jobEnsureAIAssistants.registerWorker()
+  container.jobCleanupOrphanedAIUsers.registerWorker()
 
   // lemon squeezy webhook
   container.jobProcessLemonSqueezyWebhook.registerWorker()

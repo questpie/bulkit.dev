@@ -1,6 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { bindContainer, ioc } from '@bulkit/api/ioc'
 import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
 import {
   injectProcessWebhookJob,
@@ -20,14 +20,12 @@ export const lemonSqueezyWebhookRoutes =
           hide: true,
         },
       })
-        .use(injectLemonSqueezy)
-        .use(injectDatabase)
+        .use(bindContainer([injectLemonSqueezy, injectDatabase, injectProcessWebhookJob]))
         .onParse(async ({ request }) => {
           const rawBody = await request.text()
           return rawBody
         })
         .post('/webhook', async (ctx) => {
-          const { jobProcessLemonSqueezyWebhook } = iocResolve(ioc.use(injectProcessWebhookJob))
           const signature = ctx.headers['x-signature']
 
           if (!signature) {
@@ -39,7 +37,7 @@ export const lemonSqueezyWebhookRoutes =
             signature
           )
 
-          await jobProcessLemonSqueezyWebhook.invoke(
+          await ctx.jobProcessLemonSqueezyWebhook.invoke(
             {
               eventName: payload.meta.event_name,
               payload: payload.data,

@@ -1,7 +1,7 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
 import { injectDrive } from '@bulkit/api/drive/drive'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import type { ResourceMetadata } from '@bulkit/shared/modules/resources/resources.schemas'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -19,7 +19,7 @@ export const injectResourceMetadataJob = iocJobRegister('resourceMetadata', {
     resourceIds: Type.Array(Type.String()),
   }),
   handler: async (job) => {
-    const { db, drive } = iocResolve(ioc.use(injectDatabase).use(injectDrive))
+    const { db, drive } = ioc.resolve([injectDatabase, injectDrive])
 
     appLogger.info('Fetching resources without metadata')
     job.log('Fetching resources without metadata')

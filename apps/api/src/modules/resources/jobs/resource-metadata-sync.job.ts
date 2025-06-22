@@ -1,6 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { resourcesTable } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { injectResourceMetadataJob } from '@bulkit/api/modules/resources/jobs/resource-metadata.job'
 import { appLogger } from '@bulkit/shared/utils/logger'
@@ -15,8 +15,8 @@ export const injectResourceMetadataSyncJob = iocJobRegister('resourceMetadataSyn
     pattern: '*/5 * * * *', // Run every 5 minutes
   },
   handler: async (job) => {
-    const { db } = iocResolve(ioc.use(injectDatabase))
-    const { jobResourceMetadata } = iocResolve(ioc.use(injectResourceMetadataJob))
+    const { db } = ioc.resolve([injectDatabase])
+    const { jobResourceMetadata } = ioc.resolve([injectResourceMetadataJob])
 
     appLogger.info('Fetching resources without metadata')
     job.log('Fetching resources without metadata')

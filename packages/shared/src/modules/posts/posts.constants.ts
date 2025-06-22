@@ -1,5 +1,3 @@
-import ms from 'ms'
-
 export const POST_SORTABLE_FIELDS = [
   'impressions',
   'likes',

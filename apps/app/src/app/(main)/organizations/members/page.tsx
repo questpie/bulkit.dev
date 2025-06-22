@@ -26,7 +26,7 @@ export default async function MembersPage() {
       </div>
 
       <MembersTable
-        initialMembers={organizationMembers.data ?? { data: [], nextCursor: null }}
+        initialMembers={organizationMembers.data ?? { items: [], nextCursor: null }}
         organizationId={organization.id}
       />
     </div>

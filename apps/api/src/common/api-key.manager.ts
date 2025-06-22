@@ -1,5 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import Elysia from 'elysia'
 import crypto from 'node:crypto'
 
@@ -65,4 +65,4 @@ export class ApiKeyManager {
   }
 }
 
-export const injectApiKeyManager = iocRegister('apiKeyManager', () => new ApiKeyManager())
+export const injectApiKeyManager = ioc.register('apiKeyManager', () => new ApiKeyManager())

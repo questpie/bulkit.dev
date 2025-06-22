@@ -1,7 +1,7 @@
 import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
 import { creditTransactionsTable } from '@bulkit/api/db/schema/credits.table'
 import { subscriptionsTable } from '@bulkit/api/db/schema/plans.table'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import type { SubscriptionStatus } from '@bulkit/shared/modules/plans/plans.constants'
 import { Type, type Static } from '@sinclair/typebox'
@@ -27,7 +27,7 @@ export const injectProcessWebhookJob = iocJobRegister('processLemonSqueezyWebhoo
   name: 'process-lemon-squeezy-webhook',
   schema: ProcessWebhookJobSchema,
   handler: async (job) => {
-    const { db } = iocResolve(ioc.use(injectDatabase))
+    const { db } = ioc.resolve([injectDatabase])
 
     await job.log(`Processing ${job.data.eventName} webhook`)
     await job.log(`Organization ID: ${job.data.customData.organization_id}`)

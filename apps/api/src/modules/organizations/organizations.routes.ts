@@ -1,4 +1,3 @@
-import { PaginationSchema } from '@bulkit/api/common/common.schemas'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
@@ -26,6 +25,8 @@ import { and, count, desc, eq, getTableColumns } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import Elysia, { t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
+import { PaginationQuerySchema } from '@bulkit/shared/schemas/misc'
+import { bindContainer } from '@bulkit/api/ioc'
 
 export const organizationRoutes = new Elysia({
   prefix: '/organizations',
@@ -45,8 +46,7 @@ export const organizationRoutes = new Elysia({
     })
   )
   .use(protectedMiddleware)
-  .use(injectDatabase)
-  .use(injectMailClient)
+  .use(bindContainer([injectDatabase, injectMailClient]))
   .post(
     '/',
     async ({ body, db, auth }) => {
@@ -112,22 +112,23 @@ export const organizationRoutes = new Elysia({
         .offset(cursor)
         .limit(limit + 1)
 
-      const organizations = await baseQuery
+      const [organizations, total] = await Promise.all([baseQuery, db.$count(baseQuery)])
 
       const hasNextPage = organizations.length > limit
       const results = organizations.slice(0, limit)
 
       return {
-        data: results.map(({ role, membersCount, ...rest }) => ({
+        items: results.map(({ role, membersCount, ...rest }) => ({
           ...rest,
           role: role || 'admin', // Handle case where user is admin but not a member
           membersCount,
         })),
         nextCursor: hasNextPage ? cursor + limit : null,
+        total,
       }
     },
     {
-      query: PaginationSchema,
+      query: PaginationQuerySchema,
       response: {
         200: PaginatedResponseSchema(
           t.Composite([
@@ -363,12 +364,13 @@ export const organizationRoutes = new Elysia({
       const nextCursor =
         members.length > ctx.query.limit ? ctx.query.cursor + ctx.query.limit : null
       return {
-        data: members.slice(0, ctx.query.limit),
+        items: members.slice(0, ctx.query.limit),
         nextCursor,
+        total,
       }
     },
     {
-      query: PaginationSchema,
+      query: PaginationQuerySchema,
       response: {
         200: PaginatedResponseSchema(OrganizationMemberSchema),
         403: HttpErrorSchema(),

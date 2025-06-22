@@ -2,6 +2,7 @@ import { injectApiKeyManager } from '@bulkit/api/common/api-key.manager'
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { stockImageProvidersTable } from '@bulkit/api/db/db.schema'
+import { bindContainer } from '@bulkit/api/ioc'
 import { adminMiddleware } from '@bulkit/api/modules/auth/admin/admin.middleware'
 import {
   AddStockImageProviderSchema,
@@ -15,8 +16,7 @@ import { HttpError } from 'elysia-http-error'
 
 export const stockImageProvidersRoutes = new Elysia({ prefix: '/stock-image-providers' })
   .use(adminMiddleware)
-  .use(injectDatabase)
-  .use(injectApiKeyManager)
+  .use(bindContainer([injectDatabase, injectApiKeyManager]))
   .get(
     '/',
     async ({ db }) => {

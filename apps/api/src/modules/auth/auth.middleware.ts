@@ -1,3 +1,4 @@
+import { bindContainer } from '@bulkit/api/ioc'
 import { injectLucia, type LuciaType } from '@bulkit/api/modules/auth/lucia'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import Elysia, { t } from 'elysia'
@@ -11,7 +12,7 @@ import type { Session, User } from 'lucia'
 export const authMiddleware = new Elysia({
   name: 'auth.middleware',
 })
-  .use(injectLucia)
+  .use(bindContainer([injectLucia]))
   .resolve(async ({ headers, lucia }) => {
     const authorizationHeader = headers.authorization
     const sessionId = authorizationHeader ? lucia.readBearerToken(authorizationHeader) : null
@@ -37,7 +38,7 @@ export const authMiddleware = new Elysia({
       })
     },
   }))
-  .as('plugin')
+  .as('scoped')
 
 /**
  * Middleware for protected routes.
@@ -61,7 +62,7 @@ export const protectedMiddleware = new Elysia({
       }),
     },
   })
-  .as('plugin')
+  .as('scoped')
 
 /**
  * Builds a sanitized auth object from the validated session.

@@ -6,14 +6,14 @@ import {
   type InsertChannel,
   type InsertSocialMediaIntegration,
 } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { ChannelAuthenticator } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import type {
   OAuth2Provider,
   Tokens,
 } from '@bulkit/api/modules/channels/abstract/oauth2/oauth2.provider'
 import type { channelAuthRoutes } from '@bulkit/api/modules/channels/channel-auth.routes'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
+import type { ChannelWithIntegration } from '@bulkit/shared/modules/channels/channels.schemas'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { eq } from 'drizzle-orm'
@@ -28,7 +28,7 @@ export class OAuth2Authenticator extends ChannelAuthenticator {
 
   constructor(protected readonly oAuth2Provider: OAuth2Provider) {
     super()
-    const container = iocResolve(ioc.use(injectApiKeyManager))
+    const container = ioc.resolve([injectApiKeyManager])
     this.apiKeyService = container.apiKeyManager
   }
 

@@ -1,6 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { postsTable, scheduledPostsTable } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { iocJobRegister } from '@bulkit/api/jobs/job-factory'
 import { resolveChannelManager } from '@bulkit/api/modules/channels/channel-utils'
 import { injectChannelService } from '@bulkit/api/modules/channels/services/channels.service'
@@ -19,13 +19,12 @@ export const injectPublishPostJob = iocJobRegister('publishPost', {
   }),
 
   handler: async (job) => {
-    const { postService, db, channelsService, jobCollectMetrics } = iocResolve(
-      ioc
-        .use(injectDatabase)
-        .use(injectPostService)
-        .use(injectChannelService)
-        .use(injectCollectMetricsJob)
-    )
+    const { postService, db, channelsService, jobCollectMetrics } = ioc.resolve([
+      injectDatabase,
+      injectPostService,
+      injectChannelService,
+      injectCollectMetricsJob,
+    ])
     await job.log('Getting scheduled post')
 
     const scheduledPost = await db
@@ -151,7 +150,7 @@ export const injectPublishPostJob = iocJobRegister('publishPost', {
       if (typeof job === 'string') return
 
       // mark scheduled post as failed, reason job stalled
-      const { db } = iocResolve(ioc.use(injectDatabase))
+      const { db } = ioc.resolve([injectDatabase])
 
       await db
         .update(scheduledPostsTable)
@@ -169,7 +168,7 @@ export const injectPublishPostJob = iocJobRegister('publishPost', {
         return
       }
       // mark scheduled post as failed, reason job failed
-      const { db } = iocResolve(ioc.use(injectDatabase))
+      const { db } = ioc.resolve([injectDatabase])
       await db
         .update(scheduledPostsTable)
         .set({

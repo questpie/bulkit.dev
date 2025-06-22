@@ -1,9 +1,9 @@
 import { applyRateLimit } from '@bulkit/api/common/rate-limit'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { bindContainer, ioc } from '@bulkit/api/ioc'
 import { injectLemonSqueezy } from '@bulkit/api/lemon-squeezy/lemon-squeezy.service'
-import { injectAIProvidersService } from '@bulkit/api/modules/ai/services/ai-providers.service'
+import { injectAITextProvidersService } from '@bulkit/api/modules/ai/services/ai-text-providers.service'
 import { injectAppSettingsService } from '@bulkit/api/modules/auth/admin/services/app-settings.service'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import { AI_TEXT_CAPABILITIES } from '@bulkit/shared/modules/app/app-constants'
@@ -35,9 +35,7 @@ export const appRoutes = new Elysia({
   .get('/healthy', () => 'ok', {
     detail: { description: 'Health check' },
   })
-  .use(injectAppSettingsService)
-  .use(injectDatabase)
-  .use(injectAIProvidersService)
+  .use(bindContainer([injectAppSettingsService, injectDatabase, injectAITextProvidersService]))
   .get(
     '/settings',
     async (ctx) => {
@@ -53,14 +51,14 @@ export const appRoutes = new Elysia({
       let currency = 'USD'
 
       if (envApi.DEPLOYMENT_TYPE === 'cloud') {
-        const lemonSqueezy = iocResolve(ioc.use(injectLemonSqueezy)).lemonSqueezy
+        const { lemonSqueezy } = ioc.resolve([injectLemonSqueezy])
         currency = await lemonSqueezy
           .getStore()
           .then((s) => s.data?.attributes.currency ?? 'USD')
           .catch(() => 'USD')
       }
 
-      const activeProvider = await ctx.aiProvidersService.getActiveProviders(ctx.db)
+      const activeProvider = await ctx.aiTextProvidersService.getActiveProviders(ctx.db)
 
       const enabledAICapabilities = AI_TEXT_CAPABILITIES.filter((capability) =>
         activeProvider.some((p) => p.capabilities.includes(capability))

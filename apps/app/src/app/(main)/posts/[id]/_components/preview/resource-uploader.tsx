@@ -327,52 +327,31 @@ function AITabContent(props: {
   onSelect: (resource: Resource) => void
 }) {
   const [prompt, setPrompt] = useState('')
-  const [imageFile, setImageFile] = useState<File | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedResource, setGeneratedResource] = useState<Resource | null>(null)
+  const [style, setStyle] = useState<'photorealistic' | 'artistic' | 'cartoon' | 'minimal'>('photorealistic')
+  const [aspectRatio, setAspectRatio] = useState<'1:1' | '16:9' | '9:16' | '4:3'>('1:1')
+  const [quality, setQuality] = useState<'standard' | 'high' | 'ultra'>('standard')
 
-  const { data: providers = [] } = useQuery({
-    queryKey: ['ai', 'providers'],
+  // Check if unified AI generation is available
+  const { data: capabilities = { image: [], video: [] } } = useQuery({
+    queryKey: ['ai', 'capabilities'],
     queryFn: async () => {
-      const response = await apiClient.resources.ai.providers.get()
+      const response = await apiClient.resources.ai.capabilities.get()
       if (response.error) throw response.error
-      return response.data as AIImageProvider[]
+      return response.data
     },
   })
-
-  const [activeProvider, setActiveProvider] = useState<string | undefined>()
-
-  // Initialize activeProvider when providers are loaded
-  useEffect(() => {
-    if (providers.length > 0 && !activeProvider) {
-      setActiveProvider(providers[0]?.id)
-    }
-  }, [providers, activeProvider])
 
   const queryClient = useQueryClient()
   const generateMutation = useMutation({
     mutationFn: async () => {
-      if (!activeProvider) throw new Error('No provider selected')
-
-      let imageUrl: string | undefined
-      if (imageFile) {
-        const formData = new FormData()
-        formData.append('files', imageFile)
-        formData.append('isPrivate', 'true')
-
-        const uploadResponse = await apiClient.resources.index.post({
-          files: [imageFile] as any,
-          isPrivate: true,
-        })
-
-        if (uploadResponse.error) throw uploadResponse.error
-        imageUrl = uploadResponse.data[0]?.url
-      }
-
       const response = await apiClient.resources.ai.generate.post({
         prompt,
-        imageUrl,
-        providerId: activeProvider,
+        style,
+        aspectRatio,
+        quality,
+        isPrivate: true,
       })
 
       if (response.error) throw response.error
@@ -391,23 +370,17 @@ function AITabContent(props: {
     },
   })
 
-  if (providers.length === 0) {
+  if (capabilities.image.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center h-full text-center p-4'>
         <PiImage className='w-12 h-12 text-muted-foreground/40' />
-        <h3 className='mt-4 text-sm font-bold'>AI image generation not configured</h3>
+        <h3 className='mt-4 text-sm font-bold'>AI image generation not available</h3>
         <p className='mt-2 text-xs text-muted-foreground max-w-xs'>
-          Contact your administrator to configure AI image providers.
+          Contact your administrator to configure AI image generation.
         </p>
       </div>
     )
   }
-
-  const defaultProvider = providers[0]
-  if (!defaultProvider) return null
-
-  const selectedProvider = providers.find((p) => p.id === activeProvider)
-  const hasImageToImage = selectedProvider?.capabilities.includes('image-to-image') ?? false
 
   return (
     <div className='flex flex-col h-full'>
@@ -425,7 +398,6 @@ function AITabContent(props: {
                 props.onSelect(generatedResource)
                 setGeneratedResource(null)
                 setPrompt('')
-                setImageFile(null)
               }}
             >
               Use Image
@@ -442,70 +414,74 @@ function AITabContent(props: {
       </div>
 
       <div className='space-y-4 pt-4 border-t'>
-        <div className='flex flex-col gap-2'>
-          <div className='flex flex-col gap-2'>
-            <Textarea
-              value={prompt}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
-              placeholder='Describe the image you want to generate...'
-              disabled={isGenerating}
-            />
-            <div className='flex items-center justify-between'>
-              <Select
-                value={activeProvider ?? defaultProvider.id}
-                onValueChange={setActiveProvider}
-                disabled={isGenerating}
-              >
-                <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2 shadow-none text-xs'>
-                  <p className='text-xs'>
-                    Using {selectedProvider?.model ?? defaultProvider.model}
-                  </p>
+        <div className='flex flex-col gap-4'>
+          <Textarea
+            value={prompt}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPrompt(e.target.value)}
+            placeholder='Describe the image you want to generate...'
+            disabled={isGenerating}
+          />
+          
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='space-y-2'>
+              <label className='text-xs font-medium text-muted-foreground'>Style</label>
+              <Select value={style} onValueChange={setStyle} disabled={isGenerating}>
+                <SelectTrigger className='h-8'>
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {providers.map((provider) => (
-                    <SelectItem key={provider.id} value={provider.id} className='text-xs'>
-                      {provider.id}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value='photorealistic'>Photorealistic</SelectItem>
+                  <SelectItem value='artistic'>Artistic</SelectItem>
+                  <SelectItem value='cartoon'>Cartoon</SelectItem>
+                  <SelectItem value='minimal'>Minimal</SelectItem>
                 </SelectContent>
               </Select>
-
-              <Button
-                onClick={() => {
-                  setIsGenerating(true)
-                  generateMutation.mutate()
-                }}
-                disabled={!prompt || isGenerating || !activeProvider}
-              >
-                {isGenerating ? <Spinner /> : <LuWand2 className='h-4 w-4' />}
-                Generate
-              </Button>
+            </div>
+            
+            <div className='space-y-2'>
+              <label className='text-xs font-medium text-muted-foreground'>Aspect Ratio</label>
+              <Select value={aspectRatio} onValueChange={setAspectRatio} disabled={isGenerating}>
+                <SelectTrigger className='h-8'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='1:1'>Square (1:1)</SelectItem>
+                  <SelectItem value='16:9'>Landscape (16:9)</SelectItem>
+                  <SelectItem value='9:16'>Portrait (9:16)</SelectItem>
+                  <SelectItem value='4:3'>Classic (4:3)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </div>
+          
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <label className='text-xs font-medium text-muted-foreground'>Quality:</label>
+              <Select value={quality} onValueChange={setQuality} disabled={isGenerating}>
+                <SelectTrigger className='h-6 gap-2 rounded-sm w-auto px-2 shadow-none text-xs'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='standard' className='text-xs'>Standard</SelectItem>
+                  <SelectItem value='high' className='text-xs'>High</SelectItem>
+                  <SelectItem value='ultra' className='text-xs'>Ultra</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {hasImageToImage && (
-          <div className='flex items-center gap-2 pt-2 border-t'>
-            <Input
-              type='file'
-              accept='image/*'
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setImageFile(e.target.files?.[0] ?? null)
-              }
-              disabled={isGenerating}
-            />
-            {imageFile && (
-              <Button
-                variant='ghost'
-                size='icon'
-                onClick={() => setImageFile(null)}
-                disabled={isGenerating}
-              >
-                <PiX className='h-4 w-4' />
-              </Button>
-            )}
+            <Button
+              onClick={() => {
+                setIsGenerating(true)
+                generateMutation.mutate()
+              }}
+              disabled={!prompt || isGenerating}
+              className='gap-2'
+            >
+              {isGenerating ? <Spinner /> : <LuWand2 className='h-4 w-4' />}
+              Generate
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

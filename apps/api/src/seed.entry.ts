@@ -1,6 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { seedRunner } from '@bulkit/api/db/seed'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 
 async function main() {
@@ -11,7 +11,7 @@ async function main() {
     process.exit(1)
   }
 
-  const { db } = iocResolve(ioc.use(injectDatabase))
+  const { db } = ioc.resolve([injectDatabase])
 
   try {
     await seedRunner.run(db as any, [seederName as any])

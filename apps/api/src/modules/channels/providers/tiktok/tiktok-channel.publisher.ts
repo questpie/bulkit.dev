@@ -3,7 +3,7 @@ import {
   type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { buildTikTokClient } from '@bulkit/api/modules/channels/providers/tiktok/tiktok-api-client'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
+import type { ChannelWithIntegration } from '@bulkit/shared/modules/channels/channels.schemas'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import { appLogger } from '@bulkit/shared/utils/logger'
 

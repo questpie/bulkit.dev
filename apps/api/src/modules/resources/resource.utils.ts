@@ -1,5 +1,5 @@
 import { injectDrive } from '@bulkit/api/drive/drive'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 
 /**
  * Automatically handles the URL generation based on the path prefix
@@ -11,7 +11,7 @@ export async function getResourceUrl(props: {
   expiresInSeconds?: number
   forceSignedUrl?: boolean
 }) {
-  const { drive } = iocResolve(ioc.use(injectDrive))
+  const { drive } = ioc.resolve([injectDrive])
 
   if (props.isExternal) {
     return props.location

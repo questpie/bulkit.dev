@@ -1,5 +1,6 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
+import { bindContainer } from '@bulkit/api/ioc'
 import { injectGoogleOAuthClient } from '@bulkit/api/modules/auth/lucia'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
@@ -8,9 +9,7 @@ import { Elysia, t } from 'elysia'
 import { HttpError } from 'elysia-http-error'
 
 export const googleRoutes = new Elysia({ prefix: '/google' })
-  .use(injectDatabase)
-  .use(injectAuthService)
-  .use(injectGoogleOAuthClient)
+  .use(bindContainer([injectDatabase, injectAuthService, injectGoogleOAuthClient]))
   .get(
     '/',
     async ({ cookie, query, googleOAuthClient }) => {

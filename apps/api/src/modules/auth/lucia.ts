@@ -1,16 +1,16 @@
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { sessionsTable, usersTable } from '@bulkit/api/db/db.schema'
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister, ioc, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { DeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
 import { generalEnv } from '@bulkit/shared/env/general.env'
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle'
 import { Google } from 'arctic'
 import { Lucia } from 'lucia'
 
-export const injectLucia = iocRegister('lucia', () => {
+export const injectLucia = ioc.register('lucia', () => {
   const adapter = new DrizzlePostgreSQLAdapter(
-    iocResolve(ioc.use(injectDatabase)).db,
+    ioc.resolve([injectDatabase]).db,
     sessionsTable,
     usersTable
   )
@@ -37,7 +37,7 @@ export const injectLucia = iocRegister('lucia', () => {
   })
 })
 
-export const injectGoogleOAuthClient = iocRegister('googleOAuthClient', () => {
+export const injectGoogleOAuthClient = ioc.register('googleOAuthClient', () => {
   if (!envApi.GOOGLE_LOGIN_ENABLED) {
     return null
   }
@@ -55,7 +55,7 @@ export const injectGoogleOAuthClient = iocRegister('googleOAuthClient', () => {
   )
 })
 
-export type LuciaType = ReturnType<typeof injectLucia>['decorator']['lucia']
+export type LuciaType = ReturnType<(typeof injectLucia)['resolve']>
 
 declare module 'lucia' {
   interface Register {

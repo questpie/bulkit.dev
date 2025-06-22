@@ -82,7 +82,7 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
 
   const editMutation = useMutation({
     mutationFn: async (values: UpdateAIProvider) => {
-      const response = await apiClient.admin['ai-providers'].index.put({
+      const response = await apiClient.admin['ai-providers'].put({
         ...values,
         apiKey: values.apiKey || undefined,
       })
@@ -103,7 +103,7 @@ export function AIProviderForm(props: PropsWithChildren<AIProviderFormProps>) {
 
   const addMutation = useMutation({
     mutationFn: async (values: AddAIProvider) => {
-      const response = await apiClient.admin['ai-providers'].index.post(values)
+      const response = await apiClient.admin['ai-providers'].post(values)
       if (response.error) throw new Error(response.error.value.message)
       return response.data
     },

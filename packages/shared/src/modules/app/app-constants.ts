@@ -10,14 +10,29 @@ export const AI_TEXT_CAPABILITIES = [
   'embedding', // For vector embeddings eg (text-embedding-3-small), used for semantic search, clustering, etc.
 ] as const
 
-export const AI_TEXT_PROVIDER_TYPES = ['anthropic', 'openai', 'mistral'] as const
+export const AI_TEXT_PROVIDER_TYPES = ['anthropic', 'openai'] as const
 export type AITextProviderType = (typeof AI_TEXT_PROVIDER_TYPES)[number]
 
-export const AI_IMAGE_PROVIDER_TYPES = ['replicate'] as const
+export const AI_IMAGE_PROVIDER_TYPES = ['openai', 'google-vertex'] as const
 export type AIImageProviderType = (typeof AI_IMAGE_PROVIDER_TYPES)[number]
 
-// TODO: we can add more capabilities like in-painting, etc.
-export const AI_IMAGE_CAPABILITIES = ['image-to-image', 'text-to-image'] as const
+// Enhanced AI image capabilities
+export const AI_IMAGE_CAPABILITIES = [
+  'text-to-image',
+  'image-to-image', // General image-to-image generation (using input image + prompt)
+  'image-editing', // Image editing with masks (inpainting/outpainting)
+  'image-variations', // Generate variations of an existing image
+  // 'style-transfer', // For applying artistic styles to images
+  // 'image-upscaling', // For improving image resolution and quality
+  // 'background-removal', // For isolating subjects from backgrounds
+] as const
+export type AIImageCapability = (typeof AI_IMAGE_CAPABILITIES)[number]
+
+// // Video generation support
+// export const AI_VIDEO_PROVIDER_TYPES = ['google-veo'] as const
+// export type AIVideoProviderType = (typeof AI_VIDEO_PROVIDER_TYPES)[number]
+
+// export const AI_VIDEO_CAPABILITIES = ['text-to-video', 'image-to-video'] as const
 
 // TODO: think about this more
 // export const SUPPORTED_AI_IMAGE_MODELS: Record<AIImageProviderType, ImageModelConfig[]> = {

@@ -1,6 +1,7 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { emailVerificationsTable, superAdminsTable, usersTable } from '@bulkit/api/db/db.schema'
+import { bindContainer } from '@bulkit/api/ioc'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { injectLucia } from '@bulkit/api/modules/auth/lucia'
 import { getDeviceInfo } from '@bulkit/api/modules/auth/utils/device-info'
@@ -10,8 +11,7 @@ import { HttpError } from 'elysia-http-error'
 import { isWithinExpirationDate } from 'oslo'
 
 export const sessionRoutes = new Elysia({ prefix: '/session' })
-  .use(injectDatabase)
-  .use(injectLucia)
+  .use(bindContainer([injectDatabase, injectLucia]))
   .post(
     '/',
     async ({ body, db, request, lucia }) => {
@@ -96,7 +96,7 @@ export const sessionRoutes = new Elysia({ prefix: '/session' })
   .guard((app) => {
     return app
       .use(protectedMiddleware)
-      .use(injectDatabase)
+      .use(bindContainer([injectDatabase]))
       .get(
         '/',
         async ({ auth, db }) => {

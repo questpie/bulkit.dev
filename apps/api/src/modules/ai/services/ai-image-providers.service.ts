@@ -1,7 +1,7 @@
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import { aiImageProvidersTable } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
-import type { AIImageCapability } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
+import { ioc } from '@bulkit/api/ioc'
+import type { AIImageCapability } from '@bulkit/shared/modules/app/app-constants'
 import { and, arrayContains, eq } from 'drizzle-orm'
 
 export class AIImageProvidersService {
@@ -12,6 +12,10 @@ export class AIImageProvidersService {
           eq(aiImageProvidersTable.isActive, true),
           arrayContains(aiImageProvidersTable.capabilities, [capability])
         ),
+        orderBy: (providers, { desc }) => [
+          // Prioritize providers that are default for this specific capability
+          desc(arrayContains(aiImageProvidersTable.isDefaultFor, [capability])),
+        ],
       })
 
       if (provider) {
@@ -47,6 +51,6 @@ export class AIImageProvidersService {
   }
 }
 
-export const injectAIImageProvidersService = iocRegister('aiImageProvidersService', () => {
+export const injectAIImageProvidersService = ioc.register('aiImageProvidersService', () => {
   return new AIImageProvidersService()
 })

@@ -1,4 +1,4 @@
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { OrganizationWithRole } from '@bulkit/api/modules/organizations/services/organizations.service'
 import Elysia from 'elysia'
 
@@ -17,8 +17,8 @@ export const createMockOrganizationMiddleware = (mockOrg?: Partial<OrganizationW
     .derive(() => ({
       organization: org,
     }))
-    .as('plugin')
+    .as('scoped')
 }
 
 export const injectMockOrganization = (mockOrg?: Partial<OrganizationWithRole>) =>
-  iocRegister('organization', () => createMockOrganizationMiddleware(mockOrg))
+  ioc.register('organization', () => createMockOrganizationMiddleware(mockOrg))

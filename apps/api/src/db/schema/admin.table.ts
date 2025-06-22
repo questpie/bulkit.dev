@@ -3,6 +3,8 @@ import {
   AI_IMAGE_PROVIDER_TYPES,
   AI_TEXT_CAPABILITIES,
   AI_TEXT_PROVIDER_TYPES,
+  AI_VIDEO_CAPABILITIES,
+  AI_VIDEO_PROVIDER_TYPES,
   STOCK_IMAGE_PROVIDER_TYPES,
 } from '@bulkit/shared/modules/app/app-constants'
 import { relations, sql } from 'drizzle-orm'
@@ -21,7 +23,6 @@ import ms from 'ms'
 import { PLATFORMS } from '../../../../../packages/shared/src/constants/db.constants'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { usersTable } from './auth.table'
-import type { AIImageModelInputMapping } from '@bulkit/shared/modules/admin/schemas/ai-image-providers.schemas'
 
 // admin settings for platforms
 export const platformSettingsTable = pgTable(
@@ -101,6 +102,9 @@ export const aiTextProvidersTable = pgTable(
     name: text('name', { enum: AI_TEXT_PROVIDER_TYPES }).notNull(),
     model: text('model').notNull(),
     apiKey: text('api_key').notNull(),
+
+    additionalConfig: jsonb('additional_config').notNull().default({}),
+
     promptTokenToCreditCoefficient: real('prompt_token_to_credit_coefficient')
       .notNull()
       .default(0.0001),
@@ -129,23 +133,39 @@ export const aiImageProvidersTable = pgTable('ai_image_provider', {
   name: text('name', { enum: AI_IMAGE_PROVIDER_TYPES }).notNull(),
   model: text('model').notNull(),
   apiKey: text('api_key').notNull(),
+  additionalConfig: jsonb('additional_config').notNull().default({}),
 
   capabilities: text('capabilities', { enum: AI_IMAGE_CAPABILITIES }).array().notNull(),
-
-  inputMapping: jsonb('input_mapping').$type<AIImageModelInputMapping>().notNull(),
-  // outputMapping: jsonb('output_mapping').$type<AIImageModelOutputMapping>().notNull(),
-
-  defaultInput: jsonb('default_input').$type<Record<string, any>>(),
-
   costPerImage: real('image').notNull().default(1),
 
   isActive: boolean('is_active').notNull().default(true),
 
+  isDefaultFor: text('is_default_for', { enum: AI_IMAGE_CAPABILITIES })
+    .array()
+    .notNull()
+    .default([]),
+
   ...timestampCols(),
 })
 
-export type AIImageProvider = typeof aiImageProvidersTable.$inferSelect
+// export const aiVideoProvidersTable = pgTable('ai_video_provider', {
+//   id: primaryKeyCol(),
+//   name: text('name', { enum: AI_VIDEO_PROVIDER_TYPES }).notNull(),
+//   model: text('model').notNull(),
+//   apiKey: text('api_key').notNull(),
 
+//   capabilities: text('capabilities', { enum: AI_VIDEO_CAPABILITIES }).array().notNull(),
+
+//   costPerSecond: real('cost_per_second').notNull().default(0.5),
+//   maxDuration: integer('max_duration').notNull().default(60), // seconds
+
+//   isActive: boolean('is_active').notNull().default(true),
+
+//   ...timestampCols(),
+// })
+
+export type AIImageProvider = typeof aiImageProvidersTable.$inferSelect
+// export type AIVideoProvider = typeof aiVideoProvidersTable.$inferSelect
 export type AITextProvider = typeof aiTextProvidersTable.$inferSelect
 
 export type SelectSuperAdmin = typeof superAdminsTable.$inferSelect

@@ -113,3 +113,112 @@ export type TaskActivityActionType = (typeof TASK_ACTIVITY_ACTION_TYPE)[number]
 
 export const PLAN_SUBSCRIPTION_TYPES = ['monthly', 'annual', 'life-time'] as const
 export type PlanSubscriptionType = (typeof PLAN_SUBSCRIPTION_TYPES)[number]
+
+/**
+ * Comments
+ */
+
+export const COMMENT_ENTITY_TYPES = ['post', 'task', 'knowledge'] as const
+export type CommentEntityType = (typeof COMMENT_ENTITY_TYPES)[number]
+
+export const COMMENT_REACTION_TYPES = [
+  'like',
+  'love',
+  'laugh',
+  'angry',
+  'sad',
+  'thumbs_up',
+  'thumbs_down',
+] as const
+export type CommentReactionType = (typeof COMMENT_REACTION_TYPES)[number]
+
+export const COMMENT_ATTACHMENT_TYPES = ['image', 'video', 'document', 'link'] as const
+export type CommentAttachmentType = (typeof COMMENT_ATTACHMENT_TYPES)[number]
+
+export const COMMENT_MENTION_TYPES = [
+  'user',
+  'agent',
+  'post',
+  'media',
+  'knowledge',
+  'task',
+] as const
+export type CommentMentionType = (typeof COMMENT_MENTION_TYPES)[number]
+
+/**
+ * Knowledge Base
+ */
+
+export const KNOWLEDGE_STATUS = ['draft', 'published', 'archived'] as const
+export type KnowledgeStatus = (typeof KNOWLEDGE_STATUS)[number]
+
+export const KNOWLEDGE_TEMPLATE_TYPE = [
+  'general',
+  'brand_guidelines',
+  'competitor_analysis',
+  'market_research',
+  'content_strategy',
+  'campaign_brief',
+  'product_info',
+  'style_guide',
+  'process_documentation',
+  'meeting_notes',
+  'research_summary',
+  'web_scraping_result',
+] as const
+export type KnowledgeTemplateType = (typeof KNOWLEDGE_TEMPLATE_TYPE)[number]
+
+export const KNOWLEDGE_VERSION_CHANGE_TYPE = [
+  'created',
+  'content_updated',
+  'metadata_updated',
+  'template_changed',
+  'status_changed',
+  'restored_from_version',
+] as const
+export type KnowledgeVersionChangeType = (typeof KNOWLEDGE_VERSION_CHANGE_TYPE)[number]
+
+export const KNOWLEDGE_REFERENCE_TYPE = [
+  'mentions', // Referenced via @ mentions
+  'links', // Linked within content
+  'attachments', // Attached as resource
+  'templates', // Used as template base
+] as const
+export type KnowledgeReferenceType = (typeof KNOWLEDGE_REFERENCE_TYPE)[number]
+
+/**
+ * Labels System
+ */
+
+export const LABEL_RESOURCE_TYPES = [
+  'post',
+  'task',
+  'knowledge',
+  'resource', // files/media
+] as const
+export type LabelResourceType = (typeof LABEL_RESOURCE_TYPES)[number]
+
+/**
+ * Folders System
+ */
+
+// These are the entity types that can be organized in folders
+export const FOLDERABLE_ENTITY_TYPES = [
+  'resource', // media files
+  'post', // posts
+  'knowledge', // knowledge documents
+] as const
+export type FolderableEntityType = (typeof FOLDERABLE_ENTITY_TYPES)[number]
+
+export const FOLDER_PERMISSION_LEVELS = [
+  'read', // Can view folder and contents
+  'write', // Can add/move items, create subfolders
+  'admin', // Can manage permissions, delete folder
+] as const
+export type FolderPermissionLevel = (typeof FOLDER_PERMISSION_LEVELS)[number]
+
+export const FOLDER_PERMISSION_INHERITANCE = [
+  'inherit', // Inherit from parent folder
+  'explicit', // Explicit permission set
+] as const
+export type FolderPermissionInheritance = (typeof FOLDER_PERMISSION_INHERITANCE)[number]

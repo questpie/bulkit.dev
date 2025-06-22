@@ -1,5 +1,5 @@
-import { channelsTable, resourcesTable } from '@bulkit/api/db/db.schema'
-import { ioc, iocResolve } from '@bulkit/api/ioc'
+import { channelsTable } from '@bulkit/api/db/db.schema'
+import { ioc } from '@bulkit/api/ioc'
 import { injectPublishPostJob } from '@bulkit/api/modules/posts/jobs/publish-post.job'
 import {
   injectPostService,
@@ -12,7 +12,6 @@ import {
 import type { TestContext } from '@test/utils/test-utils'
 import { setupTestApp } from '@test/utils/test-utils'
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
 
 describe('PostService', () => {
   let ctx: TestContext
@@ -21,7 +20,7 @@ describe('PostService', () => {
 
   beforeAll(async () => {
     ctx = await setupTestApp()
-    const container = iocResolve(ioc.use(injectResourcesService).use(injectPostService))
+    const container = ioc.resolve([injectResourcesService, injectPostService])
     postService = container.postService
     resourceService = container.resourcesService
   })
@@ -352,7 +351,7 @@ describe('PostService', () => {
       const futureDate = new Date()
       futureDate.setHours(futureDate.getHours() + 1)
 
-      const container = iocResolve(ioc.use(injectPublishPostJob))
+      const container = ioc.resolve([injectPublishPostJob])
 
       const post = await postService.create<'post'>(ctx.db, {
         orgId: ctx.testUser.organization.id,

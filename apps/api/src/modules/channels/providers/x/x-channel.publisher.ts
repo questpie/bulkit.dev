@@ -3,7 +3,7 @@ import {
   type PostMetrics,
 } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { buildXClient } from '@bulkit/api/modules/channels/providers/x/x-api-client'
-import type { ChannelWithIntegration } from '@bulkit/api/modules/channels/services/channels.service'
+import type { ChannelWithIntegration } from '@bulkit/shared/modules/channels/channels.schemas'
 import type { Post } from '@bulkit/api/modules/posts/services/posts.service'
 import type { Resource } from '@bulkit/api/modules/resources/services/resources.service'
 import { appLogger } from '@bulkit/shared/utils/logger'

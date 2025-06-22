@@ -43,7 +43,7 @@ export function MembersTable(props: MembersTableProps) {
     },
   })
 
-  const allMembers = membersQuery.data?.pages.flatMap((page) => page.data ?? []) ?? []
+  const allMembers = membersQuery.data?.pages.flatMap((page) => page.items ?? []) ?? []
 
   return (
     <DataTable

@@ -1,6 +1,6 @@
 import { injectDatabase, type TransactionLike } from '@bulkit/api/db/db.client'
 import { creditTransactionsTable } from '@bulkit/api/db/db.schema'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { and, eq, sql } from 'drizzle-orm'
 
@@ -86,7 +86,7 @@ export class CreditService {
   }
 }
 
-export const injectCreditService = iocRegister('creditService', () => {
-  const container = iocResolve(ioc.use(injectDatabase))
-  return new CreditService(container.db)
+export const injectCreditService = ioc.register('creditService', (ioc) => {
+  const { db } = ioc.resolve([injectDatabase])
+  return new CreditService(db)
 })

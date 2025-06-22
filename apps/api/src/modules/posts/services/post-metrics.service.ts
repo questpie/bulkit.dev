@@ -6,7 +6,7 @@ import {
   postsTable,
   scheduledPostsTable,
 } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { Platform } from '@bulkit/shared/constants/db.constants'
 import type {
   AggregateMetrics,
@@ -416,7 +416,7 @@ class PostMetricsService {
   }
 }
 
-export const injectPostMetricsService = iocRegister(
+export const injectPostMetricsService = ioc.register(
   'postMetricsService',
   () => new PostMetricsService()
 )

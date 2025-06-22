@@ -6,14 +6,14 @@ import { CreatePostDialog, CreatePostDialogTrigger } from './_components/create-
 import { PiPlus } from 'react-icons/pi'
 
 export default async function PostsPage() {
-  const initialPosts = await apiServer.posts.index.get({
+  const initialPosts = await apiServer.posts.get({
     query: {
       limit: 25,
       cursor: 0,
     },
   })
 
-  if (!initialPosts.data?.data.length) {
+  if (!initialPosts.data?.items.length) {
     return (
       <div className='flex flex-col'>
         <PostsHeader />

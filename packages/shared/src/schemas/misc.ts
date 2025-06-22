@@ -2,6 +2,7 @@ import { createEnum } from '@bulkit/shared/utils/misc'
 import {
   type NumberOptions,
   type SchemaOptions,
+  type Static,
   type StaticDecode,
   type StringOptions,
   type TEnum,
@@ -34,6 +35,10 @@ export function StringLiteralEnum<T extends string[]>(
 
 export function Nullable<T extends TSchema>(type: T) {
   return Type.Union([type, Type.Null()])
+}
+
+export function Nullish<T extends TSchema>(type: T) {
+  return Type.Optional(Type.Union([type, Type.Null()]))
 }
 
 export function MaybeArraySchema<T extends TSchema>(type: T, opts?: SchemaOptions) {
@@ -70,16 +75,25 @@ export function parse<T extends TSchema>(schema: T, data: unknown): StaticDecode
 }
 
 export type PaginatedResponse<T> = {
-  data: T[]
+  items: T[]
   nextCursor: number | null
+  total: number
 }
 
 export function PaginatedResponseSchema<T extends TSchema>(dataSchema: T) {
   return Type.Object({
-    data: Type.Array(dataSchema),
-    nextCursor: Nullable(Type.Number()),
+    items: Type.Array(dataSchema),
+    nextCursor: Nullish(Type.Number()),
+    total: Type.Number(),
   })
 }
+
+export const PaginationQuerySchema = Type.Object({
+  limit: Type.Number({ default: 25, minimum: 1, maximum: 100 }),
+  cursor: Type.Number({ default: 0, minimum: 0 }),
+})
+
+export type PaginatedQuery = Static<typeof PaginationQuerySchema>
 
 type HexStringOptions = StringOptions & {
   length?: number

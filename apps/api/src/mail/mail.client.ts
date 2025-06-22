@@ -1,5 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { injectJobFactory } from '@bulkit/api/jobs/job-factory'
 import { ResendAdapter } from '@bulkit/mail/adapter/resend.adapter'
 import { SmtpAdapter } from '@bulkit/mail/adapter/smtp.adapter'
@@ -9,7 +9,7 @@ import { appLogger } from '@bulkit/shared/utils/logger'
 import { createTestAccount, getTestMessageUrl } from 'nodemailer'
 
 // Global binding for development mode
-export const injectMailClient = iocRegister('mailClient', () => {
+export const injectMailClient = ioc.register('mailClient', () => {
   const adapterPromise = async (): Promise<MailAdapter> => {
     if (envApi.RESEND_API_KEY) {
       return new ResendAdapter({ apiKey: envApi.RESEND_API_KEY })
@@ -32,7 +32,7 @@ export const injectMailClient = iocRegister('mailClient', () => {
     })
   }
 
-  const { jobFactory } = iocResolve(ioc.use(injectJobFactory))
+  const { jobFactory } = ioc.resolve([injectJobFactory])
 
   return new MailClient({
     adapter: adapterPromise(),

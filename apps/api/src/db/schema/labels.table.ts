@@ -1,9 +1,10 @@
 import { relations } from 'drizzle-orm'
-import { index, pgTable, text, integer } from 'drizzle-orm/pg-core'
+import { index, pgTable, text } from 'drizzle-orm/pg-core'
 import { primaryKeyCol, timestampCols } from './_base.table'
 import { organizationsTable } from './organizations.table'
+import { LABEL_RESOURCE_TYPES } from '@bulkit/shared/constants/db.constants'
 
-// Main labels table (generic for all resources)
+// Simple labels table
 export const labelsTable = pgTable(
   'labels',
   {
@@ -11,7 +12,7 @@ export const labelsTable = pgTable(
     name: text('name').notNull(),
     color: text('color').notNull(), // Hex color code
     description: text('description'),
-    categoryId: text('category_id'), // Optional categorization
+    iconName: text('icon_name'), // Icon identifier for UI
     organizationId: text('organization_id')
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
@@ -20,33 +21,12 @@ export const labelsTable = pgTable(
   },
   (table) => [
     index().on(table.organizationId),
-    index().on(table.categoryId),
     // Unique constraint for label names within organization
     index().on(table.name, table.organizationId),
   ]
 )
 
-// Label categories table (for organizing labels)
-export const labelCategoriesTable = pgTable(
-  'label_categories',
-  {
-    id: primaryKeyCol('id'),
-    name: text('name').notNull(),
-    description: text('description'),
-    organizationId: text('organization_id')
-      .notNull()
-      .references(() => organizationsTable.id, { onDelete: 'cascade' }),
-
-    ...timestampCols(),
-  },
-  (table) => [
-    index().on(table.organizationId),
-    // Unique constraint for category names within organization
-    index().on(table.name, table.organizationId),
-  ]
-)
-
-// Generic resource-label associations table
+// Resource-label associations table
 export const resourceLabelsTable = pgTable(
   'resource_labels',
   {
@@ -54,8 +34,8 @@ export const resourceLabelsTable = pgTable(
     labelId: text('label_id')
       .notNull()
       .references(() => labelsTable.id, { onDelete: 'cascade' }),
-    resourceId: text('resource_id').notNull(), // ID of the resource (task, post, image, etc.)
-    resourceType: text('resource_type').notNull(), // Type of resource ('task', 'post', 'image', 'campaign', etc.)
+    resourceId: text('resource_id').notNull(),
+    resourceType: text('resource_type', { enum: LABEL_RESOURCE_TYPES }).notNull(),
     organizationId: text('organization_id')
       .notNull()
       .references(() => organizationsTable.id, { onDelete: 'cascade' }),
@@ -74,25 +54,13 @@ export const resourceLabelsTable = pgTable(
   ]
 )
 
-// Define all the relations
+// Relations
 export const labelsRelations = relations(labelsTable, ({ one, many }) => ({
   organization: one(organizationsTable, {
     fields: [labelsTable.organizationId],
     references: [organizationsTable.id],
   }),
-  category: one(labelCategoriesTable, {
-    fields: [labelsTable.categoryId],
-    references: [labelCategoriesTable.id],
-  }),
   resourceLabels: many(resourceLabelsTable),
-}))
-
-export const labelCategoriesRelations = relations(labelCategoriesTable, ({ one, many }) => ({
-  organization: one(organizationsTable, {
-    fields: [labelCategoriesTable.organizationId],
-    references: [organizationsTable.id],
-  }),
-  labels: many(labelsTable),
 }))
 
 export const resourceLabelsRelations = relations(resourceLabelsTable, ({ one }) => ({
@@ -106,10 +74,8 @@ export const resourceLabelsRelations = relations(resourceLabelsTable, ({ one }) 
   }),
 }))
 
-// Export types for use in services
+// Type exports
 export type SelectLabel = typeof labelsTable.$inferSelect
 export type InsertLabel = typeof labelsTable.$inferInsert
-export type SelectLabelCategory = typeof labelCategoriesTable.$inferSelect
-export type InsertLabelCategory = typeof labelCategoriesTable.$inferInsert
 export type SelectResourceLabel = typeof resourceLabelsTable.$inferSelect
 export type InsertResourceLabel = typeof resourceLabelsTable.$inferInsert

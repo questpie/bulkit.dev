@@ -1,467 +1,352 @@
-import { and, desc, eq, sql, count, or, ilike, inArray } from 'drizzle-orm'
 import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   labelsTable,
-  labelCategoriesTable,
   resourceLabelsTable,
   type SelectLabel,
-  type InsertLabel,
-  type SelectLabelCategory,
-  type InsertLabelCategory,
   type SelectResourceLabel,
-  type InsertResourceLabel,
 } from '@bulkit/api/db/schema/labels.table'
+import { ioc } from '@bulkit/api/ioc'
+import type { LabelResourceType } from '@bulkit/shared/constants/db.constants'
 import type {
-  Label,
-  LabelCategory,
-  LabelWithStats,
-  CreateLabelInput,
-  UpdateLabelInput,
-  LabelFilters,
-  CreateLabelCategoryInput,
-  UpdateLabelCategoryInput,
-  AddLabelsToResourceInput,
-  RemoveLabelsFromResourceInput,
-  ResourceLabelsQuery,
-  BulkLabelOperation,
+  AttachLabels,
+  CreateLabel,
+  DetachLabels,
+  LabelsQuery,
+  LabelWithUsage,
+  UpdateLabel,
 } from '@bulkit/shared/modules/labels/labels.schemas'
+import type { PaginatedResponse } from '@bulkit/shared/schemas/misc'
+import { and, count, desc, eq, ilike, inArray } from 'drizzle-orm'
 
 export class LabelsService {
-  // Label CRUD operations
-  async create(
+  // Get all labels for an organization
+  async getAll(
     db: TransactionLike,
-    input: CreateLabelInput & { organizationId: string }
-  ): Promise<Label> {
-    const label = await db
-      .insert(labelsTable)
-      .values({
-        name: input.name,
-        color: input.color,
-        description: input.description,
-        categoryId: input.categoryId,
-        organizationId: input.organizationId,
-      })
-      .returning()
-      .then((res) => res[0]!)
+    opts: { organizationId: string; query?: LabelsQuery }
+  ): Promise<PaginatedResponse<SelectLabel>> {
+    const limit = opts.query?.limit || 50
+    const cursor = opts.query?.cursor || 0
 
-    return {
-      id: label.id,
-      name: label.name,
-      color: label.color,
-      description: label.description,
-      organizationId: label.organizationId,
-      createdAt: label.createdAt,
-      updatedAt: label.updatedAt,
-    }
-  }
+    const whereConditions = and(
+      eq(labelsTable.organizationId, opts.organizationId),
+      opts.query?.search ? ilike(labelsTable.name, `%${opts.query.search}%`) : undefined,
+      opts.query?.resourceId
+        ? eq(resourceLabelsTable.resourceId, opts.query.resourceId)
+        : undefined,
+      opts.query?.resourceType
+        ? eq(resourceLabelsTable.resourceType, opts.query.resourceType)
+        : undefined
+    )
 
-  async getById(
-    db: TransactionLike,
-    opts: { labelId: string; organizationId: string }
-  ): Promise<Label | null> {
-    const label = await db
+    // Get total count
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(labelsTable)
+      .where(whereConditions)
+
+    const total = totalResult?.count || 0
+
+    // Get paginated data
+    const data = await db
       .select()
       .from(labelsTable)
-      .where(
-        and(eq(labelsTable.id, opts.labelId), eq(labelsTable.organizationId, opts.organizationId))
-      )
-      .then((res) => res[0])
+      .where(whereConditions)
+      .orderBy(desc(labelsTable.createdAt))
+      .limit(limit)
+      .offset(cursor)
 
-    if (!label) {
-      return null
-    }
+    // Calculate next cursor
+    const nextCursor = cursor + limit < total ? cursor + limit : null
 
     return {
-      id: label.id,
-      name: label.name,
-      color: label.color,
-      description: label.description,
-      organizationId: label.organizationId,
-      createdAt: label.createdAt,
-      updatedAt: label.updatedAt,
+      items: data,
+      nextCursor,
+      total,
     }
   }
 
-  async list(
+  // Get labels with usage count
+  async getAllWithUsage(
     db: TransactionLike,
-    opts: {
-      organizationId: string
-      filters?: LabelFilters
-      limit?: number
-      offset?: number
-    }
-  ): Promise<{ labels: LabelWithStats[]; total: number }> {
-    const filters = opts.filters || {}
-    const limit = opts.limit || 50
-    const offset = opts.offset || 0
+    opts: { organizationId: string; query?: LabelsQuery }
+  ): Promise<PaginatedResponse<LabelWithUsage>> {
+    const limit = opts.query?.limit || 50
+    const cursor = opts.query?.cursor || 0
 
-    const whereConditions = [eq(labelsTable.organizationId, opts.organizationId)]
+    const whereConditions = and(
+      eq(labelsTable.organizationId, opts.organizationId),
+      opts.query?.resourceId
+        ? eq(resourceLabelsTable.resourceId, opts.query.resourceId)
+        : undefined,
+      opts.query?.resourceType
+        ? eq(resourceLabelsTable.resourceType, opts.query.resourceType)
+        : undefined,
+      opts.query?.search ? ilike(labelsTable.name, `%${opts.query.search}%`) : undefined
+    )
 
-    if (filters.search) {
-      whereConditions.push(
-        or(
-          ilike(labelsTable.name, `%${filters.search}%`),
-          ilike(labelsTable.description, `%${filters.search}%`)
-        )!
+    // Get total count (need to count distinct labels)
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(labelsTable)
+      .where(
+        and(
+          eq(labelsTable.organizationId, opts.organizationId),
+          opts.query?.search ? ilike(labelsTable.name, `%${opts.query.search}%`) : undefined
+        )
       )
-    }
 
-    if (filters.categoryId) {
-      whereConditions.push(eq(labelsTable.categoryId, filters.categoryId))
-    }
+    const total = totalResult?.count || 0
 
-    if (filters.colors && filters.colors.length > 0) {
-      whereConditions.push(inArray(labelsTable.color, filters.colors))
-    }
+    // Get paginated data with usage count
+    const data = await db
+      .select({
+        id: labelsTable.id,
+        name: labelsTable.name,
+        color: labelsTable.color,
+        description: labelsTable.description,
+        iconName: labelsTable.iconName,
+        organizationId: labelsTable.organizationId,
+        createdAt: labelsTable.createdAt,
+        updatedAt: labelsTable.updatedAt,
+        resourceCount: count(resourceLabelsTable.id),
+      })
+      .from(labelsTable)
+      .leftJoin(resourceLabelsTable, eq(labelsTable.id, resourceLabelsTable.labelId))
+      .where(whereConditions)
+      .groupBy(labelsTable.id)
+      .orderBy(desc(labelsTable.createdAt))
+      .limit(limit)
+      .offset(cursor)
 
-    // Get labels with usage stats
-    const [labels, totalResult] = await Promise.all([
-      db
-        .select({
-          id: labelsTable.id,
-          name: labelsTable.name,
-          color: labelsTable.color,
-          description: labelsTable.description,
-          organizationId: labelsTable.organizationId,
-          createdAt: labelsTable.createdAt,
-          updatedAt: labelsTable.updatedAt,
-          categoryId: labelsTable.categoryId,
-          categoryName: labelCategoriesTable.name,
-          categoryDescription: labelCategoriesTable.description,
-          usageCount: sql<number>`COALESCE(COUNT(${resourceLabelsTable.id}), 0)`,
-          lastUsed: sql<string>`MAX(${resourceLabelsTable.createdAt})`,
-        })
-        .from(labelsTable)
-        .leftJoin(labelCategoriesTable, eq(labelsTable.categoryId, labelCategoriesTable.id))
-        .leftJoin(resourceLabelsTable, eq(labelsTable.id, resourceLabelsTable.labelId))
-        .where(and(...whereConditions))
-        .groupBy(
-          labelsTable.id,
-          labelsTable.name,
-          labelsTable.color,
-          labelsTable.description,
-          labelsTable.organizationId,
-          labelsTable.createdAt,
-          labelsTable.updatedAt,
-          labelsTable.categoryId,
-          labelCategoriesTable.name,
-          labelCategoriesTable.description
-        )
-        .orderBy(
-          filters.sortField === 'name'
-            ? filters.sortDirection === 'desc'
-              ? desc(labelsTable.name)
-              : labelsTable.name
-            : filters.sortField === 'usageCount'
-              ? filters.sortDirection === 'desc'
-                ? desc(sql<number>`COALESCE(COUNT(${resourceLabelsTable.id}), 0)`)
-                : sql<number>`COALESCE(COUNT(${resourceLabelsTable.id}), 0)`
-              : filters.sortDirection === 'desc'
-                ? desc(labelsTable.createdAt)
-                : labelsTable.createdAt
-        )
-        .limit(limit)
-        .offset(offset),
-      db
-        .select({ count: count() })
-        .from(labelsTable)
-        .where(and(...whereConditions))
-        .then((res) => res[0]?.count || 0),
-    ])
+    // Calculate next cursor
+    const nextCursor = cursor + limit < total ? cursor + limit : null
 
     return {
-      labels: labels.map((label) => ({
-        id: label.id,
-        name: label.name,
-        color: label.color,
-        description: label.description,
-        organizationId: label.organizationId,
-        createdAt: label.createdAt,
-        updatedAt: label.updatedAt,
-        category: label.categoryId
-          ? {
-              id: label.categoryId,
-              name: label.categoryName!,
-              description: label.categoryDescription,
-              organizationId: label.organizationId,
-              createdAt: '', // Not needed for this query
-              updatedAt: '', // Not needed for this query
-            }
-          : null,
-        usageCount: label.usageCount,
-        lastUsed: label.lastUsed,
-      })),
-      total: totalResult,
+      items: data,
+      nextCursor,
+      total,
     }
   }
 
+  // Get label by ID
+  async getById(
+    db: TransactionLike,
+    opts: { id: string; organizationId: string }
+  ): Promise<SelectLabel | null> {
+    const result = await db
+      .select()
+      .from(labelsTable)
+      .where(and(eq(labelsTable.id, opts.id), eq(labelsTable.organizationId, opts.organizationId)))
+      .limit(1)
+
+    return result[0] || null
+  }
+
+  // Create new label
+  async create(
+    db: TransactionLike,
+    opts: { organizationId: string; data: CreateLabel }
+  ): Promise<SelectLabel> {
+    const [label] = await db
+      .insert(labelsTable)
+      .values({
+        ...opts.data,
+        organizationId: opts.organizationId,
+      })
+      .returning()
+
+    return label!
+  }
+
+  // Update label
   async update(
     db: TransactionLike,
-    input: UpdateLabelInput & { id: string; organizationId: string }
-  ): Promise<Label> {
-    const updatedLabel = await db
+    opts: { id: string; organizationId: string; data: UpdateLabel }
+  ): Promise<SelectLabel | null> {
+    const [label] = await db
       .update(labelsTable)
-      .set({
-        name: input.name,
-        color: input.color,
-        description: input.description,
-        categoryId: input.categoryId,
-      })
-      .where(
-        and(eq(labelsTable.id, input.id), eq(labelsTable.organizationId, input.organizationId))
-      )
+      .set(opts.data)
+      .where(and(eq(labelsTable.id, opts.id), eq(labelsTable.organizationId, opts.organizationId)))
       .returning()
-      .then((res) => res[0])
 
-    if (!updatedLabel) {
-      throw new Error('Label not found')
-    }
-
-    return {
-      id: updatedLabel.id,
-      name: updatedLabel.name,
-      color: updatedLabel.color,
-      description: updatedLabel.description,
-      organizationId: updatedLabel.organizationId,
-      createdAt: updatedLabel.createdAt,
-      updatedAt: updatedLabel.updatedAt,
-    }
+    return label || null
   }
 
+  // Delete label
   async delete(
     db: TransactionLike,
-    opts: { labelId: string; organizationId: string }
-  ): Promise<void> {
-    // First, remove all resource-label associations
-    await db.delete(resourceLabelsTable).where(eq(resourceLabelsTable.labelId, opts.labelId))
-
-    // Then delete the label
-    await db
+    opts: { id: string; organizationId: string }
+  ): Promise<boolean> {
+    const result = await db
       .delete(labelsTable)
-      .where(
-        and(eq(labelsTable.id, opts.labelId), eq(labelsTable.organizationId, opts.organizationId))
-      )
+      .where(and(eq(labelsTable.id, opts.id), eq(labelsTable.organizationId, opts.organizationId)))
+
+    return result.rowCount! > 0
   }
 
-  // Resource-label association operations
-  async addLabelsToResource(
+  // Get labels for a specific resource
+  async getResourceLabels(
     db: TransactionLike,
-    input: AddLabelsToResourceInput & { organizationId: string }
-  ): Promise<void> {
-    const values = input.labelIds.map((labelId) => ({
-      labelId,
-      resourceId: input.resourceId,
-      resourceType: input.resourceType,
-      organizationId: input.organizationId,
-    }))
+    opts: { organizationId: string; resourceId: string; resourceType: LabelResourceType }
+  ): Promise<SelectLabel[]> {
+    return db
+      .select({
+        id: labelsTable.id,
+        name: labelsTable.name,
+        color: labelsTable.color,
+        description: labelsTable.description,
+        iconName: labelsTable.iconName,
+        organizationId: labelsTable.organizationId,
+        createdAt: labelsTable.createdAt,
+        updatedAt: labelsTable.updatedAt,
+      })
+      .from(labelsTable)
+      .innerJoin(resourceLabelsTable, eq(labelsTable.id, resourceLabelsTable.labelId))
+      .where(
+        and(
+          eq(resourceLabelsTable.organizationId, opts.organizationId),
+          eq(resourceLabelsTable.resourceId, opts.resourceId),
+          eq(resourceLabelsTable.resourceType, opts.resourceType)
+        )
+      )
+      .orderBy(labelsTable.name)
+  }
 
-    if (values.length > 0) {
-      await db.insert(resourceLabelsTable).values(values).onConflictDoNothing()
+  // Attach labels to a resource
+  async attachLabels(
+    db: TransactionLike,
+    opts: { organizationId: string; data: AttachLabels }
+  ): Promise<void> {
+    // First, check which labels are already attached to avoid duplicates
+    const existingLabels = await db
+      .select({ labelId: resourceLabelsTable.labelId })
+      .from(resourceLabelsTable)
+      .where(
+        and(
+          eq(resourceLabelsTable.organizationId, opts.organizationId),
+          eq(resourceLabelsTable.resourceId, opts.data.resourceId),
+          eq(resourceLabelsTable.resourceType, opts.data.resourceType),
+          inArray(resourceLabelsTable.labelId, opts.data.labelIds)
+        )
+      )
+
+    const existingLabelIds = existingLabels.map((l) => l.labelId)
+    const newLabelIds = opts.data.labelIds.filter((id) => !existingLabelIds.includes(id))
+
+    if (newLabelIds.length > 0) {
+      await db.insert(resourceLabelsTable).values(
+        newLabelIds.map((labelId) => ({
+          labelId,
+          resourceId: opts.data.resourceId,
+          resourceType: opts.data.resourceType,
+          organizationId: opts.organizationId,
+        }))
+      )
     }
   }
 
-  async removeLabelsFromResource(
+  // Detach labels from a resource
+  async detachLabels(
     db: TransactionLike,
-    input: RemoveLabelsFromResourceInput & { organizationId: string }
+    opts: { organizationId: string; data: DetachLabels }
   ): Promise<void> {
     await db
       .delete(resourceLabelsTable)
       .where(
         and(
-          eq(resourceLabelsTable.resourceId, input.resourceId),
-          eq(resourceLabelsTable.resourceType, input.resourceType),
-          inArray(resourceLabelsTable.labelId, input.labelIds),
-          eq(resourceLabelsTable.organizationId, input.organizationId)
+          eq(resourceLabelsTable.organizationId, opts.organizationId),
+          eq(resourceLabelsTable.resourceId, opts.data.resourceId),
+          eq(resourceLabelsTable.resourceType, opts.data.resourceType),
+          inArray(resourceLabelsTable.labelId, opts.data.labelIds)
         )
       )
   }
 
-  async getResourceLabels(
+  // Replace all labels for a resource
+  async replaceLabels(
     db: TransactionLike,
     opts: {
-      resourceId?: string
-      resourceType?: string
-      resourceIds?: string[]
       organizationId: string
+      resourceId: string
+      resourceType: LabelResourceType
+      labelIds: string[]
     }
-  ): Promise<Array<{ resourceId: string; resourceType: string; labels: Label[] }>> {
-    const whereConditions = [eq(resourceLabelsTable.organizationId, opts.organizationId)]
-
-    if (opts.resourceId && opts.resourceType) {
-      whereConditions.push(
-        eq(resourceLabelsTable.resourceId, opts.resourceId),
-        eq(resourceLabelsTable.resourceType, opts.resourceType)
-      )
-    }
-
-    if (opts.resourceIds && opts.resourceIds.length > 0) {
-      whereConditions.push(inArray(resourceLabelsTable.resourceId, opts.resourceIds))
-    }
-
-    if (opts.resourceType) {
-      whereConditions.push(eq(resourceLabelsTable.resourceType, opts.resourceType))
-    }
-
-    const results = await db
-      .select({
-        resourceId: resourceLabelsTable.resourceId,
-        resourceType: resourceLabelsTable.resourceType,
-        labelId: labelsTable.id,
-        labelName: labelsTable.name,
-        labelColor: labelsTable.color,
-        labelDescription: labelsTable.description,
-        labelCreatedAt: labelsTable.createdAt,
-        labelUpdatedAt: labelsTable.updatedAt,
-      })
-      .from(resourceLabelsTable)
-      .innerJoin(labelsTable, eq(resourceLabelsTable.labelId, labelsTable.id))
-      .where(and(...whereConditions))
-
-    // Group by resource
-    const groupedResults = new Map<
-      string,
-      { resourceId: string; resourceType: string; labels: Label[] }
-    >()
-
-    for (const result of results) {
-      const key = `${result.resourceType}:${result.resourceId}`
-      if (!groupedResults.has(key)) {
-        groupedResults.set(key, {
-          resourceId: result.resourceId,
-          resourceType: result.resourceType,
-          labels: [],
-        })
-      }
-
-      groupedResults.get(key)!.labels.push({
-        id: result.labelId,
-        name: result.labelName,
-        color: result.labelColor,
-        description: result.labelDescription,
-        organizationId: opts.organizationId,
-        createdAt: result.labelCreatedAt,
-        updatedAt: result.labelUpdatedAt,
-      })
-    }
-
-    return Array.from(groupedResults.values())
-  }
-
-  async bulkLabelOperation(
-    db: TransactionLike,
-    input: BulkLabelOperation & { organizationId: string }
   ): Promise<void> {
-    switch (input.operation) {
-      case 'add':
-        for (const resourceId of input.resourceIds) {
-          await this.addLabelsToResource(db, {
-            resourceId,
-            resourceType: input.resourceType,
-            labelIds: input.labelIds,
-            organizationId: input.organizationId,
-          })
-        }
-        break
-
-      case 'remove':
-        for (const resourceId of input.resourceIds) {
-          await this.removeLabelsFromResource(db, {
-            resourceId,
-            resourceType: input.resourceType,
-            labelIds: input.labelIds,
-            organizationId: input.organizationId,
-          })
-        }
-        break
-
-      case 'replace':
-        // First remove all existing labels, then add the new ones
-        await db
-          .delete(resourceLabelsTable)
-          .where(
-            and(
-              inArray(resourceLabelsTable.resourceId, input.resourceIds),
-              eq(resourceLabelsTable.resourceType, input.resourceType),
-              eq(resourceLabelsTable.organizationId, input.organizationId)
-            )
+    await db.transaction(async (tx) => {
+      // Remove all existing labels
+      await tx
+        .delete(resourceLabelsTable)
+        .where(
+          and(
+            eq(resourceLabelsTable.organizationId, opts.organizationId),
+            eq(resourceLabelsTable.resourceId, opts.resourceId),
+            eq(resourceLabelsTable.resourceType, opts.resourceType)
           )
+        )
 
-        // Then add the new labels
-        for (const resourceId of input.resourceIds) {
-          await this.addLabelsToResource(db, {
-            resourceId,
-            resourceType: input.resourceType,
-            labelIds: input.labelIds,
-            organizationId: input.organizationId,
-          })
-        }
-        break
-    }
+      // Add new labels
+      if (opts.labelIds.length > 0) {
+        await tx.insert(resourceLabelsTable).values(
+          opts.labelIds.map((labelId) => ({
+            labelId,
+            resourceId: opts.resourceId,
+            resourceType: opts.resourceType,
+            organizationId: opts.organizationId,
+          }))
+        )
+      }
+    })
   }
 
-  // Label category operations
-  async createCategory(
+  // Get resources by label
+  async getResourcesByLabel(
     db: TransactionLike,
-    input: CreateLabelCategoryInput & { organizationId: string }
-  ): Promise<LabelCategory> {
-    const category = await db
-      .insert(labelCategoriesTable)
-      .values({
-        name: input.name,
-        description: input.description,
-        organizationId: input.organizationId,
-      })
-      .returning()
-      .then((res) => res[0]!)
-
-    return {
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      organizationId: category.organizationId,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
+    opts: {
+      organizationId: string
+      labelId: string
+      query?: LabelsQuery
     }
-  }
+  ): Promise<PaginatedResponse<SelectResourceLabel>> {
+    const limit = opts.query?.limit || 50
+    const cursor = opts.query?.cursor || 0
 
-  async getCategories(
-    db: TransactionLike,
-    opts: { organizationId: string }
-  ): Promise<LabelCategory[]> {
-    const categories = await db
-      .select()
-      .from(labelCategoriesTable)
-      .where(eq(labelCategoriesTable.organizationId, opts.organizationId))
-      .orderBy(labelCategoriesTable.name)
+    const whereConditions = and(
+      eq(resourceLabelsTable.organizationId, opts.organizationId),
+      eq(resourceLabelsTable.labelId, opts.labelId),
+      opts.query?.resourceId
+        ? eq(resourceLabelsTable.resourceId, opts.query.resourceId)
+        : undefined,
+      opts.query?.resourceType
+        ? eq(resourceLabelsTable.resourceType, opts.query.resourceType)
+        : undefined
+    )
 
-    return categories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      organizationId: category.organizationId,
-      createdAt: category.createdAt,
-      updatedAt: category.updatedAt,
-    }))
-  }
-
-  async getUsageCount(
-    db: TransactionLike,
-    opts: { labelId: string; resourceType?: string }
-  ): Promise<number> {
-    const whereConditions = [eq(resourceLabelsTable.labelId, opts.labelId)]
-
-    if (opts.resourceType) {
-      whereConditions.push(eq(resourceLabelsTable.resourceType, opts.resourceType))
-    }
-
-    const result = await db
+    // Get total count
+    const [totalResult] = await db
       .select({ count: count() })
       .from(resourceLabelsTable)
-      .where(and(...whereConditions))
-      .then((res) => res[0]?.count || 0)
+      .where(whereConditions)
 
-    return result
+    const total = totalResult?.count || 0
+
+    // Get paginated data
+    const data = await db
+      .select()
+      .from(resourceLabelsTable)
+      .where(whereConditions)
+      .orderBy(desc(resourceLabelsTable.createdAt))
+      .limit(limit)
+      .offset(cursor)
+
+    // Calculate next cursor
+    const nextCursor = cursor + limit < total ? cursor + limit : null
+
+    return {
+      items: data,
+      nextCursor,
+      total,
+    }
   }
 }
 
-export const labelsService = new LabelsService()
+export const injectLabelsService = ioc.register('labelsService', () => new LabelsService())

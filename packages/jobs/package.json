@@ -12,7 +12,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@sinclair/typebox": "0.32.34",
+    "@sinclair/typebox": "^0.34.33",
     "@bulkit/shared": "workspace:*",
     "bullmq": "^5.25.1"
   }

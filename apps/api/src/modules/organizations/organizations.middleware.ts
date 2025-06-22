@@ -1,5 +1,6 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
+import { bindContainer } from '@bulkit/api/ioc'
 import { protectedMiddleware } from '@bulkit/api/modules/auth/auth.middleware'
 import { injectAuthService } from '@bulkit/api/modules/auth/serivces/auth.service'
 import {
@@ -20,9 +21,7 @@ export const organizationMiddleware = new Elysia({
   name: 'organization.middleware',
 })
   .use(protectedMiddleware)
-  .use(injectDatabase)
-  .use(injectAuthService)
-  .use(injectOrganizationService)
+  .use(bindContainer([injectDatabase, injectAuthService, injectOrganizationService]))
   .resolve(async ({ headers, authService, organizationsService, db, auth, error }) => {
     const organizationId = headers[ORGANIZATION_HEADER]
 
@@ -79,4 +78,4 @@ export const organizationMiddleware = new Elysia({
       403: HttpErrorSchema(),
     },
   })
-  .as('plugin')
+  .as('scoped')

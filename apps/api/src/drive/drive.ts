@@ -1,5 +1,5 @@
 import { envApi } from '@bulkit/api/envApi'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { appLogger } from '@bulkit/shared/utils/logger'
 import { addMilliseconds } from 'date-fns'
 import { DriveManager } from 'flydrive'
@@ -10,7 +10,7 @@ import path from 'node:path'
 
 /**
  * @description Drive manager
- * To use the drive, inject it using `ioc.use(injectDrive)`
+ * To use the drive, inject it using `ioc.resolve([injectDrive])`
  * Don't get the drive instance directly, use the injector
  */
 export const driveManager = new DriveManager({
@@ -108,6 +108,6 @@ export const driveManager = new DriveManager({
 
 export type Drive = ReturnType<typeof driveManager.use>
 
-export const injectDrive = iocRegister('drive', () => {
+export const injectDrive = ioc.register('drive', () => {
   return driveManager.use()
 })

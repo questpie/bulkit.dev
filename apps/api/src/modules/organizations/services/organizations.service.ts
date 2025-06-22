@@ -2,9 +2,10 @@ import type { TransactionLike } from '@bulkit/api/db/db.client'
 import {
   organizationsTable,
   userOrganizationsTable,
+  usersTable,
   type insertOrganizationSchema,
 } from '@bulkit/api/db/db.schema'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import type { UserRole } from '@bulkit/shared/constants/db.constants'
 import { and, desc, eq, getTableColumns } from 'drizzle-orm'
 import type { Static } from 'elysia'
@@ -35,10 +36,60 @@ export class OrganizationsService {
       .returning()
       .then((res) => res[0]!)
 
+    // Create default AI assistant for the organization
+    await this.ensureAIAssistant(trx, organization.id)
+
     return {
       ...organization,
       role: organizationUser.role,
     }
+  }
+
+  /**
+   * Ensure an organization has a default AI assistant user
+   */
+  async ensureAIAssistant(db: TransactionLike, organizationId: string): Promise<string> {
+    // Check if AI assistant already exists for this organization
+    const existingAI = await db
+      .select({ id: usersTable.id, role: userOrganizationsTable.role })
+      .from(usersTable)
+      .innerJoin(userOrganizationsTable, eq(userOrganizationsTable.userId, usersTable.id))
+      .where(
+        and(eq(userOrganizationsTable.organizationId, organizationId), eq(usersTable.type, 'ai'))
+      )
+      .limit(1)
+      .then((res) => res[0])
+
+    if (existingAI) {
+      if (existingAI.role !== 'admin') {
+        await db
+          .update(userOrganizationsTable)
+          .set({ role: 'admin' })
+          .where(eq(userOrganizationsTable.userId, existingAI.id))
+      }
+
+      return existingAI.id
+    }
+
+    // Create AI user
+    const aiUser = await db
+      .insert(usersTable)
+      .values({
+        name: 'AI Assistant',
+        email: `ai-assistant-${organizationId}@bulkit.dev`,
+        type: 'ai',
+      })
+      .returning()
+      .then((res) => res[0]!)
+
+    // Add AI user to organization
+    await db.insert(userOrganizationsTable).values({
+      userId: aiUser.id,
+      organizationId: organizationId,
+      role: 'admin',
+    })
+
+    return aiUser.id
   }
 
   async getForUser(
@@ -132,7 +183,6 @@ export class OrganizationsService {
   // async deleteById(db: TransactionLike, opts: {...}) {...}
 }
 
-export const injectOrganizationService = iocRegister(
-  'organizationsService',
-  () => new OrganizationsService()
-)
+export const injectOrganizationService = ioc.register('organizationsService', () => {
+  return new OrganizationsService()
+})

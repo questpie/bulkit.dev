@@ -1,6 +1,6 @@
 import { driveManager, type Drive } from '@bulkit/api/drive/drive'
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 
-export const injectMockDrive = iocRegister('drive', () => {
+export const injectMockDrive = ioc.register('drive', () => {
   return driveManager.fake() as Drive
 })

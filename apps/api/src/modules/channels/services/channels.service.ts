@@ -5,27 +5,93 @@ import {
   scheduledPostsTable,
   socialMediaIntegrationsTable,
 } from '@bulkit/api/db/db.schema'
-import { ioc, iocRegister, iocResolve } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { ChannelCantBeDeletedException } from '@bulkit/api/modules/channels/exceptions/channel-cant-be-deleted.exception'
-import { and, eq, getTableColumns, isNotNull, or, sql } from 'drizzle-orm'
-
-export type ChannelWithIntegration = Exclude<
-  Awaited<ReturnType<typeof ChannelsService.prototype.getChannelWithIntegration>>,
-  undefined
->
+import type { Platform, PostType } from '@bulkit/shared/constants/db.constants'
+import { getAllowedPlatformsFromPostType } from '@bulkit/shared/modules/admin/utils/platform-settings.utils'
+import type {
+  ChannelGetAllQuery,
+  ChannelListItem,
+  ChannelWithIntegration,
+} from '@bulkit/shared/modules/channels/channels.schemas'
+import type { PaginatedQuery, PaginatedResponse } from '@bulkit/shared/schemas/misc'
+import { and, desc, eq, getTableColumns, ilike, inArray, isNotNull, or, sql } from 'drizzle-orm'
 
 class ChannelsService {
-  private readonly apiKeyManager: ApiKeyManager
+  constructor(private readonly apiKeyManager: ApiKeyManager) {}
 
-  constructor() {
-    const container = iocResolve(ioc.use(injectApiKeyManager))
-    this.apiKeyManager = container.apiKeyManager
+  async getAll(
+    db: TransactionLike,
+    organizationId: string,
+    opts: ChannelGetAllQuery & PaginatedQuery
+  ): Promise<PaginatedResponse<ChannelListItem>> {
+    const { limit = 10, cursor, platform, q, isActive, postType } = opts
+
+    const platforms = postType ? getAllowedPlatformsFromPostType(postType) : undefined
+
+    // Build where conditions
+    const whereConditions: any[] = [eq(channelsTable.organizationId, organizationId)]
+
+    if (platform) {
+      whereConditions.push(eq(channelsTable.platform, platform))
+    }
+
+    if (isActive !== undefined) {
+      whereConditions.push(eq(channelsTable.status, isActive ? 'active' : 'inactive'))
+    }
+
+    if (q) {
+      whereConditions.push(ilike(channelsTable.name, `${q}%`))
+    }
+
+    if (platforms) {
+      whereConditions.push(inArray(channelsTable.platform, platforms))
+    }
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: sql<number>`COUNT(DISTINCT ${channelsTable.id})` })
+      .from(channelsTable)
+      .where(and(...whereConditions))
+
+    const total = totalResult[0]?.count || 0
+
+    // Get channels with pagination
+    const channels = await db
+      .select({
+        ...getTableColumns(channelsTable),
+        postsCount: sql<string>`COUNT(${scheduledPostsTable.id})`,
+        publishedPostsCount: sql<string>`COUNT(CASE WHEN ${scheduledPostsTable.publishedAt} IS NOT NULL THEN 1 ELSE NULL END)`,
+        scheduledPostsCount: sql<string>`COUNT(CASE WHEN ${scheduledPostsTable.publishedAt} IS NULL AND ${scheduledPostsTable.scheduledAt} IS NOT NULL THEN 1 ELSE NULL END)`,
+      })
+      .from(channelsTable)
+      .where(and(...whereConditions))
+      .orderBy(desc(channelsTable.name))
+      .leftJoin(scheduledPostsTable, eq(scheduledPostsTable.channelId, channelsTable.id))
+      .groupBy(channelsTable.id)
+      .limit(limit + 1)
+      .offset(cursor)
+
+    const hasNextPage = channels.length > limit
+    const results = channels.slice(0, limit)
+    const nextCursor = hasNextPage ? cursor + limit : null
+
+    return {
+      items: results.map((r) => ({
+        ...r,
+        postsCount: Number(r.postsCount),
+        publishedPostsCount: Number(r.publishedPostsCount),
+        scheduledPostsCount: Number(r.scheduledPostsCount),
+      })),
+      total,
+      nextCursor,
+    }
   }
 
   async getChannelWithIntegration(
     db: TransactionLike,
     opts: { id: string; organizationId?: string }
-  ) {
+  ): Promise<ChannelWithIntegration | null> {
     return db
       .select({
         ...getTableColumns(channelsTable),
@@ -50,7 +116,7 @@ class ChannelsService {
       .limit(1)
       .then((rows) => rows[0])
       .then((item) => {
-        if (!item) return item
+        if (!item) return null
 
         return {
           ...item,
@@ -114,4 +180,7 @@ class ChannelsService {
   }
 }
 
-export const injectChannelService = iocRegister('channelsService', () => new ChannelsService())
+export const injectChannelService = ioc.register('channelsService', (ioc) => {
+  const { apiKeyManager } = ioc.resolve([injectApiKeyManager])
+  return new ChannelsService(apiKeyManager)
+})

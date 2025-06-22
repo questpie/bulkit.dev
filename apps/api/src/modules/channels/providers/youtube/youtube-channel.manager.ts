@@ -1,4 +1,4 @@
-import { iocRegister } from '@bulkit/api/ioc'
+import { ioc } from '@bulkit/api/ioc'
 import { ChannelManager } from '@bulkit/api/modules/channels/abstract/channel.manager'
 import { YoutubeAuthenticator } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.authenticator'
 import { YoutubeChannelPublisher } from '@bulkit/api/modules/channels/providers/youtube/youtube-channel.publisher'
@@ -9,7 +9,6 @@ class YoutubeChannelManager extends ChannelManager {
   }
 }
 
-export const injectYoutubeChannelManager = iocRegister(
-  'youtubeChannelManager',
-  () => new YoutubeChannelManager()
-)
+export const injectYoutubeChannelManager = ioc.register('youtubeChannelManager', () => {
+  return new YoutubeChannelManager()
+})

@@ -9,14 +9,14 @@ import {
 import { PiPlus } from 'react-icons/pi'
 
 export default async function ChannelsPage() {
-  const initialChannels = await apiServer.channels.index.get({
+  const initialChannels = await apiServer.channels.get({
     query: {
       limit: 25,
       cursor: 0,
     },
   })
 
-  if (!initialChannels.data?.data.length) {
+  if (!initialChannels.data?.items.length) {
     return (
       <div className='flex flex-col'>
         <ChannelsPageHeader />

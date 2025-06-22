@@ -1,6 +1,7 @@
 import { HttpErrorSchema } from '@bulkit/api/common/http-error-handler'
 import { injectDatabase } from '@bulkit/api/db/db.client'
 import { envApi } from '@bulkit/api/envApi'
+import { bindContainer } from '@bulkit/api/ioc'
 import { organizationMiddleware } from '@bulkit/api/modules/organizations/organizations.middleware'
 import { injectPlanService } from '@bulkit/api/modules/plans/services/plans.service'
 import { generalEnv } from '@bulkit/shared/env/general.env'
@@ -13,8 +14,7 @@ export const planRoutes = new Elysia({
     hide: true,
   },
 })
-  .use(injectDatabase)
-  .use(injectPlanService)
+  .use(bindContainer([injectDatabase, injectPlanService]))
   .get(
     '/',
     async (ctx) => {
