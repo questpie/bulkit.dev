@@ -1,26 +1,18 @@
-import { cn } from '@bulkit/ui/lib'
-import { cva, type VariantProps } from 'class-variance-authority'
-import { FaSpinner } from 'react-icons/fa'
+import { cn } from "@bulkit/ui/lib";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Loading03Icon } from "@hugeicons/core-free-icons";
 
-const spinnerVariants = cva('animate-spin', {
-  variants: {
-    size: {
-      md: 'h-4 w-4',
-      sm: 'h-3 w-3',
-      lg: 'h-5 w-5',
-    },
-  },
-  defaultVariants: {
-    size: 'md',
-  },
-})
-
-export interface SpinnerProps extends VariantProps<typeof spinnerVariants> {
-  className?: string
+function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+	return (
+		<HugeiconsIcon
+			icon={Loading03Icon}
+			strokeWidth={2}
+			role="status"
+			aria-label="Loading"
+			className={cn("size-4 animate-spin", className)}
+			{...props}
+		/>
+	);
 }
 
-const Spinner = ({ className, size, ...props }: SpinnerProps) => {
-  return <FaSpinner className={cn(spinnerVariants({ size, className }))} {...props} />
-}
-
-export { Spinner, spinnerVariants }
+export { Spinner };

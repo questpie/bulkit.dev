@@ -8,14 +8,14 @@
 	"type": "module",
 	"private": true,
 	"devDependencies": {
-		"@types/bun": "latest"
+		"@types/bun": "1.3.4"
 	},
 	"peerDependencies": {
-		"typescript": "^5.0.0"
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
-		"@sinclair/typebox": "^0.34.34",
+		"@sinclair/typebox": "^0.34.41",
 		"@bulkit/shared": "workspace:*",
-		"bullmq": "^5.56.0"
+		"bullmq": "^5.66.0"
 	}
 }

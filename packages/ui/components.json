@@ -1,17 +1,24 @@
 {
   "$schema": "https://ui.shadcn.com/schema.json",
-  "style": "new-york",
-  "rsc": true,
+  "style": "base-lyra",
+  "rsc": false,
   "tsx": true,
   "tailwind": {
-    "config": "tailwind.config.js",
+    "config": "",
     "css": "src/globals.css",
-    "baseColor": "stone",
+    "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
   },
+  "iconLibrary": "hugeicons",
   "aliases": {
     "components": "@bulkit/ui/components",
-    "utils": "@bulkit/ui/lib"
-  }
+    "utils": "@bulkit/ui/lib/utils",
+    "ui": "@bulkit/ui/components/ui",
+    "lib": "@bulkit/ui/lib",
+    "hooks": "@bulkit/ui/hooks"
+  },
+  "menuColor": "default",
+  "menuAccent": "subtle",
+  "registries": {}
 }

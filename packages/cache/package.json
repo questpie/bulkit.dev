@@ -6,13 +6,13 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "1.3.4"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0",
-    "ioredis": "^5.4.1"
+    "typescript": "^5.9.3",
+    "ioredis": "^5.8.2"
   },
   "dependencies": {
-    "lru-cache": "^11.1.0"
+    "lru-cache": "^11.2.4"
   }
 }
