@@ -8,7 +8,7 @@
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleDetection": "force",
-		"jsx": "react",
+		"jsx": "preserve",
 		"allowJs": true,
 		// Bundler mode
 		"moduleResolution": "bundler",
