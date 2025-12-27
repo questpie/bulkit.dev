@@ -258,14 +258,15 @@ export default function ChatPageTest() {
 
 					{/* Navigation */}
 					<div className="flex justify-between items-center pt-6 border-t">
-						<Button variant="outline" asChild>
-							<Link href="/layout-test/files">
-								<PiArrowLeft className="w-4 h-4 mr-2" />
-								Previous: Files Test
-							</Link>
+						<Button
+							variant="outline"
+							render={<Link href="/layout-test/files" />}
+						>
+							<PiArrowLeft className="w-4 h-4 mr-2" />
+							Previous: Files Test
 						</Button>
-						<Button asChild>
-							<Link href="/layout-test/admin">Next: Admin Test</Link>
+						<Button render={<Link href="/layout-test/admin" />}>
+							Next: Admin Test
 						</Button>
 					</div>
 				</div>

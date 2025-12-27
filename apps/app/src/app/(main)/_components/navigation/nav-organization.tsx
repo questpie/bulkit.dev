@@ -94,15 +94,13 @@ export function NavOrganization({ isCollapsed = false }: NavOrganizationProps) {
 					return (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton
-								asChild
 								isActive={isActive}
 								tooltip={item.title}
 								// onClick={handleOrganizationClick}
+								render={<Link href={item.url} />}
 							>
-								<Link href={item.url}>
-									<item.icon className="!size-4" />
-									<span>{item.title}</span>
-								</Link>
+								<item.icon className="size-4" />
+								<span>{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					);

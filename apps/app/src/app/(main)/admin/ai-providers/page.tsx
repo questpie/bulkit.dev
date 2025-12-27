@@ -28,8 +28,8 @@ export default async function AIProvidersPage() {
 						image creation. Add your first provider to get started.
 					</p>
 					<AIProviderForm mode="add">
-						<AIProviderFormTrigger asChild>
-							<Button className="mt-6">Add your first AI provider</Button>
+						<AIProviderFormTrigger render={<Button className="mt-6" />}>
+							Add your first AI provider
 						</AIProviderFormTrigger>
 					</AIProviderForm>
 				</div>
@@ -45,8 +45,8 @@ export default async function AIProvidersPage() {
 			/>
 			<div className="flex justify-end mb-4">
 				<AIProviderForm mode="add">
-					<AIProviderFormTrigger asChild>
-						<Button>Add Provider</Button>
+					<AIProviderFormTrigger render={<Button />}>
+						Add Provider
 					</AIProviderFormTrigger>
 				</AIProviderForm>
 			</div>

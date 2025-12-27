@@ -68,25 +68,25 @@ export function OrganizationSelect() {
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					// biome-ignore lint/a11y/useSemanticElements: <explanation>
-					role="combobox"
-					aria-expanded={open}
-					className="w-full justify-center md:justify-between px-0 md:px-2 "
-					isLoading={organizationsQuery.isPending || setOrgMutation.isPending}
-					variant="outline"
-				>
-					<PiBuilding />
-
-					<span className="flex-1 text-left line-clamp-1 hidden md:inline text-ellipsis">
-						{selectedOrganization?.id
-							? organizations.find((org) => org.id === selectedOrganization?.id)
-									?.name
-							: "Select organization..."}
-					</span>
-					<PiCaretDown className="ml-2 h-4 hidden md:inline w-4 shrink-0 opacity-50" />
-				</Button>
+			<PopoverTrigger
+				render={
+					<Button
+						role="combobox"
+						aria-expanded={open}
+						className="w-full justify-center md:justify-between px-0 md:px-2 "
+						isLoading={organizationsQuery.isPending || setOrgMutation.isPending}
+						variant="outline"
+					/>
+				}
+			>
+				<PiBuilding />
+				<span className="flex-1 text-left line-clamp-1 hidden md:inline text-ellipsis">
+					{selectedOrganization?.id
+						? organizations.find((org) => org.id === selectedOrganization?.id)
+								?.name
+						: "Select organization..."}
+				</span>
+				<PiCaretDown className="ml-2 h-4 hidden md:inline w-4 shrink-0 opacity-50" />
 			</PopoverTrigger>
 			<PopoverContent className="max-w-full w-60 p-0">
 				<Command>
@@ -124,7 +124,7 @@ export function OrganizationSelect() {
 						</CommandGroup>
 						<CommandSeparator />
 						<CommandGroup>
-							<CommandItem className="flex  gap-2" asChild>
+							<CommandItem className="flex  gap-2">
 								<Link href="/onboarding/organization">
 									<PiPlus />
 									<span className="flex-1 text-ellipsis line-clamp-1">

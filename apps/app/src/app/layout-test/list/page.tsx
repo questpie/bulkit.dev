@@ -122,10 +122,7 @@ export default function ListPageTest() {
 					<div className="flex flex-wrap gap-4">
 						<div className="flex items-center gap-2">
 							<PiMagnifyingGlass className="w-4 h-4 text-muted-foreground" />
-							<Input
-								placeholder="Search items..."
-								className={{ wrapper: "w-64" }}
-							/>
+							<Input placeholder="Search items..." className="w-64" />
 						</div>
 						<Select defaultValue="all">
 							<SelectTrigger className="w-40">
@@ -248,14 +245,15 @@ export default function ListPageTest() {
 
 					{/* Navigation */}
 					<div className="flex justify-between items-center pt-6 border-t">
-						<Button variant="outline" asChild>
-							<Link href="/layout-test/dashboard">
-								<PiArrowLeft className="w-4 h-4 mr-2" />
-								Previous: Dashboard
-							</Link>
+						<Button
+							variant="outline"
+							render={<Link href="/layout-test/dashboard" />}
+						>
+							<PiArrowLeft className="w-4 h-4 mr-2" />
+							Previous: Dashboard
 						</Button>
-						<Button asChild>
-							<Link href="/layout-test/files">Next: Files Test</Link>
+						<Button render={<Link href="/layout-test/files" />}>
+							Next: Files Test
 						</Button>
 					</div>
 				</div>

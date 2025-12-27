@@ -28,8 +28,8 @@ export default async function StockImagesPage() {
 						images in their posts. Add a provider to enable this feature.
 					</p>
 					<StockProviderForm mode="add">
-						<StockProviderFormTrigger asChild>
-							<Button className="mt-6">Add your first stock provider</Button>
+						<StockProviderFormTrigger render={<Button className="mt-6" />}>
+							Add your first stock provider
 						</StockProviderFormTrigger>
 					</StockProviderForm>
 				</div>
@@ -45,8 +45,8 @@ export default async function StockImagesPage() {
 			/>
 			<div className="flex justify-end mb-4">
 				<StockProviderForm mode="add">
-					<StockProviderFormTrigger asChild>
-						<Button>Add Provider</Button>
+					<StockProviderFormTrigger render={<Button />}>
+						Add Provider
 					</StockProviderFormTrigger>
 				</StockProviderForm>
 			</div>

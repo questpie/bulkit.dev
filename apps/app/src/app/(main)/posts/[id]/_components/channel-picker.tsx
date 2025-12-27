@@ -172,15 +172,17 @@ const ChannelPicker: React.FC<ChannelPickerProps> = ({
 
 				{queryFlatData.length > value.length &&
 					queryFlatData.length > FIRST_ROW_ITEMS_COUNT && (
-						<ResponsiveDialogTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								className="size-12 rounded-full"
-								disabled={isDisabled}
-							>
-								<PiPlus className="size-5" />
-							</Button>
+						<ResponsiveDialogTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="size-12 rounded-full"
+									disabled={isDisabled}
+								/>
+							}
+						>
+							<PiPlus className="size-5" />
 						</ResponsiveDialogTrigger>
 					)}
 			</div>

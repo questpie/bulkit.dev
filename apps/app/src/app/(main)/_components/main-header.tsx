@@ -35,9 +35,7 @@ export function MainHeader() {
 							placeholder="Search everything..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className={{
-								wrapper: "pl-10",
-							}}
+							className="pl-9"
 						/>
 					</div>
 				</form>

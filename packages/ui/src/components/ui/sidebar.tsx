@@ -1,9 +1,8 @@
-import * as React from "react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
-import { cn } from "@bulkit/ui/lib";
 import { Button } from "@bulkit/ui/components/ui/button";
 import { Input } from "@bulkit/ui/components/ui/input";
 import { Separator } from "@bulkit/ui/components/ui/separator";
@@ -21,8 +20,8 @@ import {
 	TooltipTrigger,
 } from "@bulkit/ui/components/ui/tooltip";
 import { useIsMobile } from "@bulkit/ui/hooks/use-mobile";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SidebarLeftIcon } from "@hugeicons/core-free-icons";
+import { cn } from "@bulkit/ui/lib";
+import { SidebarIcon } from "@phosphor-icons/react";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -90,7 +89,7 @@ function SidebarProvider({
 	// Helper to toggle the sidebar.
 	const toggleSidebar = React.useCallback(() => {
 		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
-	}, [isMobile, setOpen, setOpenMobile]);
+	}, [isMobile, setOpen]);
 
 	// Adds a keyboard shortcut to toggle the sidebar.
 	React.useEffect(() => {
@@ -122,7 +121,7 @@ function SidebarProvider({
 			setOpenMobile,
 			toggleSidebar,
 		}),
-		[state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+		[state, open, setOpen, isMobile, openMobile, toggleSidebar],
 	);
 
 	return (
@@ -270,7 +269,7 @@ function SidebarTrigger({
 			}}
 			{...props}
 		>
-			<HugeiconsIcon icon={SidebarLeftIcon} strokeWidth={2} />
+			<SidebarIcon strokeWidth={2} />
 			<span className="sr-only">Toggle Sidebar</span>
 		</Button>
 	);
@@ -718,5 +717,6 @@ export {
 	SidebarRail,
 	SidebarSeparator,
 	SidebarTrigger,
-	useSidebar,
+	useSidebar
 };
+

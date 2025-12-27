@@ -17,11 +17,7 @@ export default function LayoutTestPage() {
 				title="Layout System Test"
 				description="Test the new dual-sidebar layout system with different page types"
 				breadcrumbs={[{ href: "/", label: "Home" }, { label: "Layout Test" }]}
-				actions={
-					<Button asChild>
-						<Link href="/">Back to Main App</Link>
-					</Button>
-				}
+				actions={<Button render={<Link href="/" />}>Back to Main App</Button>}
 			>
 				<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 					{/* Standard Page Test */}
@@ -33,8 +29,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/standard">View Standard Page</Link>
+							<Button
+								render={<Link href="/layout-test/standard" />}
+								className="w-full"
+							>
+								View Standard Page
 							</Button>
 						</CardContent>
 					</Card>
@@ -48,8 +47,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/dashboard">View Dashboard</Link>
+							<Button
+								render={<Link href="/layout-test/dashboard" />}
+								className="w-full"
+							>
+								View Dashboard
 							</Button>
 						</CardContent>
 					</Card>
@@ -63,8 +65,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/list">View List Page</Link>
+							<Button
+								render={<Link href="/layout-test/list" />}
+								className="w-full"
+							>
+								View List Page
 							</Button>
 						</CardContent>
 					</Card>
@@ -78,8 +83,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/files">View Files Page</Link>
+							<Button
+								render={<Link href="/layout-test/files" />}
+								className="w-full"
+							>
+								View Files Page
 							</Button>
 						</CardContent>
 					</Card>
@@ -93,8 +101,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/chat">View Chat Test</Link>
+							<Button
+								render={<Link href="/layout-test/chat" />}
+								className="w-full"
+							>
+								View Chat Test
 							</Button>
 						</CardContent>
 					</Card>
@@ -108,8 +119,11 @@ export default function LayoutTestPage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<Button asChild className="w-full">
-								<Link href="/layout-test/admin">View Admin Test</Link>
+							<Button
+								render={<Link href="/layout-test/admin" />}
+								className="w-full"
+							>
+								View Admin Test
 							</Button>
 						</CardContent>
 					</Card>

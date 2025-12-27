@@ -76,20 +76,18 @@ type TreeItem = {
 
 function TreeNode({ item, level = 0 }: { item: TreeItem; level?: number }) {
 	const [isOpen, setIsOpen] = useState(level < 2); // Auto-expand first 2 levels
-	const pathname = usePathname();
+	const _pathname = usePathname();
 
 	if (item.type === "file") {
 		return (
 			<SidebarMenuItem>
 				<SidebarMenuButton
-					asChild
 					className="pl-6"
 					style={{ paddingLeft: `${(level + 1) * 16 + 8}px` }}
+					render={<Link href={`/files?file=${item.id}`} />}
 				>
-					<Link href={`/files?file=${item.id}`}>
-						<PiFile className="!size-4" />
-						<span className="truncate">{item.name}</span>
-					</Link>
+					<PiFile className="!size-4" />
+					<span className="truncate">{item.name}</span>
 				</SidebarMenuButton>
 			</SidebarMenuItem>
 		);
@@ -98,23 +96,25 @@ function TreeNode({ item, level = 0 }: { item: TreeItem; level?: number }) {
 	return (
 		<SidebarMenuItem>
 			<Collapsible open={isOpen} onOpenChange={setIsOpen}>
-				<CollapsibleTrigger asChild>
-					<SidebarMenuButton
-						className="pl-6"
-						style={{ paddingLeft: `${level * 16 + 8}px` }}
-					>
-						<PiCaretRight
-							className={`!size-4 transition-transform ${
-								isOpen ? "rotate-90" : ""
-							}`}
+				<CollapsibleTrigger
+					render={
+						<SidebarMenuButton
+							className="pl-6"
+							style={{ paddingLeft: `${level * 16 + 8}px` }}
 						/>
-						{isOpen ? (
-							<PiFolderOpen className="!size-4" />
-						) : (
-							<PiFolder className="!size-4" />
-						)}
-						<span className="truncate">{item.name}</span>
-					</SidebarMenuButton>
+					}
+				>
+					<PiCaretRight
+						className={`!size-4 transition-transform ${
+							isOpen ? "rotate-90" : ""
+						}`}
+					/>
+					{isOpen ? (
+						<PiFolderOpen className="!size-4" />
+					) : (
+						<PiFolder className="!size-4" />
+					)}
+					<span className="truncate">{item.name}</span>
 				</CollapsibleTrigger>
 				<CollapsibleContent>
 					<SidebarMenuSub>
@@ -172,36 +172,36 @@ export function FilesTreeSidebar() {
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/files?file=recent-1">
-										<PiFile className="!size-4" />
-										<span className="truncate">Presentation.pptx</span>
-										<Badge variant="secondary" className="ml-auto text-xs">
-											2m
-										</Badge>
-									</Link>
+								<SidebarMenuButton
+									render={<Link href="/files?file=recent-1" />}
+								>
+									<PiFile className="!size-4" />
+									<span className="truncate">Presentation.pptx</span>
+									<Badge variant="secondary" className="ml-auto text-xs">
+										2m
+									</Badge>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/files?file=recent-2">
-										<PiFile className="!size-4" />
-										<span className="truncate">Meeting Notes.md</span>
-										<Badge variant="secondary" className="ml-auto text-xs">
-											1h
-										</Badge>
-									</Link>
+								<SidebarMenuButton
+									render={<Link href="/files?file=recent-2" />}
+								>
+									<PiFile className="!size-4" />
+									<span className="truncate">Meeting Notes.md</span>
+									<Badge variant="secondary" className="ml-auto text-xs">
+										1h
+									</Badge>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<SidebarMenuButton asChild>
-									<Link href="/files?file=recent-3">
-										<PiFile className="!size-4" />
-										<span className="truncate">Data Analysis.xlsx</span>
-										<Badge variant="secondary" className="ml-auto text-xs">
-											3h
-										</Badge>
-									</Link>
+								<SidebarMenuButton
+									render={<Link href="/files?file=recent-3" />}
+								>
+									<PiFile className="!size-4" />
+									<span className="truncate">Data Analysis.xlsx</span>
+									<Badge variant="secondary" className="ml-auto text-xs">
+										3h
+									</Badge>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						</SidebarMenu>

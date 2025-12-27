@@ -65,17 +65,15 @@ export function NavMain({ isCollapsed = false }: NavMainProps) {
 				{mainNavItems.map((item) => (
 					<SidebarMenuItem key={item.title}>
 						<SidebarMenuButton
-							asChild
 							isActive={
 								pathname === item.url ||
 								(item.url !== "/" && pathname.startsWith(item.url))
 							}
 							tooltip={item.title}
+							render={<Link href={item.url} />}
 						>
-							<Link href={item.url}>
-								<item.icon className="!size-4" />
-								<span>{item.title}</span>
-							</Link>
+							<item.icon className="!size-4" />
+							<span>{item.title}</span>
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 				))}

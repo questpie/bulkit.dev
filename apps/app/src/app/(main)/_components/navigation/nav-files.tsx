@@ -44,15 +44,13 @@ export function NavFiles({ isCollapsed = false }: NavFilesProps) {
 					return (
 						<SidebarMenuItem key={item.title}>
 							<SidebarMenuButton
-								asChild
 								isActive={isActive}
 								tooltip={item.title}
 								// onClick={() => handleFilesClick(item)}
+								render={<Link href={item.url} />}
 							>
-								<Link href={item.url}>
-									<item.icon className="!size-4" />
-									<span>{item.title}</span>
-								</Link>
+								<item.icon className="size-4" />
+								<span>{item.title}</span>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					);

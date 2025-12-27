@@ -5,8 +5,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 
 import { cn } from "@bulkit/ui/lib";
 import { Button } from "@bulkit/ui/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import { XCircleIcon } from "@phosphor-icons/react";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
 	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -71,7 +70,7 @@ function DialogContent({
 							/>
 						}
 					>
-						<HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+						<XCircleIcon strokeWidth={2} />
 						<span className="sr-only">Close</span>
 					</DialogPrimitive.Close>
 				)}

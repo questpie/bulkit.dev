@@ -2,8 +2,7 @@ import { NavigationMenu as NavigationMenuPrimitive } from "@base-ui/react/naviga
 import { cva } from "class-variance-authority";
 
 import { cn } from "@bulkit/ui/lib";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { ArrowDownIcon } from "@phosphor-icons/react";
 
 function NavigationMenu({
 	className,
@@ -70,8 +69,7 @@ function NavigationMenuTrigger({
 			{...props}
 		>
 			{children}{" "}
-			<HugeiconsIcon
-				icon={ArrowDown01Icon}
+			<ArrowDownIcon
 				strokeWidth={2}
 				className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-open/navigation-menu-trigger:rotate-180 group-data-popup-open/navigation-menu-trigger:rotate-180"
 				aria-hidden="true"

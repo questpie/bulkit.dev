@@ -9,12 +9,11 @@ import {
 
 import { cn } from "@bulkit/ui/lib";
 import { Button, buttonVariants } from "@bulkit/ui/components/ui/button";
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
+	ArrowDownIcon,
 	ArrowLeftIcon,
 	ArrowRightIcon,
-	ArrowDownIcon,
-} from "@hugeicons/core-free-icons";
+} from "@phosphor-icons/react";
 
 function Calendar({
 	className,
@@ -149,8 +148,7 @@ function Calendar({
 				Chevron: ({ className, orientation, ...props }) => {
 					if (orientation === "left") {
 						return (
-							<HugeiconsIcon
-								icon={ArrowLeftIcon}
+							<ArrowLeftIcon
 								strokeWidth={2}
 								className={cn("size-4", className)}
 								{...props}
@@ -160,8 +158,7 @@ function Calendar({
 
 					if (orientation === "right") {
 						return (
-							<HugeiconsIcon
-								icon={ArrowRightIcon}
+							<ArrowRightIcon
 								strokeWidth={2}
 								className={cn("size-4", className)}
 								{...props}
@@ -170,8 +167,7 @@ function Calendar({
 					}
 
 					return (
-						<HugeiconsIcon
-							icon={ArrowDownIcon}
+						<ArrowDownIcon
 							strokeWidth={2}
 							className={cn("size-4", className)}
 							{...props}

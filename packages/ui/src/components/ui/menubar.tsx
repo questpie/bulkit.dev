@@ -18,8 +18,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@bulkit/ui/components/ui/dropdown-menu";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { CheckIcon } from "@phosphor-icons/react";
 
 function Menubar({ className, ...props }: MenubarPrimitive.Props) {
 	return (
@@ -126,7 +125,7 @@ function MenubarCheckboxItem({
 		>
 			<span className="left-1.5 size-4 [&_svg:not([class*='size-'])]:size-4 pointer-events-none absolute flex items-center justify-center">
 				<MenuPrimitive.CheckboxItemIndicator>
-					<HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+					<CheckIcon strokeWidth={2} />
 				</MenuPrimitive.CheckboxItemIndicator>
 			</span>
 			{children}
@@ -156,7 +155,7 @@ function MenubarRadioItem({
 		>
 			<span className="left-1.5 size-4 [&_svg:not([class*='size-'])]:size-4 pointer-events-none absolute flex items-center justify-center">
 				<MenuPrimitive.RadioItemIndicator>
-					<HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+					<CheckIcon strokeWidth={2} />
 				</MenuPrimitive.RadioItemIndicator>
 			</span>
 			{children}

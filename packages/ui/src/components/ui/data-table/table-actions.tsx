@@ -69,12 +69,10 @@ export function ActionButton<T>({
 				disabled={action.disabled}
 				variant={action.variant}
 				className="flex items-center px-2 sm:px-4 h-8 sm:h-9 gap-1 sm:gap-2 w-full justify-start text-xs sm:text-sm"
-				asChild
+				render={<Link href={href ?? "#"} />}
 			>
-				<Link href={href!}>
-					{action.icon}
-					<span className="truncate">{action.label}</span>
-				</Link>
+				{action.icon}
+				<span className="truncate">{action.label}</span>
 			</Button>
 		);
 	}
@@ -91,15 +89,17 @@ export function ActionButton<T>({
 					return true;
 				}}
 			>
-				<ResponsiveDialogTrigger asChild>
-					<Button
-						disabled={action.disabled}
-						variant={action.variant}
-						className="flex items-center gap-1 sm:gap-2 w-full justify-start text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-4"
-					>
-						{action.icon}
-						{action.label}
-					</Button>
+				<ResponsiveDialogTrigger
+					render={
+						<Button
+							disabled={action.disabled}
+							variant={action.variant}
+							className="flex items-center gap-1 sm:gap-2 w-full justify-start text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-4"
+						/>
+					}
+				>
+					{action.icon}
+					{action.label}
 				</ResponsiveDialogTrigger>
 			</ResponsiveConfirmDialog>
 		);
@@ -121,11 +121,11 @@ export function ActionButton<T>({
 export function TableActions<T>(props: TableActionsProps<T>) {
 	const visibleOptions =
 		props.actions.options?.filter((action) => action.show ?? true) ?? [];
-	if (!props.actions.primary && !visibleOptions.length) return null;
 
 	const [activeRequireConfirm, setActiveRequireConfirm] = useState<
 		TableActionWithClick<T> | undefined
 	>(undefined);
+	if (!props.actions.primary && !visibleOptions.length) return null;
 
 	return (
 		<>
@@ -137,15 +137,17 @@ export function TableActions<T>(props: TableActionsProps<T>) {
 				)}
 				{visibleOptions.length > 0 && (
 					<ResponsiveDropdownMenu>
-						<ResponsiveDropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								size="icon"
-								className="size-8 sm:size-9"
-							>
-								<LuEllipsisVertical className="h-4 w-4" />
-								<span className="sr-only">Open menu</span>
-							</Button>
+						<ResponsiveDropdownMenuTrigger
+							render={
+								<Button
+									variant="outline"
+									size="icon"
+									className="size-8 sm:size-9"
+								/>
+							}
+						>
+							<LuEllipsisVertical className="h-4 w-4" />
+							<span className="sr-only">Open menu</span>
 						</ResponsiveDropdownMenuTrigger>
 						<ResponsiveDropdownMenuContent
 							align="end"

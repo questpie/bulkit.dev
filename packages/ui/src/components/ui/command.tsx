@@ -15,8 +15,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 } from "@bulkit/ui/components/ui/input-group";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { SearchIcon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { CheckIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";"@base-ui/react/use-ren
 
 function Command({
 	className,
@@ -80,8 +79,7 @@ function CommandInput({
 					{...props}
 				/>
 				<InputGroupAddon>
-					<HugeiconsIcon
-						icon={SearchIcon}
+					<MagnifyingGlassIcon
 						strokeWidth={2}
 						className="size-4 shrink-0 opacity-50"
 					/>
@@ -153,7 +151,8 @@ function CommandItem({
 	className,
 	children,
 	...props
-}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+}:	React.ComponentProps<typeof CommandPrimitive.Item>) {
+
 	return (
 		<CommandPrimitive.Item
 			data-slot="command-item"
@@ -164,10 +163,9 @@ function CommandItem({
 			{...props}
 		>
 			{children}
-			<HugeiconsIcon
-				icon={Tick02Icon}
+			<CheckIcon
 				strokeWidth={2}
-				className="ml-auto opacity-0 group-has-[[data-slot=command-shortcut]]/command-item:hidden group-data-[checked=true]/command-item:opacity-100"
+				className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100"
 			/>
 		</CommandPrimitive.Item>
 	);

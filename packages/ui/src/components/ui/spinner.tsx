@@ -1,11 +1,12 @@
 import { cn } from "@bulkit/ui/lib";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon } from "@hugeicons/core-free-icons";
+import { SpinnerIcon } from "@phosphor-icons/react/ssr";
 
-function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+function Spinner({
+	className,
+	...props
+}: React.ComponentProps<typeof SpinnerIcon>) {
 	return (
-		<HugeiconsIcon
-			icon={Loading03Icon}
+		<SpinnerIcon
 			strokeWidth={2}
 			role="status"
 			aria-label="Loading"

@@ -276,7 +276,7 @@ function useResourceUploader({
 					uniqueErrorMessages.add(error.message);
 				}
 			}
-			const m = Array.from(uniqueErrorMessages).map((m, i) => (
+			const m = Array.from(uniqueErrorMessages).map((m, _i) => (
 				<>
 					<span key={`${m}-span`}>{m}</span>
 					<br key={`${m}-br`} />
@@ -469,10 +469,14 @@ function AITabContent(props: { onSelect: (resource: Resource) => void }) {
 
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
-							<label className="text-xs font-medium text-muted-foreground">
+							<label
+								htmlFor="provider-select"
+								className="text-xs font-medium text-muted-foreground"
+							>
 								Provider:
 							</label>
 							<Select
+								id="provider-select"
 								value={selectedProvider}
 								onValueChange={(value: string) => setSelectedProvider(value)}
 								disabled={isGenerating}
@@ -619,14 +623,11 @@ export function ResourceUploadDialog({
 										? "bg-primary/10 border-primary"
 										: "hover:bg-muted",
 								)}
-								asChild
 							>
-								<button type="button">
-									<tab.icon className="h-5 w-5" />
-									<span className="text-sm w-full line-clamp-1 text-ellipsis font-bold">
-										{tab.label}
-									</span>
-								</button>
+								<tab.icon className="h-5 w-5" />
+								<span className="text-sm w-full line-clamp-1 text-ellipsis font-bold">
+									{tab.label}
+								</span>
 							</Card>
 						))}
 					</div>

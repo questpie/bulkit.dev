@@ -204,14 +204,15 @@ export default function DashboardPageTest() {
 
 					{/* Navigation */}
 					<div className="flex justify-between items-center pt-6 border-t">
-						<Button variant="outline" asChild>
-							<Link href="/layout-test/standard">
-								<PiArrowLeft className="w-4 h-4 mr-2" />
-								Previous: Standard Page
-							</Link>
+						<Button
+							variant="outline"
+							render={<Link href="/layout-test/standard" />}
+						>
+							<PiArrowLeft className="w-4 h-4 mr-2" />
+							Previous: Standard Page
 						</Button>
-						<Button asChild>
-							<Link href="/layout-test/list">Next: List Template</Link>
+						<Button render={<Link href="/layout-test/list" />}>
+							Next: List Template
 						</Button>
 					</div>
 				</div>

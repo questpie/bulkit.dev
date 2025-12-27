@@ -4,13 +4,12 @@ import type * as React from "react";
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 
 import { cn } from "@bulkit/ui/lib";
-import { HugeiconsIcon } from "@hugeicons/react";
 import {
-	UnfoldMoreIcon,
-	Tick02Icon,
-	ArrowUp01Icon,
-	ArrowDown01Icon,
-} from "@hugeicons/core-free-icons";
+	ArrowDownIcon,
+	ArrowUpIcon,
+	CaretUpDownIcon,
+	CheckIcon,
+} from "@phosphor-icons/react";
 
 const Select = SelectPrimitive.Root;
 
@@ -24,13 +23,22 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
 	);
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({
+	className,
+	...props
+}: SelectPrimitive.Value.Props & {
+	placeholder?: React.ReactNode;
+}) {
 	return (
 		<SelectPrimitive.Value
 			data-slot="select-value"
 			className={cn("flex flex-1 text-left", className)}
 			{...props}
-		/>
+		>
+			{props.placeholder ? (
+				<span className="text-muted-foreground">{props.placeholder}</span>
+			) : null}
+		</SelectPrimitive.Value>
 	);
 }
 
@@ -38,9 +46,11 @@ function SelectTrigger({
 	className,
 	size = "default",
 	children,
+	hideCaret = false,
 	...props
 }: SelectPrimitive.Trigger.Props & {
 	size?: "sm" | "default";
+	hideCaret?: boolean;
 }) {
 	return (
 		<SelectPrimitive.Trigger
@@ -53,15 +63,16 @@ function SelectTrigger({
 			{...props}
 		>
 			{children}
-			<SelectPrimitive.Icon
-				render={
-					<HugeiconsIcon
-						icon={UnfoldMoreIcon}
-						strokeWidth={2}
-						className="text-muted-foreground size-4 pointer-events-none"
-					/>
-				}
-			/>
+			{!hideCaret && (
+				<SelectPrimitive.Icon
+					render={
+						<CaretUpDownIcon
+							strokeWidth={2}
+							className="text-muted-foreground size-4 pointer-events-none"
+						/>
+					}
+				/>
+			)}
 		</SelectPrimitive.Trigger>
 	);
 }
@@ -142,11 +153,7 @@ function SelectItem({
 					<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />
 				}
 			>
-				<HugeiconsIcon
-					icon={Tick02Icon}
-					strokeWidth={2}
-					className="pointer-events-none"
-				/>
+				<CheckIcon strokeWidth={2} className="pointer-events-none" />
 			</SelectPrimitive.ItemIndicator>
 		</SelectPrimitive.Item>
 	);
@@ -178,7 +185,7 @@ function SelectScrollUpButton({
 			)}
 			{...props}
 		>
-			<HugeiconsIcon icon={ArrowUp01Icon} strokeWidth={2} />
+			<ArrowUpIcon strokeWidth={2} />
 		</SelectPrimitive.ScrollUpArrow>
 	);
 }
@@ -196,7 +203,7 @@ function SelectScrollDownButton({
 			)}
 			{...props}
 		>
-			<HugeiconsIcon icon={ArrowDown01Icon} strokeWidth={2} />
+			<ArrowDownIcon strokeWidth={2} />
 		</SelectPrimitive.ScrollDownArrow>
 	);
 }

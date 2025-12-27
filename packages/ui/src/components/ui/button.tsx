@@ -49,6 +49,8 @@ function Button({
 	className,
 	variant = "default",
 	size = "default",
+	isLoading,
+	loadingText,
 	...props
 }: ButtonProps) {
 	return (
@@ -57,12 +59,8 @@ function Button({
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
 		>
-			{props.isLoading && (
-				<>
-					<Spinner /> {props.loadingText || "Loading..."}
-				</>
-			)}
-			{props.children}
+			{isLoading && <Spinner />}
+			{isLoading && loadingText ? loadingText : props.children}
 		</ButtonPrimitive>
 	);
 }

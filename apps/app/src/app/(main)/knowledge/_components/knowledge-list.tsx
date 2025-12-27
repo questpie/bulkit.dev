@@ -23,22 +23,23 @@ import {
 	SelectValue,
 } from "@bulkit/ui/components/ui/select";
 import { cn } from "@bulkit/ui/lib";
-import { useState } from "react";
 import {
-	LuClock as Clock,
-	LuPencil as Edit,
-	LuEye as Eye,
-	LuFileText as FileText,
-	LuFilter as Filter,
-	LuHistory as History,
-	LuMoveVertical as MoreVertical,
-	LuPlus as Plus,
-	LuSearch as Search,
-	LuArrowUp as SortAsc,
-	LuArrowDown as SortDesc,
-	LuTrash2 as Trash2,
-	LuUser as User,
-} from "react-icons/lu";
+	ClockCounterClockwiseIcon,
+	ClockIcon,
+	DotsThreeVerticalIcon,
+	EyeIcon,
+	FileTextIcon,
+	FunnelIcon,
+	MagnifyingGlassIcon,
+	PencilIcon,
+	PlusIcon,
+	PlusMinusIcon,
+	SortAscendingIcon,
+	SortDescendingIcon,
+	TrashIcon,
+	UserIcon,
+} from "@phosphor-icons/react";
+import { useState } from "react";
 
 interface KnowledgeItem {
 	id: string;
@@ -191,7 +192,7 @@ export function KnowledgeList({
 				</div>
 
 				<Button onClick={onCreateNew}>
-					<Plus className="w-4 h-4 mr-2" />
+					<PlusIcon className="w-4 h-4 mr-2" />
 					New Document
 				</Button>
 			</div>
@@ -203,20 +204,20 @@ export function KnowledgeList({
 						{/* Search Bar */}
 						<div className="flex gap-2">
 							<div className="relative flex-1">
-								<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+								<MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
 								<Input
 									placeholder="Search knowledge documents..."
 									value={searchTerm}
 									onChange={(e) => setSearchTerm(e.target.value)}
 									onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-									className={{ wrapper: "pl-10" }}
+									className={"pl-10"}
 								/>
 							</div>
 							<Button
 								onClick={() => setShowFilters(!showFilters)}
 								variant="outline"
 							>
-								<Filter className="w-4 h-4 mr-2" />
+								<FunnelIcon className="w-4 h-4 mr-2" />
 								Filters
 							</Button>
 							<Button onClick={handleSearch}>Search</Button>
@@ -226,7 +227,9 @@ export function KnowledgeList({
 						{showFilters && (
 							<div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
 								<div className="space-y-2">
-									<label className="text-sm font-medium">Status</label>
+									<label className="text-sm font-medium" htmlFor="statusFilter">
+										Status
+									</label>
 									<Select
 										value={statusFilter}
 										onValueChange={(value) =>
@@ -253,9 +256,12 @@ export function KnowledgeList({
 								</div>
 
 								<div className="space-y-2">
-									<label className="text-sm font-medium">Sort By</label>
+									<label className="text-sm font-medium" htmlFor="sortBy">
+										Sort By
+									</label>
 									<Select
 										value={sortBy}
+										id="sortBy"
 										onValueChange={(value) => setSortBy(value as typeof sortBy)}
 									>
 										<SelectTrigger>
@@ -272,8 +278,11 @@ export function KnowledgeList({
 								</div>
 
 								<div className="space-y-2">
-									<label className="text-sm font-medium">Order</label>
+									<label className="text-sm font-medium" htmlFor="sortOrder">
+										Order
+									</label>
 									<Select
+										id="sortOrder"
 										value={sortOrder}
 										onValueChange={(value) =>
 											setSortOrder(value as "asc" | "desc")
@@ -285,13 +294,13 @@ export function KnowledgeList({
 										<SelectContent>
 											<SelectItem value="desc">
 												<div className="flex items-center gap-2">
-													<SortDesc className="w-4 h-4" />
+													<SortDescendingIcon className="w-4 h-4" />
 													Descending
 												</div>
 											</SelectItem>
 											<SelectItem value="asc">
 												<div className="flex items-center gap-2">
-													<SortAsc className="w-4 h-4" />
+													<SortAscendingIcon className="w-4 h-4" />
 													Ascending
 												</div>
 											</SelectItem>
@@ -318,6 +327,7 @@ export function KnowledgeList({
 				{isLoading ? (
 					// Loading skeleton
 					Array.from({ length: 3 }, (_, i) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 						<Card key={i}>
 							<CardContent className="pt-6">
 								<div className="animate-pulse space-y-3">
@@ -333,7 +343,7 @@ export function KnowledgeList({
 					<Card>
 						<CardContent className="pt-6">
 							<div className="text-center py-12">
-								<FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+								<FileTextIcon className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
 								<h3 className="text-lg font-medium mb-2">
 									No knowledge documents found
 								</h3>
@@ -343,7 +353,7 @@ export function KnowledgeList({
 										: "Get started by creating your first knowledge document"}
 								</p>
 								<Button onClick={onCreateNew}>
-									<Plus className="w-4 h-4 mr-2" />
+									<PlusMinusIcon className="w-4 h-4 mr-2" />
 									Create First Document
 								</Button>
 							</div>
@@ -361,10 +371,13 @@ export function KnowledgeList({
 										<div className="flex-1 min-w-0">
 											{/* Title and Status */}
 											<div className="flex items-center gap-3 mb-2">
-												<FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+												<FileTextIcon className="w-5 h-5 text-muted-foreground shrink-0" />
 												<h3
 													className="font-medium text-lg cursor-pointer hover:text-primary transition-colors truncate"
 													onClick={() => onView(item)}
+													onKeyDown={(e) => {
+														if (e.key === "Enter") onView(item);
+													}}
 												>
 													{item.title}
 												</h3>
@@ -416,16 +429,16 @@ export function KnowledgeList({
 											{/* Meta info */}
 											<div className="flex items-center gap-4 text-xs text-muted-foreground">
 												<div className="flex items-center gap-1">
-													<User className="w-3 h-3" />
+													<UserIcon className="w-3 h-3" />
 													{item.createdByUser.displayName}
 												</div>
 												<div className="flex items-center gap-1">
-													<Clock className="w-3 h-3" />
+													<ClockIcon className="w-3 h-3" />
 													Updated {formatTimeAgo(item.updatedAt)}
 												</div>
 												{item.viewCount !== undefined && (
 													<div className="flex items-center gap-1">
-														<Eye className="w-3 h-3" />
+														<EyeIcon className="w-3 h-3" />
 														{item.viewCount} views
 													</div>
 												)}
@@ -439,24 +452,24 @@ export function KnowledgeList({
 
 										{/* Actions */}
 										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="sm">
-													<MoreVertical className="w-4 h-4" />
-												</Button>
+											<DropdownMenuTrigger
+												render={<Button variant="ghost" size="sm" />}
+											>
+												<DotsThreeVerticalIcon className="w-4 h-4" />
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuItem onClick={() => onView(item)}>
-													<Eye className="w-4 h-4 mr-2" />
+													<EyeIcon className="w-4 h-4 mr-2" />
 													View
 												</DropdownMenuItem>
 												<DropdownMenuItem onClick={() => onEdit(item)}>
-													<Edit className="w-4 h-4 mr-2" />
+													<PencilIcon className="w-4 h-4 mr-2" />
 													Edit
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													onClick={() => onVersionHistory(item)}
 												>
-													<History className="w-4 h-4 mr-2" />
+													<ClockCounterClockwiseIcon className="w-4 h-4 mr-2" />
 													Version History
 												</DropdownMenuItem>
 												<DropdownMenuSeparator />
@@ -464,7 +477,7 @@ export function KnowledgeList({
 													onClick={() => onDelete(item)}
 													className="text-destructive"
 												>
-													<Trash2 className="w-4 h-4 mr-2" />
+													<TrashIcon className="w-4 h-4 mr-2" />
 													Delete
 												</DropdownMenuItem>
 											</DropdownMenuContent>

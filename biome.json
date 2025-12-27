@@ -19,6 +19,9 @@
 			"a11y": {
 				"useSemanticElements": "off",
 				"useAriaPropsForRole": "off"
+			},
+			"style": {
+				"noNonNullAssertion": "off"
 			}
 		}
 	},

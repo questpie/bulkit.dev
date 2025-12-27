@@ -39,21 +39,21 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 	if (isCollapsed) {
 		return (
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button variant="ghost" size="icon" className="h-8 w-8">
-						<Avatar className="h-6 w-6">
-							<AvatarFallback className="text-xs">
-								{capitalize(authData.user.name)[0]}
-							</AvatarFallback>
-						</Avatar>
-					</Button>
+				<DropdownMenuTrigger
+					render={<Button variant="ghost" size="icon" className="h-8 w-8" />}
+				>
+					<Avatar className="h-6 w-6">
+						<AvatarFallback className="text-xs">
+							{capitalize(authData.user.name)[0]}
+						</AvatarFallback>
+					</Avatar>
 				</DropdownMenuTrigger>
 
 				<DropdownMenuContent className="max-w-full w-64" align="end">
 					<DropdownMenuLabel className="text-muted-foreground">
 						Appearance
 					</DropdownMenuLabel>
-					<DropdownMenuItem asChild>
+					<DropdownMenuItem>
 						<ThemeToggle
 							variant="button"
 							className="w-full bg-transparent border-none flex flex-row justify-start items-center gap-2"
@@ -66,13 +66,13 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 							<DropdownMenuLabel className="text-muted-foreground">
 								{selectedOrganization.name}
 							</DropdownMenuLabel>
-							<DropdownMenuItem className="flex flex-row gap-2" asChild>
+							<DropdownMenuItem className="flex flex-row gap-2">
 								<Link href="/organizations">
 									<PiGear className="size-5" />
 									<span>Settings</span>
 								</Link>
 							</DropdownMenuItem>
-							<DropdownMenuItem className="flex flex-row gap-2" asChild>
+							<DropdownMenuItem className="flex flex-row gap-2">
 								<Link href="/organizations/members">
 									<PiUsers className="size-5" />
 									<span>Members</span>
@@ -85,7 +85,7 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 					<DropdownMenuLabel className="text-muted-foreground">
 						My Account
 					</DropdownMenuLabel>
-					<DropdownMenuItem className="flex flex-row gap-2" asChild>
+					<DropdownMenuItem className="flex flex-row gap-2">
 						<Link href="/profile">
 							<PiUser className="size-5" />
 							<span>Profile</span>
@@ -93,7 +93,7 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 					</DropdownMenuItem>
 
 					{authData.user.isAdmin && (
-						<DropdownMenuItem className="flex flex-row gap-2" asChild>
+						<DropdownMenuItem className="flex flex-row gap-2">
 							<Link href="/admin">
 								<PiBuilding className="size-5" />
 								<span>Administration</span>
@@ -136,7 +136,7 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 				<DropdownMenuLabel className="text-muted-foreground">
 					Appearance
 				</DropdownMenuLabel>
-				<DropdownMenuItem asChild>
+				<DropdownMenuItem>
 					<ThemeToggle
 						variant="button"
 						className="w-full bg-transparent border-none flex flex-row justify-start items-center gap-2"
@@ -149,13 +149,13 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 						<DropdownMenuLabel className="text-muted-foreground">
 							{selectedOrganization.name}
 						</DropdownMenuLabel>
-						<DropdownMenuItem className="flex flex-row gap-2" asChild>
+						<DropdownMenuItem className="flex flex-row gap-2">
 							<Link href="/organizations">
 								<PiGear className="size-5" />
 								<span>Settings</span>
 							</Link>
 						</DropdownMenuItem>
-						<DropdownMenuItem className="flex flex-row gap-2" asChild>
+						<DropdownMenuItem className="flex flex-row gap-2">
 							<Link href="/organizations/members">
 								<PiUsers className="size-5" />
 								<span>Members</span>
@@ -168,7 +168,7 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 				<DropdownMenuLabel className="text-muted-foreground">
 					My Account
 				</DropdownMenuLabel>
-				<DropdownMenuItem className="flex flex-row gap-2" asChild>
+				<DropdownMenuItem className="flex flex-row gap-2">
 					<Link href="/profile">
 						<PiUser className="size-5" />
 						<span>Profile</span>
@@ -176,7 +176,7 @@ export function ProfileDropdown({ isCollapsed = false }: ProfileDropdownProps) {
 				</DropdownMenuItem>
 
 				{authData.user.isAdmin && (
-					<DropdownMenuItem className="flex flex-row gap-2" asChild>
+					<DropdownMenuItem className="flex flex-row gap-2">
 						<Link href="/admin">
 							<PiBuilding className="size-5" />
 							<span>Administration</span>

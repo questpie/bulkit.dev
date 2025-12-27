@@ -22,7 +22,6 @@ import {
 	LuPlay,
 	LuTrash,
 } from "react-icons/lu";
-import { PiX } from "react-icons/pi";
 
 type ResourcePreviewProps = {
 	resource: Resource;
@@ -58,7 +57,7 @@ export function ResourcePreview({
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const isVideo = resource.type.startsWith("video/");
 	const [showFullscreen, setShowFullscreen] = useState(false);
-
+_showFullscreen_setShowFullscreen
 	useEffect(() => {
 		const generateThumbnail = async () => {
 			if (resource.type.startsWith("video/")) {
@@ -101,14 +100,12 @@ export function ResourcePreview({
 		<div className="relative w-full h-full">
 			{thumbnailUrl ? (
 				<>
-					<Image
-						src={thumbnailUrl}
+					src={thumbnailUrl}
 						alt={resource.location}
 						layout="fill"
 						objectFit="cover"
 					/>
-				</>
-			) : (
+				<: (
 				<div className="flex flex-col justify-center items-center h-full text-center gap-2">
 					<Icon className="w-12 h-12 text-muted-foreground" />
 				</div>
@@ -127,15 +124,13 @@ export function ResourcePreview({
 
 	const renderActionsDropdown = () => (
 		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<Button
+			<DropdownMenuTrigger render={<Button
 					type="button"
 					className="absolute group-hover:opacity-100 opacity-0 z-10 rounded-full h-6 w-6 top-0 right-0 p-1 text-sm"
 					size="icon"
 					variant="outline"
-				>
+				/>}>
 					<LuEllipsisVertical />
-				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent>
 				{allowPreview && (

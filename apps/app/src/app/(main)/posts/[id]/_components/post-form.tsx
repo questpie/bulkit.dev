@@ -661,127 +661,125 @@ function ThreadItem(props: {
 					)}
 				</div>
 
-				<CollapsibleContent asChild>
-					<div className="p-4 flex flex-col gap-4 border-t border-border">
-						<FormField
-							control={form.control}
-							name={`${props.name}.text` as "items.0.text"}
-							render={({ field }) => {
-								return (
-									<FormItem>
-										{/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
+				<CollapsibleContent className="p-4 flex flex-col gap-4 border-t border-border">
+					<FormField
+						control={form.control}
+						name={`${props.name}.text` as "items.0.text"}
+						render={({ field }) => {
+							return (
+								<FormItem>
+									{/* <FormLabel>{props.item.order + 1}. Thread content</FormLabel> */}
 
-										<FormControl>
-											<div className="relative">
-												<Textarea
-													disabled={isPostLocked}
-													rows={10}
-													{...field}
-													placeholder="Write your thread here"
-												/>
-												<TextImproveButton
-													fieldValue={field.value}
-													onValueChange={field.onChange}
-												/>
-											</div>
-										</FormControl>
+									<FormControl>
+										<div className="relative">
+											<Textarea
+												disabled={isPostLocked}
+												rows={10}
+												{...field}
+												placeholder="Write your thread here"
+											/>
+											<TextImproveButton
+												fieldValue={field.value}
+												onValueChange={field.onChange}
+											/>
+										</div>
+									</FormControl>
 
-										<FormMessage />
-									</FormItem>
-								);
-							}}
-						/>
+									<FormMessage />
+								</FormItem>
+							);
+						}}
+					/>
 
-						<FormField
-							control={form.control}
-							name={`${props.name}.media` as "items.0.media"}
-							render={({ field }) => {
-								return (
-									<FormItem>
-										<FormLabel>Post Media</FormLabel>
+					<FormField
+						control={form.control}
+						name={`${props.name}.media` as "items.0.media"}
+						render={({ field }) => {
+							return (
+								<FormItem>
+									<FormLabel>Post Media</FormLabel>
 
-										<FormControl>
-											<div className="flex flex-col gap-3">
-												<div className="flex w-full">
-													{mediaArray.fields.length < 10 && !isPostLocked && (
-														<ResourceButtonUpload
-															disabled={isPostLocked}
-															maxFiles={10 - mediaArray.fields.length}
-															onUploaded={(resources) => {
-																if (isPostLocked) return;
-																for (const resource of resources) {
-																	mediaArray.append({
-																		id: nanoid(),
-																		// id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
-																		order: lastMediaOrder + 1,
-																		resource,
-																	});
-																}
-															}}
-														/>
-													)}
-												</div>
-												<FormMessage />
-
-												{!!mediaArray.fields.length && (
-													<DndContext
-														sensors={sensors}
-														collisionDetection={closestCenter}
-														onDragEnd={handleMediaDragEnd}
-													>
-														<SortableContext
-															disabled={isPostLocked}
-															items={mediaArray.fields}
-														>
-															<div className="flex flex-row gap-4 flex-wrap w-full">
-																{mediaArray.fields.map((media, index) => {
-																	return (
-																		<MediaItem
-																			key={media.id}
-																			onRemove={() => {
-																				if (isPostLocked) return;
-																				let i = 0;
-																				for (const item of mediaArray.fields) {
-																					if (i === index) {
-																						continue;
-																					}
-																					mediaArray.update(i, {
-																						...item,
-																						order: i + 1,
-																					});
-																					i++;
-																				}
-																				mediaArray.remove(index);
-																			}}
-																			media={media}
-																		/>
-																	);
-																})}
-															</div>
-														</SortableContext>
-													</DndContext>
+									<FormControl>
+										<div className="flex flex-col gap-3">
+											<div className="flex w-full">
+												{mediaArray.fields.length < 10 && !isPostLocked && (
+													<ResourceButtonUpload
+														disabled={isPostLocked}
+														maxFiles={10 - mediaArray.fields.length}
+														onUploaded={(resources) => {
+															if (isPostLocked) return;
+															for (const resource of resources) {
+																mediaArray.append({
+																	id: nanoid(),
+																	// id: resource.id, // we can just set the resource id as this doesn't matter, it just needs to be unique
+																	order: lastMediaOrder + 1,
+																	resource,
+																});
+															}
+														}}
+													/>
 												)}
 											</div>
-										</FormControl>
-									</FormItem>
-								);
-							}}
-						/>
+											<FormMessage />
 
-						<div className="flex justify-end pt-4">
-							{props.onRemove && (
-								<Button
-									variant="outline"
-									disabled={isPostLocked}
-									onClick={() => {
-										if (isPostLocked) return;
-										props.onRemove?.();
-									}}
-								>
-									<LuTrash2 /> Remove
-								</Button>
-							)}
-						</div>
+											{!!mediaArray.fields.length && (
+												<DndContext
+													sensors={sensors}
+													collisionDetection={closestCenter}
+													onDragEnd={handleMediaDragEnd}
+												>
+													<SortableContext
+														disabled={isPostLocked}
+														items={mediaArray.fields}
+													>
+														<div className="flex flex-row gap-4 flex-wrap w-full">
+															{mediaArray.fields.map((media, index) => {
+																return (
+																	<MediaItem
+																		key={media.id}
+																		onRemove={() => {
+																			if (isPostLocked) return;
+																			let i = 0;
+																			for (const item of mediaArray.fields) {
+																				if (i === index) {
+																					continue;
+																				}
+																				mediaArray.update(i, {
+																					...item,
+																					order: i + 1,
+																				});
+																				i++;
+																			}
+																			mediaArray.remove(index);
+																		}}
+																		media={media}
+																	/>
+																);
+															})}
+														</div>
+													</SortableContext>
+												</DndContext>
+											)}
+										</div>
+									</FormControl>
+								</FormItem>
+							);
+						}}
+					/>
+
+					<div className="flex justify-end pt-4">
+						{props.onRemove && (
+							<Button
+								variant="outline"
+								disabled={isPostLocked}
+								onClick={() => {
+									if (isPostLocked) return;
+									props.onRemove?.();
+								}}
+							>
+								<LuTrash2 /> Remove
+							</Button>
+						)}
 					</div>
 				</CollapsibleContent>
 			</Card>

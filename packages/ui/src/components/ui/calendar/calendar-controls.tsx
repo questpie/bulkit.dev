@@ -1,65 +1,60 @@
-'use client'
+"use client";
 
-import type * as React from 'react'
-import { Slot } from '@radix-ui/react-slot'
-import { Button } from '@bulkit/ui/components/ui/button'
-import { useAtom } from 'jotai'
-import { currentDateAtom } from './calendar.atoms'
-import { addMonths, setMonth } from 'date-fns'
+import { Button, type ButtonProps } from "@bulkit/ui/components/ui/button";
+import { useAtom } from "jotai";
+import { currentDateAtom } from "./calendar.atoms";
+import { addMonths } from "date-fns";
 
-interface CalendarControlProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  asChild?: boolean
-  className?: string
+type CalendarControlProps = ButtonProps;
+
+export function CalendarControlPrevTrigger({
+	className,
+	...props
+}: CalendarControlProps) {
+	const [currentDate, setCurrentDate] = useAtom(currentDateAtom);
+
+	return (
+		<Button
+			variant="outline"
+			className={className}
+			onClick={() => setCurrentDate(addMonths(currentDate, -1))}
+			{...props}
+		>
+			{props.children ?? "Previous"}
+		</Button>
+	);
 }
 
-export function CalendarControlPrevTrigger({ asChild, className, ...props }: CalendarControlProps) {
-  const [currentDate, setCurrentDate] = useAtom(currentDateAtom)
-  const Comp = asChild ? Slot : Button
+export function CalendarControlNextTrigger({
+	className,
+	...props
+}: CalendarControlProps) {
+	const [currentDate, setCurrentDate] = useAtom(currentDateAtom);
 
-  return (
-    <Comp
-      variant='outline'
-      className={className}
-      onClick={() => setCurrentDate(addMonths(currentDate, -1))}
-      {...props}
-    >
-      {props.children ?? 'Previous'}
-    </Comp>
-  )
-}
-
-export function CalendarControlNextTrigger({ asChild, className, ...props }: CalendarControlProps) {
-  const [currentDate, setCurrentDate] = useAtom(currentDateAtom)
-  const Comp = asChild ? Slot : Button
-
-  return (
-    <Comp
-      variant='outline'
-      className={className}
-      onClick={() => setCurrentDate(addMonths(currentDate, 1))}
-      {...props}
-    >
-      {props.children ?? 'Next'}
-    </Comp>
-  )
+	return (
+		<Button
+			variant="outline"
+			className={className}
+			onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+			{...props}
+		>
+			{props.children ?? "Next"}
+		</Button>
+	);
 }
 
 export function CalendarControlTodayTrigger({
-  asChild,
-  className,
-  ...props
+	className,
+	...props
 }: CalendarControlProps) {
-  const [, setCurrentDate] = useAtom(currentDateAtom)
-  const Comp = asChild ? Slot : Button
-
-  return (
-    <Comp
-      variant='outline'
-      className={className}
-      onClick={() => setCurrentDate(new Date())}
-      {...props}
-    >
-      {props.children ?? 'Today'}
-    </Comp>
-  )
+	const [, setCurrentDate] = useAtom(currentDateAtom);
+	return (
+		<Button
+			variant="outline"
+			onClick={() => setCurrentDate(new Date())}
+			{...props}
+		>
+			{props.children ?? "Today"}
+		</Button>
+	);
 }

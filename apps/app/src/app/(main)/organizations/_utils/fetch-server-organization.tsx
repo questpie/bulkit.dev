@@ -18,5 +18,5 @@ export async function fetchServerOrganization() {
 			: null,
 	]);
 
-	return selectedOrganizationResp?.data ?? orgsResp.data?.data[0]!;
+	return selectedOrganizationResp?.data ?? orgsResp.data?.items[0] ?? null;
 }

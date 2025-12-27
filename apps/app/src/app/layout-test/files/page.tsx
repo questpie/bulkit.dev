@@ -334,14 +334,15 @@ export default function FilesPageTest() {
 
 					{/* Navigation */}
 					<div className="flex justify-between items-center pt-6 border-t">
-						<Button variant="outline" asChild>
-							<Link href="/layout-test/list">
-								<PiArrowLeft className="w-4 h-4 mr-2" />
-								Previous: List Page
-							</Link>
+						<Button
+							variant="outline"
+							render={<Link href="/layout-test/list" />}
+						>
+							<PiArrowLeft className="w-4 h-4 mr-2" />
+							Previous: List Page
 						</Button>
-						<Button asChild>
-							<Link href="/layout-test/chat">Next: Chat Test</Link>
+						<Button render={<Link href="/layout-test/chat" />}>
+							Next: Chat Test
 						</Button>
 					</div>
 				</div>
