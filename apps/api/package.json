@@ -45,9 +45,7 @@
 		"@ffmpeg-installer/ffmpeg": "^1.1.0",
 		"@ffprobe-installer/ffprobe": "^2.1.2",
 		"@google-cloud/vertexai": "^1.10.0",
-		"@langchain/anthropic": "^1.3.1",
 		"@langchain/community": "^1.1.0",
-		"nanoid": "^5.1.6",
 		"@langchain/core": "^1.1.6",
 		"@langchain/langgraph": "^1.0.5",
 		"@langchain/openai": "^1.2.0",
@@ -73,6 +71,7 @@
 		"install": "^0.13.0",
 		"lucia": "^3.2.2",
 		"ms": "^2.1.3",
+		"nanoid": "^5.1.6",
 		"nodemailer": "^7.0.11",
 		"open-graph-scraper": "^6.11.0",
 		"oslo": "^1.2.1",
@@ -85,7 +84,8 @@
 		"resend": "^6.6.0",
 		"rettiwt-api": "^6.1.4",
 		"twitter-api-v2": "^1.28.0",
-		"ua-parser-js": "^2.0.7"
+		"ua-parser-js": "^2.0.7",
+		"zod": "^4.2.1"
 	},
 	"devDependencies": {
 		"@elysiajs/eden": "^1.4.5",
