@@ -1,0 +1,2 @@
+/* TODO: this workaround is temporary, as the import from @bulkut/ui/css didn't work in layout */
+@import '../../../packages/ui/src/globals.css';

@@ -1,6 +1,6 @@
 import { apiServer } from "@bulkit/app/api/api.server";
 import { RootProviders } from "@bulkit/app/app/root-providers";
-import "@bulkit/ui/css";
+import "@bulkit/app/globals.css";
 import { cn } from "@bulkit/ui/lib";
 import type { Metadata, Viewport } from "next";
 import { Inter as FontSans } from "next/font/google";
