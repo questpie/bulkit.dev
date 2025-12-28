@@ -15,7 +15,7 @@ import {
 	InputGroup,
 	InputGroupAddon,
 } from "@bulkit/ui/components/ui/input-group";
-import { CheckIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";"@base-ui/react/use-ren
+import { CheckIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 
 function Command({
 	className,
@@ -151,8 +151,7 @@ function CommandItem({
 	className,
 	children,
 	...props
-}:	React.ComponentProps<typeof CommandPrimitive.Item>) {
-
+}: React.ComponentProps<typeof CommandPrimitive.Item>) {
 	return (
 		<CommandPrimitive.Item
 			data-slot="command-item"

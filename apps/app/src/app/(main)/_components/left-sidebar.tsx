@@ -55,9 +55,7 @@ export function LeftSidebar(props: { isCollapsed: boolean }) {
 
 			<SidebarContent className="px-2">
 				{/* Main Navigation */}
-				<div>
-					<NavMain isCollapsed={!!isCollapsed} />
-				</div>
+				<NavMain isCollapsed={!!isCollapsed} />
 
 				{/* Files Section */}
 				<NavFiles isCollapsed={!!isCollapsed} />
